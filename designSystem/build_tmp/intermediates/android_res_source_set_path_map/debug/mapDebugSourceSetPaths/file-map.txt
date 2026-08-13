@@ -1,0 +1,7 @@
+com.quimia.designsystem.designSystem-updated_navigation_xml-0 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\build\generated\updated_navigation_xml\debug
+com.quimia.designsystem.designSystem-mergeDebugResources-1 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\build\intermediates\incremental\debug\mergeDebugResources\merged.dir
+com.quimia.designsystem.designSystem-mergeDebugResources-2 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\build\intermediates\incremental\debug\mergeDebugResources\stripped.dir
+com.quimia.designsystem.designSystem-debug-3 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\build\intermediates\merged_res\debug\mergeDebugResources
+com.quimia.designsystem.designSystem-debug-4 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\build\intermediates\packaged_res\debug\packageDebugResources
+com.quimia.designsystem.designSystem-debug-5 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\src\debug\res
+com.quimia.designsystem.designSystem-main-6 C:\Users\gustavosousa-ieg\OneDrive - Instituto J&F\Desktop\INTER-MOBILE\quimia-android\designSystem\src\main\res

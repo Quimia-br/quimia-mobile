@@ -1,0 +1,13 @@
+def featurePath = ":presentation"
+
+rootProject.allprojects { Project project ->
+    if (project.path.contains(featurePath)) {
+        setupDependencies(project.path)
+    }
+}
+
+def setupDependencies(String path) {
+    dependencies {
+        implementation project(path)
+    }
+}
