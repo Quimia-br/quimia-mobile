@@ -8,6 +8,7 @@ apply {
 }
 
 android {
+    compileSdk = 34
     namespace = "com.quimia"
 
     defaultConfig {
@@ -35,3 +36,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+

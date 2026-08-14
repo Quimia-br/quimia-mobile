@@ -8,8 +8,14 @@ function Write-Step($message) {
     Write-Host "[quimia] $message" -ForegroundColor Cyan
 }
 
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $repoRoot
+$repoRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $MyInvocation.MyCommand.Path)).Path
+Set-Location -LiteralPath $repoRoot
+
+if ($repoRoot -match '&') {
+    Write-Warning 'O caminho do projeto contém "&". O PowerShell interpreta isso como operador. Use o arquivo .cmd do projeto ou execute com caminho entre aspas.'
+    Write-Host 'Exemplo: setup-quimia-mobile.cmd' -ForegroundColor Yellow
+    Write-Host 'Ou: powershell -ExecutionPolicy Bypass -File "C:\caminho\para\setup-quimia-mobile.ps1"' -ForegroundColor Yellow
+}
 
 $projectSettings = Join-Path $repoRoot 'settings.gradle.kts'
 $wrapperProps = Join-Path $repoRoot 'gradle\wrapper\gradle-wrapper.properties'
@@ -57,7 +63,14 @@ try {
     $jdkOk = $false
     $javaCmd = Get-Command java -ErrorAction SilentlyContinue
     if ($javaCmd) {
-        $javaVersionOutput = & java -version 2>&1
+        $prevErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $javaVersionOutput = & java -version 2>&1
+        } finally {
+            $ErrorActionPreference = $prevErrorActionPreference
+        }
+
         $javaVersion = $javaVersionOutput | Select-Object -First 1
         if ($javaVersion -match 'version\s+"?(\d+)') {
             $javaMajor = [int]$Matches[1]
@@ -186,6 +199,11 @@ try {
         exit 0
     }
 } catch {
-    Write-Error "Erro no setup: $($_.Exception.Message)"
+    $msg = $_.Exception.Message
+    $pos = $_.InvocationInfo.PositionMessage
+    Write-Error "Erro no setup: $msg"
+    if ($pos) {
+        Write-Host "Detalhes do erro: $pos" -ForegroundColor Red
+    }
     exit 1
 }

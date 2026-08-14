@@ -15,7 +15,8 @@ Passos rápidos para configurar o ambiente de desenvolvimento:
   2. Execute:
      `setup-quimia-mobile.cmd`
   3. Se quiser rodar manualmente em PowerShell:
-     `powershell -ExecutionPolicy Bypass -File .\setup-quimia-mobile.ps1`
+     `powershell -ExecutionPolicy Bypass -File ".\setup-quimia-mobile.ps1"`
+  4. Se o caminho do projeto contiver `&` (ex.: `...\J&F\...`), prefira o `.cmd` ou passe o caminho entre aspas, porque o PowerShell interpreta `&` como operador.
 - Esse script tenta corrigir os problemas mais comuns:
   - `Unresolved reference 'RepositoriesMode'`
   - Gradle 9.0.0 / AGP 9.x incompatível
