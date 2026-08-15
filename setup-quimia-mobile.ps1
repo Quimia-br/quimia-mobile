@@ -129,7 +129,7 @@ try {
 
         if (-not (Test-Path $wrapperProps)) {
             New-Item -ItemType Directory -Force -Path (Split-Path -Parent $wrapperProps) | Out-Null
-            Set-Content -Path $wrapperProps -Value "distributionBase=GRADLE_USER_HOME`ndistributionPath=wrapper/dists`ndistributionUrl=https\\://services.gradle.org/distributions/gradle-9.1.0-bin.zip`nnetworkTimeout=10000`nvalidateDistributionUrl=true`nzipStoreBase=GRADLE_USER_HOME`nzipStorePath=wrapper/dists`n" -Encoding ASCII
+            Set-Content -Path $wrapperProps -Value "distributionBase=GRADLE_USER_HOME`ndistributionPath=wrapper/dists`ndistributionUrl=https\\://services.gradle.org/distributions/gradle-9.1.0-bin.zip`nnetworkTimeout=60000`nvalidateDistributionUrl=true`nzipStoreBase=GRADLE_USER_HOME`nzipStorePath=wrapper/dists`n" -Encoding ASCII
             Write-Step 'gradle-wrapper.properties foi ajustado para Gradle 9.1.0.'
         } else {
             $wrapperText = Get-Content -Raw -Path $wrapperProps

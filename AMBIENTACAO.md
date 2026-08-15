@@ -4,26 +4,27 @@ Passos rápidos para configurar o ambiente de desenvolvimento:
 
 1) Requisitos
 - Java: JDK 17+ (recomendado JDK 17 ou 21).
-- Android SDK: platforms e command-line tools instalados.
+- Android SDK: `platforms;android-34` e `build-tools;34.0.0` instalados.
 - Variáveis: setar ANDROID_SDK_ROOT (ou ANDROID_HOME) apontando para o SDK.
-- Gradle wrapper: usar a wrapper do projeto (./gradlew) — o projeto usa Gradle 9.x.
+- Gradle wrapper: usar a wrapper do projeto (./gradlew) — o projeto usa Gradle 9.3.0.
+- AGP: 9.3.1 — requer Gradle >= 9.3.x (já configurado na wrapper).
 
 2) Script de correção para amigos
 - O projeto inclui `setup-quimia-mobile.ps1` e `setup-quimia-mobile.cmd` na raiz.
 - Como rodar no Windows pelo CMD:
-  1. Abra o Prompt de Comando (CMD) na pasta do projeto.
-  2. Execute:
-     `setup-quimia-mobile.cmd`
-  3. Se quiser rodar manualmente em PowerShell:
-     `powershell -ExecutionPolicy Bypass -File ".\setup-quimia-mobile.ps1"`
-  4. Se o caminho do projeto contiver `&` (ex.: `...\J&F\...`), prefira o `.cmd` ou passe o caminho entre aspas, porque o PowerShell interpreta `&` como operador.
+    1. Abra o Prompt de Comando (CMD) na pasta do projeto.
+    2. Execute:
+       `setup-quimia-mobile.cmd`
+    3. Se quiser rodar manualmente em PowerShell:
+       `powershell -ExecutionPolicy Bypass -File ".\setup-quimia-mobile.ps1"`
+    4. Se o caminho do projeto contiver `&` (ex.: `...\J&F\...`), prefira o `.cmd` ou passe o caminho entre aspas, porque o PowerShell interpreta `&` como operador.
 - Esse script tenta corrigir os problemas mais comuns:
-  - `Unresolved reference 'RepositoriesMode'`
-  - Gradle 9.0.0 / AGP 9.x incompatível
-  - `local.properties` ausente
-  - `settings.gradle.kts` sem google()/mavenCentral()
-  - `compileSdk` ausente
-  - `plugins/android-commons.gradle` e `plugins/feature-dependencies.gradle` inexistentes
+    - `Unresolved reference 'RepositoriesMode'`
+    - Gradle 9.0.0 / AGP 9.x incompatível
+    - `local.properties` ausente
+    - `settings.gradle.kts` sem google()/mavenCentral()
+    - `compileSdk` ausente
+    - `plugins/android-commons.gradle` e `plugins/feature-dependencies.gradle` inexistentes
 
 3) Problema comum: ScriptCompilationException com "Unresolved reference 'RepositoriesMode'"
 - Causa: o Kotlin DSL de settings pode falhar ao compilar o script temporário e não enxergar o tipo RepositoriesMode naquele contexto.
@@ -43,10 +44,10 @@ Passos rápidos para configurar o ambiente de desenvolvimento:
 6) Problemas com SDK / downloads (ex.: "This version only understands SDK XML versions up to 3" / connection timed out)
 - Sintoma: o Gradle/AGP tenta baixar metadados do SDK e falha com timeout ou encontra um formato de SDK incompatível entre ferramentas (ex: SDK Manager mais novo que as ferramentas instaladas).
 - Causas comuns:
-  - Android SDK não instalado ou ANDROID_SDK_ROOT não configurado.
-  - Ferramentas de linha de comando desatualizadas (cmdline-tools)
-  - Falta do platform desejado (ex: platforms;android-34) ou build-tools correspondente.
-  - Firewall/proxy bloqueando acesso ao repositório remoto do Google.
+    - Android SDK não instalado ou ANDROID_SDK_ROOT não configurado.
+    - Ferramentas de linha de comando desatualizadas (cmdline-tools)
+    - Falta do platform desejado (ex: platforms;android-34) ou build-tools correspondente.
+    - Firewall/proxy bloqueando acesso ao repositório remoto do Google.
 
 Passos de correção:
 1. Verificar variável de ambiente (PowerShell):
@@ -72,4 +73,4 @@ Passos de correção:
 5. Rodar: `gradlew.bat --version`
 6. Rodar: `gradlew.bat assembleDebug`
 
-Observação: esse bootstrap é para distribuição entre colegas e tenta automatizar os principais erros comuns do ambiente Android/Gradle. Se o JDK 17+ ou SDK ainda não estiver instalado, o script aponta o problema sem mudar a versão do Gradle. 
+Observação: esse bootstrap é para distribuição entre colegas e tenta automatizar os principais erros comuns do ambiente Android/Gradle. Se o JDK 17+ ou SDK ainda não estiver instalado, o script aponta o problema sem mudar a versão do Gradle.
