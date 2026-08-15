@@ -8,7 +8,6 @@ apply {
 }
 
 android {
-    compileSdk = 34
     namespace = "com.quimia.designsystem"
 
     buildFeatures {
@@ -29,4 +28,3 @@ dependencies {
     // Lucide icons for Jetpack Compose - Android variant
     api("com.composables:icons-lucide-android:1.1.0")
 }
-

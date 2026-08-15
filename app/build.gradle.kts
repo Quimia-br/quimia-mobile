@@ -4,11 +4,12 @@ plugins {
 
 apply {
     from("$rootDir/plugins/android-commons.gradle")
+    // Nota: feature-dependencies.gradle só tem efeito quando o módulo :presentation existir
+    // e for declarado no settings.gradle.kts
     from("$rootDir/plugins/feature-dependencies.gradle")
 }
 
 android {
-    compileSdk = 34
     namespace = "com.quimia"
 
     defaultConfig {
@@ -36,4 +37,3 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
-
