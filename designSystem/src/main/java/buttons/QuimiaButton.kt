@@ -11,11 +11,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import theme.LightTokens
@@ -23,13 +27,12 @@ import theme.PaddingMedium
 import theme.PaddingSmall
 import theme.RadiusFull
 import theme.RadiusMedium
-import theme.TextMedium
 import theme.quimiaColorTokens
 import theme.toDp
-import theme.toSp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.composables.icons.lucide.*
+import theme.QuimiaFontFamily
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuimiaButton(
@@ -39,6 +42,9 @@ fun QuimiaButton(
     iconLeftVector: ImageVector? = null,
     iconRightVector: ImageVector? = null,
     text: String,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    fontFamily: FontFamily? = null,
+    fontWeight: FontWeight? = null,
     onClick: () -> Unit = { },
     containerColor: Color? = null,
     indicatorColor: Color? = null,
@@ -91,7 +97,16 @@ fun QuimiaButton(
             if (!isCentered) {
                 Spacer(modifier = Modifier.width(espacamento?.toDp() ?: PaddingSmall.toDp()))
             }
-            Text(text, fontSize = TextMedium.toSp(), color = actualTextColor)
+            val resolvedTextStyle = textStyle.copy(
+                color = actualTextColor,
+                fontFamily = fontFamily ?: textStyle.fontFamily,
+                fontWeight = fontWeight ?: textStyle.fontWeight
+            )
+
+            Text(
+                text = text,
+                style = resolvedTextStyle
+            )
             iconRightVector?.let {
                Icon(
                    imageVector = it,
@@ -125,5 +140,7 @@ fun PreviewQuimiaButton() {
         iconSize = 20,
         espacamento = PaddingSmall,
         curvaCirculo = RadiusMedium,
+        fontFamily = QuimiaFontFamily,
+        fontWeight = FontWeight.Medium
     )
 }
