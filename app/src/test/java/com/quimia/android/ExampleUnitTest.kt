@@ -1,4 +1,4 @@
-package com.anime.check
+package com.quimia.android
 
 import org.junit.Test
 
