@@ -141,7 +141,11 @@ val DarkTokens = QuimiaColorTokens(
 
 // Função para acessar os tokens do tema atual
 @Composable
-fun quimiaColorTokens(): QuimiaColorTokens {
-    val colors = MaterialTheme.colorScheme
-    return if (colors.surface == SurfaceLight) LightTokens else DarkTokens
+fun quimiaColorTokens(forceDark: Boolean? = null): QuimiaColorTokens {
+    // Prefer explicit override, otherwise fall back to system dark flag.
+    // Comparing Color objects (previous implementation) can be unreliable because
+    // colorScheme values may be mutated or created at runtime. Using isSystemInDarkTheme
+    // aligns token selection with the active UI mode.
+    val useDark = forceDark ?: androidx.compose.foundation.isSystemInDarkTheme()
+    return if (!useDark) LightTokens else DarkTokens
 }
