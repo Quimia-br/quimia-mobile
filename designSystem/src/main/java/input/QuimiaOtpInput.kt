@@ -74,16 +74,21 @@ fun QuimiaOtpInput(
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.secondary
     val actualTextColor = textColor ?: tokens.foregroundPrimary
+    val actualErrorColor = errorColor ?: tokens.error
 
     val resolvedTextStyle = textStyle.copy(
         color = actualTextColor,
         fontFamily = fontFamily ?: textStyle.fontFamily,
         fontWeight = fontWeight ?: textStyle.fontWeight
     )
-    val actualErrorColor = errorColor ?: tokens.error
+    val resolvedErrorTextStyle = errorTextStyle.copy(
+        color = actualErrorColor,
+        fontFamily = fontFamily ?: textStyle.fontFamily,
+        fontWeight = fontWeight ?: textStyle.fontWeight
+    )
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(textMargin.toDp(), Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(textMargin.dp, Alignment.CenterVertically),
         modifier = modifier
             .fillMaxWidth()
     ) {
@@ -135,9 +140,7 @@ fun QuimiaOtpInput(
         if (isError && errorMessage != null) {
             Text(
                 text = errorMessage,
-                style = errorTextStyle.copy(
-                    color = actualErrorColor
-                )
+                style = resolvedErrorTextStyle
             )
         }
     }
@@ -163,15 +166,16 @@ fun QuimiaOtpItem(
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.secondary
     val actualTextColor = textColor ?: tokens.foregroundPrimary
+    val actualErrorColor = errorColor ?: tokens.error
 
-    val shape = RoundedCornerShape(radius?.toDp() ?: RadiusMedium.toDp())
+    val shape = RoundedCornerShape(radius?.dp ?: RadiusMedium.dp)
     val resolvedTextStyle = textStyle.copy(
         color = actualTextColor,
         fontFamily = fontFamily ?: textStyle.fontFamily,
         fontWeight = fontWeight ?: textStyle.fontWeight
     )
     val borderColor by animateColorAsState(
-        if (isError) errorColor ?: tokens.error else Color.Transparent
+        if (isError) actualErrorColor else Color.Transparent
     )
 
     val text = value ?: ""
