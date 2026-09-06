@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import theme.LightTokens
 import theme.RadiusFull
-import theme.RadiusMedium
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
