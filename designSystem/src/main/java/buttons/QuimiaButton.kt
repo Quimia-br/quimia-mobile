@@ -1,6 +1,7 @@
 package buttons
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,23 +17,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Circle
+import com.composables.icons.lucide.Lucide
 import theme.LightTokens
 import theme.PaddingMedium
 import theme.PaddingSmall
+import theme.QuimiaFontFamily
 import theme.RadiusFull
 import theme.RadiusMedium
 import theme.quimiaColorTokens
-import theme.toDp
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.composables.icons.lucide.*
-import theme.QuimiaFontFamily
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuimiaButton(
@@ -51,8 +52,8 @@ fun QuimiaButton(
     textColor: Color? = null,
     iconColor: Color? = null,
     iconSize: Int,
-    espacamento: Int? = PaddingSmall,
-    curvaCirculo: Int? = RadiusFull
+    espacamento: Int = PaddingSmall,
+    curvaCirculo: Int = RadiusFull
 ) {
 
     val tokens = quimiaColorTokens()
@@ -67,10 +68,10 @@ fun QuimiaButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = actualContainer
         ),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo?.toDp() ?: RadiusMedium.toDp()),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo.dp),
         contentPadding = PaddingValues(
-            horizontal = PaddingMedium.toDp(),
-            vertical = PaddingSmall.toDp()
+            horizontal = PaddingMedium.dp,
+            vertical = PaddingSmall.dp
         )
     ) {
         val isCentered = (espacamento == 0)
@@ -95,7 +96,7 @@ fun QuimiaButton(
                )
             }
             if (!isCentered) {
-                Spacer(modifier = Modifier.width(espacamento?.toDp() ?: PaddingSmall.toDp()))
+                Spacer(modifier = Modifier.width(espacamento.dp))
             }
             val resolvedTextStyle = textStyle.copy(
                 color = actualTextColor,
