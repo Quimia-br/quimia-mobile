@@ -59,7 +59,7 @@ fun QuimiaOtpInput(
     fontWeight: FontWeight? = null,
     containerColor: Color? = null,
     textColor: Color? = null,
-    radius: Int? = RadiusFull,
+    radius: Int = RadiusFull,
     textMargin: Int = 7,
     isError: Boolean = false,
     errorColor: Color? = null,
@@ -118,7 +118,7 @@ fun QuimiaOtpInput(
                 ) {
                     repeat(length) { index ->
                         val char = value.getOrNull(index)?.toString()
-                        val isFocused = isFieldFocused && index == value.length
+                        // val isFocused = isFieldFocused && (index == value.length || index == length - 1 && value.length == length)
                         QuimiaOtpItem(
                             value = char,
                             modifier = itemModifier.semantics {
@@ -129,7 +129,7 @@ fun QuimiaOtpInput(
                             textColor = actualTextColor,
                             radius = radius,
                             isError = isError,
-                            isFocused = isFocused,
+                            // isFocused = isFocused,
                             errorColor = actualErrorColor
                         )
                     }
@@ -158,8 +158,9 @@ fun QuimiaOtpItem(
     fontWeight: FontWeight? = null,
     containerColor: Color? = null,
     textColor: Color? = null,
-    radius: Int? = RadiusFull,
-    isFocused: Boolean = false,
+    radius: Int = RadiusFull,
+    // isFocused: Boolean = false,
+    // focusColor: Color? = null,
     isError: Boolean = false,
     errorColor: Color? = null
 ) {
@@ -167,15 +168,20 @@ fun QuimiaOtpItem(
     val actualContainer = containerColor ?: tokens.secondary
     val actualTextColor = textColor ?: tokens.foregroundPrimary
     val actualErrorColor = errorColor ?: tokens.error
+    // val actualFocusColor = focusColor ?: tokens.?
 
-    val shape = RoundedCornerShape(radius?.dp ?: RadiusMedium.dp)
+    val shape = RoundedCornerShape(radius.dp)
     val resolvedTextStyle = textStyle.copy(
         color = actualTextColor,
         fontFamily = fontFamily ?: textStyle.fontFamily,
         fontWeight = fontWeight ?: textStyle.fontWeight
     )
     val borderColor by animateColorAsState(
-        if (isError) actualErrorColor else Color.Transparent
+        when {
+            isError -> actualErrorColor
+            // isFocused -> actualFocusColor
+            else -> Color.Transparent
+        },
     )
 
     val text = value ?: ""
