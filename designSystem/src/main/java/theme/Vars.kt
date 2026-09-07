@@ -124,11 +124,11 @@ val TextSecondaryDark = TextColorSecondaryDark
 val ErrorLight = Color(0xFFFF2B7C)
 val ErrorDark = Color(0xFFFF2B7C)
 
-val SuccessLight = Color(0xFF388E3C)
-val SuccessDark = Color(0xFF66BB6A)
+val SuccessLight = Color(0xFF1EEE97)
+val SuccessDark = Color(0xFF1EEE97)
 
-val WarningLight = Color(0xFFF57C00)
-val WarningDark = Color(0xFFFFB74D)
+val WarningLight = Color(0xFFFCC368)
+val WarningDark = Color(0xFFFCC368)
 
 val InfoLight = Color(0xFF0288D1)
 val InfoDark = Color(0xFF42A5F5)
