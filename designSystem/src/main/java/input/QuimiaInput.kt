@@ -187,7 +187,7 @@ private fun QuimiaInputPreview() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .background(
-                color = LightTokens.background,
+                color = quimiaColorTokens().background,
                 shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .width(352.dp)

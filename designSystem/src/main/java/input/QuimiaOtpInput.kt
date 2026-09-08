@@ -45,7 +45,6 @@ import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
-import theme.toDp
 
 @Composable
 fun QuimiaOtpInput(
@@ -240,8 +239,8 @@ private fun QuimiaOtpInputPreview() {
         verticalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .background(
-                color = LightTokens.background,
-                shape = RoundedCornerShape(RadiusSmall.toDp())
+                color = quimiaColorTokens().background,
+                shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .height(493.dp)
             .padding(20.dp)
