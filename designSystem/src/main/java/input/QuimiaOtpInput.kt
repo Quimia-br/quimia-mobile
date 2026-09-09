@@ -1,9 +1,11 @@
 package input
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -21,12 +23,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -45,8 +44,8 @@ import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
-import theme.toDp
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun QuimiaOtpInput(
     value: String,
@@ -56,6 +55,7 @@ fun QuimiaOtpInput(
         keyboardType = KeyboardType.NumberPassword
     ),
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     itemModifier: Modifier = Modifier,
     itemWidth: Dp = 77.dp,
     itemHeight: Dp = 123.dp,
@@ -77,8 +77,7 @@ fun QuimiaOtpInput(
         lineHeight = TextUnit.Unspecified
     ),
 ) {
-    var isFieldFocused by remember { mutableStateOf(false) }
-    val interactionSource = remember { MutableInteractionSource() }
+    val isFieldFocused by interactionSource.collectIsFocusedAsState()
 
     val isError = error != null
 
@@ -110,7 +109,6 @@ fun QuimiaOtpInput(
                 onValueChange(digitsOnly)
             },
             modifier = Modifier
-                .onFocusChanged { isFieldFocused = it.isFocused }
                 .clearAndSetSemantics {
                     contentDescription = "One-time password, $length digits"
                     error?.let { error(it) }
@@ -119,13 +117,14 @@ fun QuimiaOtpInput(
             keyboardActions = keyboardActions,
             interactionSource = interactionSource,
             decorationBox = { innerTextField ->
-                //noinspection UnusedBoxWithConstraintsScope
                 BoxWithConstraints(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     val aspectRatio = 1.618034f
 
-                    val computedItemWidth = (maxWidth / length - itemSpacing).coerceIn(24.dp, itemWidth)
+                    val safeLength = if (length > 0) length else 1
+
+                    val computedItemWidth = (this.maxWidth / safeLength - itemSpacing).coerceIn(24.dp, itemWidth)
                     val computedItemHeight = (computedItemWidth * aspectRatio).coerceAtMost(itemHeight)
 
                     Box(modifier = Modifier.size(0.dp)) {
@@ -240,8 +239,8 @@ private fun QuimiaOtpInputPreview() {
         verticalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .background(
-                color = LightTokens.background,
-                shape = RoundedCornerShape(RadiusSmall.toDp())
+                color = LightTokens.surfaceBackground,
+                shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .height(493.dp)
             .padding(20.dp)

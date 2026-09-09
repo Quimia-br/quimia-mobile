@@ -50,7 +50,7 @@ fun QuimiaInput(
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
-    interactionSource: MutableInteractionSource? = null,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     textStyle: TextStyle = Typography.titleMedium.copy(
         lineHeight = TextUnit.Unspecified
     ),
@@ -64,7 +64,6 @@ fun QuimiaInput(
     error: String? = null,
     errorColor: Color? = null
     ) {
-    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     val isError = error != null
@@ -150,15 +149,15 @@ fun QuimiaInput(
                 }
                     if (value.isNotEmpty()) {
                         QuimiaIconButton(
-                            modifier = Modifier.padding(start = 4.dp),
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                             icon = Lucide.X,
                             onClick = { onValueChange("") },
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
-                            iconSize = 16,
+                            iconSize = 16.dp,
                             contentDescription = "Clear all",
-                            spacing = 0,
-                            radius = 0
+                            spacing = 0.dp,
+                            radius = 0.dp
                         )
                     }
                 }
@@ -187,7 +186,7 @@ private fun QuimiaInputPreview() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .background(
-                color = LightTokens.background,
+                color = LightTokens.surfaceBackground,
                 shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .width(352.dp)

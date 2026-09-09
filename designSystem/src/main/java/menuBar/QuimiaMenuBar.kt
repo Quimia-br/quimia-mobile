@@ -1,4 +1,4 @@
-package MenuBar
+package menuBar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -102,7 +101,7 @@ fun QuimiaMenuBar(
                         modifier = Modifier
                             .matchParentSize()
                             .background(
-                                color = tokens.background,
+                                color = tokens.surfaceBackground,
                                 shape = RoundedCornerShape(RadiusFull.dp)
                             )
                     )
