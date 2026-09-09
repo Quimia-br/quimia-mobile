@@ -62,7 +62,7 @@ private fun resolveColors(
     QuimiaSearchBarVariant.Secondary -> SearchBarColors(
         container = tokens.secondary,
         sticky = tokens.onPrimary,
-        icon = tokens.onForeground
+        icon = tokens.foregroundPrimary
     )
 }
 
