@@ -35,7 +35,7 @@ private fun QuimiaHorizontalDividerPreview() {
         modifier = Modifier
             .fillMaxWidth()
             .height(32.dp)
-            .background(quimiaColorTokens().background)
+            .background(quimiaColorTokens().surfaceBackground)
     ) {
         QuimiaHorizontalDivider()
     }

@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import buttons.QuimiaIconButton
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
-import theme.LightTokens
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
@@ -157,7 +156,7 @@ fun QuimiaInput(
                             containerColor = actualContainerColor,
                             iconSize = 16.dp,
                             contentDescription = "Clear all",
-                            spacing = 0.dp,
+                            padding = 0.dp,
                             radius = 0.dp
                         )
                     }

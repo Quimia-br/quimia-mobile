@@ -159,7 +159,7 @@ fun QuimiaSearchBar(
                 iconColor = colors.icon,
                 iconSize = iconSize,
                 contentDescription = iconDescription,
-                spacing = iconSpacing
+                padding = iconSpacing
             )
         }
     }
