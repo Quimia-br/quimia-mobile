@@ -8,28 +8,35 @@ import androidx.compose.ui.graphics.Color
 // Use estes em vez de cores hardcoded nos componentes
 
 data class QuimiaColorTokens(
+    // Black White
+    val black: Color,
+    val white: Color,
+
     // Primary
     val primary: Color,
+    val primaryPressed: Color,
     val onPrimary: Color,
+    val primaryDisabled: Color,
     
     // Secondary
     val secondary: Color,
+    val secondaryPressed: Color,
     val onSecondary: Color,
     
     // Surface
-    val surface: Color,
-    val onSurface: Color,
-    val surfaceVariant: Color,
-    val onSurfaceVariant: Color,
-    
-    // Background
-    val background: Color,
-    val onBackground: Color,
+    val surfaceBackground: Color,
+    val surfaceBase: Color,
+    val surfaceDisabled: Color,
     
     // Border
     val borderPrimary: Color,
     val borderSecondary: Color,
     val borderFocus: Color,
+
+    // Brand
+    val brandPrimary: Color,
+    val brandSecondary: Color,
+    val brandAccent: Color,
     
     // Text
     val textPrimary: Color,
@@ -44,11 +51,10 @@ data class QuimiaColorTokens(
     // Foreground
     val foregroundPrimary: Color,
     val foregroundSecondary: Color,
-    val foregroundSubtle: Color,
-
-    // Black White
-    val black: Color,
-    val white: Color
+    val foregroundDisabled: Color,
+    val foregroundError: Color,
+    val onForeground: Color,
+    val foregroundSubtle: Color
 )
 
 val LightTokens = QuimiaColorTokens(
@@ -58,26 +64,29 @@ val LightTokens = QuimiaColorTokens(
 
     // Primary
     primary = PrimaryLight,
+    primaryPressed = PrimaryPressedLight,
     onPrimary = PrimaryOnColorLight,
+    primaryDisabled = PrimaryDisabledLight,
 
     // Secondary
     secondary = SecondaryLight,
+    secondaryPressed = SecondaryPressedLight,
     onSecondary = SecondaryOnColorLight,
 
     // Surface
-    surface = SurfaceBaseLight,
-    onSurface = ForegroundPrimaryLight,
-    surfaceVariant = SurfaceDisabledLight,
-    onSurfaceVariant = ForegroundSubtleLight,
-
-    // Background
-    background = SurfaceBackgroundLight,
-    onBackground = ForegroundPrimaryLight,
+    surfaceBackground = SurfaceBackgroundLight,
+    surfaceBase = SurfaceBaseLight,
+    surfaceDisabled = SurfaceDisabledLight,
 
     // Border
     borderPrimary = BorderPrimaryLight,
     borderSecondary = BorderSecondaryLight,
     borderFocus = BorderFocusLight,
+
+    // Brand
+    brandPrimary = BrandPrimary,
+    brandSecondary = BrandSecondary,
+    brandAccent = BrandAccent,
 
     // Text
     textPrimary = TextColorLight,
@@ -92,32 +101,42 @@ val LightTokens = QuimiaColorTokens(
     // Foreground
     foregroundPrimary = ForegroundPrimaryLight,
     foregroundSecondary = ForegroundSecondaryLight,
+    foregroundDisabled = ForegroundDisabledLight,
+    foregroundError = ForegroundErrorLight,
+    onForeground = ForegroundOnColorLight,
     foregroundSubtle = ForegroundSubtleLight
 )
 
 val DarkTokens = QuimiaColorTokens(
+    // Black White
+    black = Black,
+    white = White,
+
     // Primary
     primary = PrimaryDark,
+    primaryPressed = PrimaryPressedDark,
     onPrimary = PrimaryOnColorDark,
+    primaryDisabled = PrimaryDisabledDark,
 
     // Secondary
     secondary = SecondaryDark,
+    secondaryPressed = SecondaryPressedDark,
     onSecondary = SecondaryOnColorDark,
 
     // Surface
-    surface = SurfaceBaseDark,
-    onSurface = ForegroundPrimaryDark,
-    surfaceVariant = SurfaceDisabledDark,
-    onSurfaceVariant = ForegroundSubtleDark,
-
-    // Background
-    background = SurfaceBackgroundDark,
-    onBackground = ForegroundPrimaryDark,
+    surfaceBackground = SurfaceBackgroundDark,
+    surfaceBase = SurfaceBaseDark,
+    surfaceDisabled = SurfaceDisabledDark,
 
     // Border
     borderPrimary = BorderPrimaryDark,
     borderSecondary = BorderSecondaryDark,
     borderFocus = BorderFocusDark,
+
+    // Brand
+    brandPrimary = BrandPrimary,
+    brandSecondary = BrandSecondary,
+    brandAccent = BrandAccent,
 
     // Text
     textPrimary = TextColorDark,
@@ -132,11 +151,10 @@ val DarkTokens = QuimiaColorTokens(
     // Foreground
     foregroundPrimary = ForegroundPrimaryDark,
     foregroundSecondary = ForegroundSecondaryDark,
+    foregroundDisabled = ForegroundDisabledDark,
+    foregroundError = ForegroundErrorDark,
+    onForeground = ForegroundOnColorDark,
     foregroundSubtle = ForegroundSubtleDark,
-
-    // Black White
-    black = Black,
-    white = White
 )
 
 // Função para acessar os tokens do tema atual

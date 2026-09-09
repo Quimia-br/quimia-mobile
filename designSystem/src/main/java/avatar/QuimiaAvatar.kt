@@ -27,7 +27,7 @@ fun QuimiaAvatar(
     size: Dp = 40.dp,
     photo: Painter? = null,
     initials: String = "",
-    backgroundColor: Color = quimiaColorTokens().surfaceVariant,
+    backgroundColor: Color = quimiaColorTokens().surfaceDisabled,
     foregroundColor: Color = quimiaColorTokens().foregroundPrimary,
     borderColor: Color = quimiaColorTokens().borderPrimary,
     borderWidth: Dp = 1.dp,
@@ -79,7 +79,7 @@ private fun QuimiaAvatarPreview() {
     val tokens = quimiaColorTokens()
 
     Box(
-        modifier = Modifier.background(tokens.background)
+        modifier = Modifier.background(tokens.surfaceBackground)
     ) {
         androidx.compose.foundation.layout.Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -88,7 +88,7 @@ private fun QuimiaAvatarPreview() {
             QuimiaAvatar(
                 size = 44.dp,
                 initials = "PP",
-                backgroundColor = tokens.surfaceVariant,
+                backgroundColor = tokens.surfaceDisabled,
                 foregroundColor = tokens.foregroundPrimary
             )
 
@@ -97,7 +97,7 @@ private fun QuimiaAvatarPreview() {
             QuimiaAvatar(
                 size = 44.dp,
                 photo = androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_camera),
-                backgroundColor = tokens.surfaceVariant,
+                backgroundColor = tokens.surfaceDisabled,
                 foregroundColor = tokens.foregroundPrimary
             )
         }

@@ -27,11 +27,6 @@ val BrandPrimary = Color(0xFF1EEE97)
 val BrandSecondary = Color(0xFF5ADFEA)
 val BrandAccent = Color(0xFF00DC9D)
 
-// FeedBack
-val FeedbackSuccess = Color(0xFF1EEE97)
-val FeedbackWarning = Color(0xFF5ADFEA)
-val FeedbackError = Color(0xFF00DC9D)
-
 // Foreground
 val ForegroundPrimaryLight = Color(0xFF404040)
 val ForegroundPrimaryDark = Color(0xFFFFFFFF)
@@ -64,8 +59,11 @@ val PrimaryDark = Color(0xFF5ADFEA)
 val PrimaryPressedLight = Color(0xFF02C1D6)
 val PrimaryPressedDark = Color(0xFF02C1D6)
 
-val PrimaryOnColorLight = Color(0xFFFFFFFF)
+val PrimaryOnColorLight = Color(0x99FFFFFF)
 val PrimaryOnColorDark = Color(0xFFFFFFFF)
+
+val PrimaryDisabledLight = Color(0x995ADFEA)
+val PrimaryDisabledDark = Color(0x995ADFEA)
 
 // Radius
 val RadiusNone = 0

@@ -150,15 +150,15 @@ fun QuimiaInput(
                 }
                     if (value.isNotEmpty()) {
                         QuimiaIconButton(
-                            modifier = Modifier.padding(start = 4.dp),
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                             icon = Lucide.X,
                             onClick = { onValueChange("") },
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
-                            iconSize = 16,
+                            iconSize = 16.dp,
                             contentDescription = "Clear all",
-                            spacing = 0,
-                            radius = 0
+                            spacing = 0.dp,
+                            radius = 0.dp
                         )
                     }
                 }
@@ -187,7 +187,7 @@ private fun QuimiaInputPreview() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .background(
-                color = quimiaColorTokens().background,
+                color = quimiaColorTokens().surfaceBackground,
                 shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .width(352.dp)
