@@ -239,7 +239,11 @@ private fun QuimiaOtpInputPreview() {
         verticalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .background(
+<<<<<<< HEAD
                 color = LightTokens.surfaceBackground,
+=======
+                color = quimiaColorTokens().background,
+>>>>>>> main
                 shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .height(493.dp)

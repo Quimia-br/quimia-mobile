@@ -50,7 +50,7 @@ fun QuimiaInput(
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     textStyle: TextStyle = Typography.titleMedium.copy(
         lineHeight = TextUnit.Unspecified
     ),
@@ -64,6 +64,7 @@ fun QuimiaInput(
     error: String? = null,
     errorColor: Color? = null
     ) {
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     val isError = error != null
@@ -186,7 +187,7 @@ private fun QuimiaInputPreview() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .background(
-                color = LightTokens.surfaceBackground,
+                color = quimiaColorTokens().surfaceBackground,
                 shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .width(352.dp)
