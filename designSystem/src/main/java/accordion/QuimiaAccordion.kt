@@ -22,15 +22,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
-import com.composables.icons.lucide.*
+import com.composables.icons.lucide.Check
+import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronUp
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.X
 import theme.LightTokens
 import theme.PaddingMedium
 import theme.PaddingSmall
 import theme.TextMedium
 import theme.quimiaColorTokens
-import theme.toDp
-import theme.toSp
 
 @Composable
 fun QuimiaAccordion(
@@ -56,12 +60,12 @@ fun QuimiaAccordion(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { isExpanded.value = !isExpanded.value }
-                .padding(PaddingMedium.toDp()),
+                .padding(PaddingMedium.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = title,
-                fontSize = TextMedium.toSp(),
+                fontSize = TextMedium.sp,
                 color = actualTitleColor,
                 modifier = Modifier.weight(1f)
             )
@@ -69,7 +73,7 @@ fun QuimiaAccordion(
                 imageVector = if (isExpanded.value) Lucide.ChevronUp else Lucide.ChevronDown,
                 contentDescription = if (isExpanded.value) "Fechar" else "Abrir",
                 tint = actualIconColor,
-                modifier = Modifier.padding(start = PaddingSmall.toDp())
+                modifier = Modifier.padding(start = PaddingSmall.dp)
             )
         }
         Divider(color = Color.White, thickness = 1.dp, modifier = Modifier.fillMaxWidth())
@@ -79,9 +83,9 @@ fun QuimiaAccordion(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        start = PaddingMedium.toDp(),
-                        end = PaddingMedium.toDp(),
-                        bottom = PaddingMedium.toDp()
+                        start = PaddingMedium.dp,
+                        end = PaddingMedium.dp,
+                        bottom = PaddingMedium.dp
                     )
             ) {
                 content()
@@ -138,7 +142,7 @@ fun PreviewQuimiaAccordion() {
         Column(
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .padding(PaddingMedium.toDp()),
+            .padding(PaddingMedium.dp),
         horizontalAlignment = Alignment.CenterHorizontally
         ) {
             QuimiaAccordionGroup(
@@ -180,7 +184,7 @@ fun PreviewQuimiaAccordion() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 androidx.compose.foundation.layout.Spacer(
-                                    modifier = Modifier.height(PaddingSmall.toDp())
+                                    modifier = Modifier.height(PaddingSmall.dp)
                                 )
                                 QuimiaButton(
                                     text = "Cancelar",
@@ -211,7 +215,7 @@ fun PreviewQuimiaAccordion() {
                 )
             )
 
-            Spacer(modifier = Modifier.height(PaddingMedium.toDp()))
+            Spacer(modifier = Modifier.height(PaddingMedium.dp))
         }
     }
 }
