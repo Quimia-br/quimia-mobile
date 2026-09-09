@@ -2,6 +2,7 @@ package buttons
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,13 +29,14 @@ fun QuimiaIconButton(
     iconColor: Color? = null,
     iconSize: Dp,
     contentDescription: String? = null,
-    spacing: Dp = PaddingMedium.dp,
-    radius: Dp = RadiusFull.dp
+    padding: Dp = PaddingMedium.dp,
+    radius: Dp = RadiusFull.dp,
+    width: Dp = 1.dp
 ) {
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
     val actualIconColor = iconColor ?: tokens.textPrimary
-    val buttonSize = (iconSize + (spacing * 2))
+    val buttonSize = (iconSize + (padding * 2))
 
     Button(
         onClick = onClick,
@@ -43,13 +45,15 @@ fun QuimiaIconButton(
             containerColor = actualContainer
         ),
         shape = RoundedCornerShape(radius),
-        contentPadding = PaddingValues(spacing)
+        contentPadding = PaddingValues(padding)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = actualIconColor,
-            modifier = Modifier.size(iconSize)
+            modifier = Modifier
+                .size(iconSize)
+                .width(width)
         )
     }
 }
