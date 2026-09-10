@@ -35,7 +35,7 @@ import com.composables.icons.lucide.PackageCheck
 import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.Zap
 import theme.QuimiaTheme
-import theme.QuimiaTypography
+import theme.Typography
 import theme.quimiaColorTokens
 import com.composables.icons.lucide.ToolCase
 import theme.QuimiaColorTokens
@@ -136,7 +136,7 @@ fun QuimiaListItem(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
         ) {
-            val titleStyle = QuimiaTypography.titleMedium.copy(
+            val titleStyle = Typography.titleMedium.copy(
                 color = resolvedTitleColor,
                 fontWeight = FontWeight.Medium
             )
@@ -149,7 +149,7 @@ fun QuimiaListItem(
 
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
-                val subtitleStyle = QuimiaTypography.bodyMedium.copy(
+                val subtitleStyle = Typography.bodyMedium.copy(
                     color = resolvedSubtitleColor,
                     fontWeight = FontWeight.Normal
                 )
