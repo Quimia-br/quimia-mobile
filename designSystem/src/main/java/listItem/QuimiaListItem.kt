@@ -228,7 +228,7 @@ private fun QuimiaListItemPreview() {
             QuimiaListItem(
                 leftIcon = Lucide.ToolCase,
                 title = "Organização & Saúde",
-                subtitle = "Utilize a funcionalidade cómodos",
+                subtitle = "Utilize a funcionalidade cômodos",
                 modifier = Modifier.fillMaxWidth()
             )
 
