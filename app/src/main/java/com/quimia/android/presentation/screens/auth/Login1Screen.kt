@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,8 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
-import theme.QuimiaTypography
+import input.QuimiaInput
+import theme.Typography
 import theme.quimiaColorTokens
 
 @Composable
@@ -34,108 +38,143 @@ fun Login1Screen(
     onContinue: () -> Unit = {}
 ) {
     val tokens = quimiaColorTokens()
-    val (email, setEmail) = remember { mutableStateOf("") }
-    val (password, setPassword) = remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(tokens.background)
-            .padding(horizontal = 28.dp, vertical = 32.dp),
+            .clip(RoundedCornerShape(50.dp))
+            .background(tokens.surfaceBackground)
+            .padding(start = 20.dp, end = 20.dp, bottom = 50.dp),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Seja bem-vindo de volta!\nFaça login abaixo",
-            style = QuimiaTypography.titleLarge,
-            fontWeight = FontWeight.Medium,
-            color = tokens.textPrimary
-        )
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = setEmail,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp)),
-            singleLine = true,
-            placeholder = { Text(text = "exemplo@quimia.com", color = tokens.textSecondary) }
-        )
+                .padding(top = 150.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = setPassword,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp)),
-            singleLine = true,
-            placeholder = { Text(text = "123456", color = tokens.textSecondary) }
-        )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Esqueci a senha", color = tokens.textSecondary)
+            Text(
+                text = "Seja bem-vindo de volta!\nFaça login abaixo",
+                style = Typography.titleLarge.copy(
+                    fontSize = 19.sp,
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = tokens.textPrimary
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(tokens.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("G", color = tokens.textPrimary)
-            }
-            Spacer(modifier = Modifier.size(16.dp))
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(tokens.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("■", color = tokens.textPrimary)
-            }
-            Spacer(modifier = Modifier.size(16.dp))
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(tokens.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("@", color = tokens.textPrimary)
-            }
+            QuimiaInput(
+                value = email,
+                onValueChange = { email = it },
+                label = "E-mail",
+                placeholder = "exemplo@quimia.com",
+                textStyle = Typography.bodySmall,
+                containerColor = tokens.secondary,
+                primaryTextColor = tokens.textPrimary,
+                secondaryTextColor = tokens.textSecondary,
+                radius = 1000,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            QuimiaInput(
+                value = password,
+                onValueChange = { password = it },
+                label = "Senha",
+                placeholder = "123456",
+                textStyle = Typography.bodySmall,
+                containerColor = tokens.secondary,
+                primaryTextColor = tokens.textPrimary,
+                secondaryTextColor = tokens.textSecondary,
+                radius = 1000,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                text = "Esqueci a senha",
+                style = Typography.bodySmall,
+                color = tokens.textPrimary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(56.dp))
+
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SocialIcon { Text("G", color = tokens.textPrimary, fontWeight = FontWeight.Bold) }
+            SocialIcon { MicrosoftMark(color = tokens.textPrimary) }
+            SocialIcon { Text("✉", color = tokens.textPrimary, fontSize = 16.sp) }
+        }
+
+        Spacer(modifier = Modifier.height(80.dp))
 
         QuimiaButton(
             text = "Continuar",
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            containerColor = Color(0xFFB7F2F0),
-            textColor = Color(0xFF6FCFCB),
+                .height(46.dp),
+            containerColor = Color(0xFF96E3E7),
+            textColor = Color(0xFFA5C8C9),
             onClick = onContinue,
             iconSize = 20,
-            espacamento = 0
+            espacamento = 0,
+            textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Não tem conta no Quimia? ", color = tokens.textSecondary)
-        Text(text = "Crie já", color = tokens.textPrimary, modifier = Modifier.padding(top = 4.dp))
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Não tem conta no Quimia? ", style = Typography.bodySmall, color = tokens.textSecondary)
+            Text("Crie já", style = Typography.bodySmall, color = tokens.textPrimary, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
-@Preview
+@Composable
+private fun SocialIcon(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFECECEC)),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun MicrosoftMark(color: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            Box(Modifier.size(6.dp).background(color))
+            Box(Modifier.size(6.dp).background(color))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            Box(Modifier.size(6.dp).background(color))
+            Box(Modifier.size(6.dp).background(color))
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun Login1ScreenPreview() {
     Login1Screen()

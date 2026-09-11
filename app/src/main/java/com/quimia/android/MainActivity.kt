@@ -14,7 +14,6 @@ import com.quimia.android.domain.auth.AuthResult
 import com.quimia.android.presentation.auth.AuthViewModel
 import com.quimia.android.presentation.screens.auth.Login1Screen
 import com.quimia.android.presentation.screens.auth.LoginHomeScreen
-import com.quimia.android.presentation.screens.home.HomeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +32,7 @@ private fun QuimiaApp() {
 
     when (authState) {
         is AuthResult.Success -> {
-            HomeScreen(onLogout = { authViewModel.logout() })
+            LoginHomeScreen()
         }
         else -> {
             if (showLoginHome) {

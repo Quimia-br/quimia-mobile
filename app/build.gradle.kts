@@ -2,7 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
-    id("com.google.gms.google-services")
+}
+
+// Apply Google Services plugin only when google-services.json is present
+// This prevents CI/local builds failing when the file is intentionally omitted (it's gitignored).
+if (file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 apply {
@@ -49,6 +54,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(project(":designSystem"))
     
     // Retrofit e Networking
     implementation(libs.retrofit)
