@@ -1,7 +1,6 @@
 package com.quimia.android.presentation.screens.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,12 +36,12 @@ import theme.Typography
 import theme.quimiaColorTokens
 
 @Composable
-fun Login1Screen(
+fun Cadastro1Screen(
     modifier: Modifier = Modifier,
-    onContinue: () -> Unit = {},
-    onCreateAccount: () -> Unit = {}
+    onContinue: () -> Unit = {}
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -52,21 +51,19 @@ fun Login1Screen(
             .clip(RoundedCornerShape(50.dp))
             .background(tokens.surfaceBackground)
             .padding(start = 20.dp, end = 20.dp, bottom = 50.dp),
-        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 150.dp),
+                .padding(top = 105.dp),
             horizontalAlignment = Alignment.Start
         ) {
 
-            Spacer(modifier = Modifier.height(80.dp))
-
+            Spacer(modifier = Modifier.height(50.dp))
 
             Text(
-                text = "Seja bem-vindo de volta!\nFaça login abaixo",
+                text = "Seja bem-vindo!\nFaça cadastro abaixo",
                 style = Typography.titleLarge.copy(
                     fontSize = 19.sp,
                     lineHeight = 22.sp,
@@ -75,13 +72,28 @@ fun Login1Screen(
                 color = tokens.textPrimary
             )
 
-            Spacer(modifier = Modifier.height(34.dp))
+            Spacer(modifier = Modifier.height(26.dp))
+
+            QuimiaInput(
+                value = name,
+                onValueChange = { name = it },
+                label = "Nome",
+                placeholder = "Gabriela Benfica",
+                textStyle = Typography.bodySmall,
+                containerColor = tokens.secondary,
+                primaryTextColor = tokens.textPrimary,
+                secondaryTextColor = tokens.textSecondary,
+                radius = 1000,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             QuimiaInput(
                 value = email,
                 onValueChange = { email = it },
                 label = "E-mail",
-                placeholder = "exemplo@quimia.com",
+                placeholder = "gabrielabenfica@gmail.com.br",
                 textStyle = Typography.bodySmall,
                 containerColor = tokens.secondary,
                 primaryTextColor = tokens.textPrimary,
@@ -95,32 +107,25 @@ fun Login1Screen(
             QuimiaInput(
                 value = password,
                 onValueChange = { password = it },
-                label = "Senha",
-                placeholder = "123456",
+                label = "Crie uma senha",
+                placeholder = "12345",
                 textStyle = Typography.bodySmall,
                 containerColor = tokens.secondary,
                 primaryTextColor = tokens.textPrimary,
                 secondaryTextColor = tokens.textSecondary,
+                focusColor = tokens.success,
                 radius = 1000,
                 modifier = Modifier.fillMaxWidth()
             )
-
-            Text(
-                text = "Esqueci a senha",
-                style = Typography.bodySmall,
-                color = tokens.textPrimary,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(56.dp))
-
         }
+
+        Spacer(modifier = Modifier.height(48.dp))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SocialIcon(containerColor = tokens.secondary) {
+            CadastroSocialIcon(containerColor = tokens.secondary) {
                 Icon(
                     painter = painterResource(R.drawable.social_google),
                     contentDescription = "Continuar com Google",
@@ -128,7 +133,7 @@ fun Login1Screen(
                     tint = Color.Unspecified
                 )
             }
-            SocialIcon(containerColor = tokens.secondary) {
+            CadastroSocialIcon(containerColor = tokens.secondary) {
                 Icon(
                     painter = painterResource(R.drawable.social_microsoft),
                     contentDescription = "Continuar com Microsoft",
@@ -136,7 +141,7 @@ fun Login1Screen(
                     tint = Color.Unspecified
                 )
             }
-            SocialIcon(containerColor = tokens.secondary) {
+            CadastroSocialIcon(containerColor = tokens.secondary) {
                 Icon(
                     painter = painterResource(R.drawable.social_mail),
                     contentDescription = "Continuar com e-mail",
@@ -146,7 +151,7 @@ fun Login1Screen(
             }
         }
 
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(78.dp))
 
         QuimiaButton(
             text = "Continuar",
@@ -161,26 +166,20 @@ fun Login1Screen(
             textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(13.dp))
 
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Não tem conta no Quimia? ", style = Typography.bodySmall, color = tokens.textSecondary)
-            Text(
-                text = "Crie já",
-                style = Typography.bodySmall,
-                color = tokens.textPrimary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable(onClick = onCreateAccount)
-            )
+            Text("Crie já", style = Typography.bodySmall, color = tokens.textPrimary, fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
-private fun SocialIcon(
+private fun CadastroSocialIcon(
     containerColor: Color,
     content: @Composable () -> Unit
 ) {
@@ -197,6 +196,6 @@ private fun SocialIcon(
 
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
-private fun Login1ScreenPreview() {
-    Login1Screen()
+private fun Cadastro1ScreenPreview() {
+    Cadastro1Screen()
 }

@@ -7,14 +7,20 @@ import com.quimia.android.utils.AnalyticsLogger
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthService {
-    private val auth = FirebaseAuth.getInstance()
+    // The app can be previewed/run without google-services.json. In that case
+    // Firebase Auth is unavailable, but the authentication screen must still open.
+    private val auth: FirebaseAuth? = runCatching {
+        FirebaseAuth.getInstance()
+    }.getOrNull()
 
     suspend fun loginWithEmail(email: String, password: String): AuthResult {
+        val firebaseAuth = auth ?: return firebaseUnavailable()
+
         return try {
             require(email.isNotBlank()) { "Informe um e-mail válido." }
             require(password.isNotBlank()) { "Informe a senha." }
 
-            val result = auth.signInWithEmailAndPassword(email.trim(), password).await()
+            val result = firebaseAuth.signInWithEmailAndPassword(email.trim(), password).await()
             AuthResult.Success(uid = result.user?.uid ?: "", email = result.user?.email)
         } catch (e: FirebaseAuthException) {
             AuthResult.Error(e.message ?: "Erro ao fazer login")
@@ -26,11 +32,13 @@ class FirebaseAuthService {
     }
 
     suspend fun registerWithEmail(email: String, password: String): AuthResult {
+        val firebaseAuth = auth ?: return firebaseUnavailable()
+
         return try {
             require(email.isNotBlank()) { "Informe um e-mail válido." }
             require(password.length >= 6) { "A senha precisa ter pelo menos 6 caracteres." }
 
-            val result = auth.createUserWithEmailAndPassword(email.trim(), password).await()
+            val result = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
             AuthResult.Success(uid = result.user?.uid ?: "", email = result.user?.email)
         } catch (e: FirebaseAuthException) {
             AuthResult.Error(e.message ?: "Erro ao registrar")
@@ -42,6 +50,8 @@ class FirebaseAuthService {
     }
 
     suspend fun loginWithGoogle(idToken: String): AuthResult {
+        val firebaseAuth = auth ?: return firebaseUnavailable()
+
         return try {
             require(idToken.isNotBlank()) { "Token do Google inválido." }
 
@@ -49,7 +59,7 @@ class FirebaseAuthService {
             val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
             
             AnalyticsLogger.logInfo("FirebaseAuthService: Signing in with credential")
-            val result = auth.signInWithCredential(credential).await()
+            val result = firebaseAuth.signInWithCredential(credential).await()
             
             val uid = result.user?.uid ?: ""
             val email = result.user?.email
@@ -68,9 +78,15 @@ class FirebaseAuthService {
         }
     }
 
-    fun isLoggedIn(): Boolean = auth.currentUser != null
+    fun isLoggedIn(): Boolean = auth?.currentUser != null
 
-    fun getCurrentUser() = auth.currentUser
+    fun getCurrentUser() = auth?.currentUser
 
-    fun logout() = auth.signOut()
+    fun logout() {
+        auth?.signOut()
+    }
+
+    private fun firebaseUnavailable(): AuthResult {
+        return AuthResult.Error("Firebase não configurado. Adicione o google-services.json para habilitar o login.")
+    }
 }

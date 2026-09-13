@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,12 +27,15 @@ import com.composables.icons.lucide.Zap
 import listItem.QuimiaListItem
 import theme.QuimiaTheme
 import theme.Typography
+import theme.quimiaColorTokens
 
 @Composable
 fun LoginHomeScreen(
     modifier: Modifier = Modifier,
     onStart: () -> Unit = {}
 ) {
+    val tokens = quimiaColorTokens(forceDark = true)
+
     Box(modifier = modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = com.quimia.designsystem.R.drawable.login_image),
@@ -47,7 +49,10 @@ fun LoginHomeScreen(
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color(0x90000000)),
+                        colors = listOf(
+                            tokens.black.copy(alpha = 0f),
+                            tokens.black.copy(alpha = 0.56f)
+                        ),
                         startY = 0f,
                         endY = Float.POSITIVE_INFINITY
                     )
@@ -66,7 +71,7 @@ fun LoginHomeScreen(
                 Text(
                     text = "Bem-vindo ao\nQuimia!",
                     style = Typography.displayMedium,
-                    color = Color.White,
+                    color = tokens.white,
                     modifier = Modifier.padding(top = 8.dp, bottom = 50.dp),
                     fontWeight = FontWeight.Medium
                 )
@@ -101,8 +106,8 @@ fun LoginHomeScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 iconSize = 20,
-                containerColor = Color.White,
-                textColor = Color.Black,
+                containerColor = tokens.white,
+                textColor = tokens.black,
                 onClick = onStart,
                 espacamento = 0
             )
