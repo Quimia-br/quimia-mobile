@@ -1,4 +1,4 @@
-package com.quimia.android.presentation.screens.auth
+package com.quimia.android.presentation.screens.auth.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,7 +40,8 @@ import theme.quimiaColorTokens
 fun Login1Screen(
     modifier: Modifier = Modifier,
     onContinue: () -> Unit = {},
-    onCreateAccount: () -> Unit = {}
+    onCreateAccount: () -> Unit = {},
+    onForgotPassword: () -> Unit = {}
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
     var email by remember { mutableStateOf("") }
@@ -109,7 +110,9 @@ fun Login1Screen(
                 text = "Esqueci a senha",
                 style = Typography.bodySmall,
                 color = tokens.textPrimary,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(onClick = onForgotPassword)
             )
 
             Spacer(modifier = Modifier.height(56.dp))
