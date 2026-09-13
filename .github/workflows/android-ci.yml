@@ -52,10 +52,10 @@ jobs:
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             echo "### Gradle failure output" >> "$GITHUB_STEP_SUMMARY"
-            grep -Ei '(^e:|FAILURE:|What went wrong|Execution failed|error:|Unresolved reference|Caused by:)' gradle-ci.log | head -n 40 >> "$GITHUB_STEP_SUMMARY" || true
+            grep -Ei '(^e:|FAILURE:|What went wrong|Execution failed|error:|Unresolved reference|Caused by:|issues were found|Dependency|requires|compileSdk|minCompileSdk|currently|AAR metadata)' gradle-ci.log | head -n 60 >> "$GITHUB_STEP_SUMMARY" || true
             while IFS= read -r line; do
               echo "::error::$line"
-            done < <(grep -Ei '(^e:|FAILURE:|What went wrong|Execution failed|error:|Unresolved reference|Caused by:)' gradle-ci.log | head -n 40)
+            done < <(grep -Ei '(^e:|FAILURE:|What went wrong|Execution failed|error:|Unresolved reference|Caused by:|issues were found|Dependency|requires|compileSdk|minCompileSdk|currently|AAR metadata)' gradle-ci.log | head -n 60)
             exit "$status"
           fi
 
