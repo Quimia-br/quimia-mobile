@@ -55,6 +55,7 @@ fun QuimiaIconButton(
             tint = actualIconColor,
             modifier = Modifier
                 .size(iconSize)
+                .width(width)
         )
     }
 }
