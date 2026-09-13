@@ -4,6 +4,20 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val releaseVersionCode = providers.gradleProperty("versionCode")
+    .orElse(providers.environmentVariable("ANDROID_VERSION_CODE"))
+    .getOrElse("1")
+    .toInt()
+val releaseVersionName = providers.gradleProperty("versionName")
+    .orElse(providers.environmentVariable("ANDROID_VERSION_NAME"))
+    .getOrElse("1.0")
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = java.util.Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use(keystoreProperties::load)
+}
+
 // Apply Google Services plugin only when google-services.json is present
 // This prevents CI/local builds failing when the file is intentionally omitted (it's gitignored).
 if (file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()) {
@@ -26,13 +40,27 @@ android {
 
     defaultConfig {
         applicationId = "com.quimia.android"
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
