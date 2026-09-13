@@ -24,9 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -49,6 +51,10 @@ fun QuimiaInput(
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingIcon: ImageVector? = null,
+    trailingIconContentDescription: String? = null,
+    onTrailingIconClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
     textStyle: TextStyle = Typography.titleMedium.copy(
         lineHeight = TextUnit.Unspecified
@@ -118,6 +124,7 @@ fun QuimiaInput(
             enabled = enabled,
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
+            visualTransformation = visualTransformation,
             modifier = modifier
                 .fillMaxWidth()
                 .background(
@@ -150,12 +157,12 @@ fun QuimiaInput(
                     if (value.isNotEmpty()) {
                         QuimiaIconButton(
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
-                            icon = Lucide.X,
-                            onClick = { onValueChange("") },
+                            icon = trailingIcon ?: Lucide.X,
+                            onClick = onTrailingIconClick ?: { onValueChange("") },
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
                             iconSize = 16.dp,
-                            contentDescription = "Clear all",
+                            contentDescription = trailingIconContentDescription ?: "Clear all",
                             padding = 0.dp,
                             radius = 0.dp
                         )

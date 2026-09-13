@@ -1,4 +1,4 @@
-package com.quimia.android.presentation.screens.auth
+package com.quimia.android.presentation.screens.auth.registration
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
