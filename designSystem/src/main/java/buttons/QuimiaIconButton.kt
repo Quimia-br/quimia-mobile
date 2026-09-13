@@ -31,7 +31,9 @@ fun QuimiaIconButton(
     iconSize: Dp,
     contentDescription: String? = null,
     padding: Dp = PaddingMedium.dp,
-    radius: Dp = RadiusFull.dp
+    radius: Dp = RadiusFull.dp,
+    width: Dp = 1.dp,
+    buttonSize: Dp? = null
 ) {
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
@@ -53,6 +55,7 @@ fun QuimiaIconButton(
             tint = actualIconColor,
             modifier = Modifier
                 .size(iconSize)
+                .width(width)
         )
     }
 }
