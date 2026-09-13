@@ -60,7 +60,7 @@ fun Cadastro2Screen(
                 .padding(top = 72.dp)
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFECECEC))
+                .background(tokens.secondary)
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center
         ) {
@@ -110,7 +110,8 @@ fun Cadastro2Screen(
         ) {
             UfField(
                 modifier = Modifier.weight(0.38f),
-                textColor = tokens.textPrimary
+                textColor = tokens.textPrimary,
+                containerColor = tokens.secondary
             )
             Box(modifier = Modifier.weight(1f)) {
                 QuimiaInput(
@@ -211,8 +212,8 @@ fun Cadastro2Screen(
                 modifier = Modifier
                     .weight(1f)
                     .height(46.dp),
-                containerColor = Color(0xFF96E3E7),
-                textColor = Color(0xFFA5C8C9),
+                containerColor = tokens.primary,
+                textColor = tokens.onPrimary,
                 onClick = onEnter,
                 iconSize = 20,
                 espacamento = 0,
@@ -225,7 +226,8 @@ fun Cadastro2Screen(
 @Composable
 private fun UfField(
     modifier: Modifier = Modifier,
-    textColor: Color
+    textColor: Color,
+    containerColor: Color
 ) {
     Column(modifier = modifier) {
         Text(
@@ -239,7 +241,7 @@ private fun UfField(
                 .fillMaxWidth()
                 .height(44.dp)
                 .clip(RoundedCornerShape(1000.dp))
-                .background(Color(0xFFECECEC)),
+                .background(containerColor),
             contentAlignment = Alignment.Center
         ) {
             Text(text = "SP⌄", style = Typography.bodySmall, color = textColor)

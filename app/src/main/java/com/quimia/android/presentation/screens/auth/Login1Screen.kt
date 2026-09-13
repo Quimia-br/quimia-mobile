@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,11 +25,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
+import com.quimia.android.R
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
@@ -117,9 +120,30 @@ fun Login1Screen(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SocialIcon { Text("G", color = tokens.textPrimary, fontWeight = FontWeight.Bold) }
-            SocialIcon { MicrosoftMark(color = tokens.textPrimary) }
-            SocialIcon { Text("✉", color = tokens.textPrimary, fontSize = 16.sp) }
+            SocialIcon(containerColor = tokens.secondary) {
+                Icon(
+                    painter = painterResource(R.drawable.social_google),
+                    contentDescription = "Continuar com Google",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+            }
+            SocialIcon(containerColor = tokens.secondary) {
+                Icon(
+                    painter = painterResource(R.drawable.social_microsoft),
+                    contentDescription = "Continuar com Microsoft",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+            }
+            SocialIcon(containerColor = tokens.secondary) {
+                Icon(
+                    painter = painterResource(R.drawable.social_mail),
+                    contentDescription = "Continuar com e-mail",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(80.dp))
@@ -129,8 +153,8 @@ fun Login1Screen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(46.dp),
-            containerColor = Color(0xFF96E3E7),
-            textColor = Color(0xFFA5C8C9),
+            containerColor = tokens.primary,
+            textColor = tokens.onPrimary,
             onClick = onContinue,
             iconSize = 20,
             espacamento = 0,
@@ -156,29 +180,18 @@ fun Login1Screen(
 }
 
 @Composable
-private fun SocialIcon(content: @Composable () -> Unit) {
+private fun SocialIcon(
+    containerColor: Color,
+    content: @Composable () -> Unit
+) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(44.dp)
             .clip(CircleShape)
-            .background(Color(0xFFECECEC)),
+            .background(containerColor),
         contentAlignment = Alignment.Center
     ) {
         content()
-    }
-}
-
-@Composable
-private fun MicrosoftMark(color: Color) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            Box(Modifier.size(6.dp).background(color))
-            Box(Modifier.size(6.dp).background(color))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            Box(Modifier.size(6.dp).background(color))
-            Box(Modifier.size(6.dp).background(color))
-        }
     }
 }
 

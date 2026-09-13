@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,11 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
+import com.quimia.android.R
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
@@ -56,6 +59,9 @@ fun Cadastro1Screen(
                 .padding(top = 105.dp),
             horizontalAlignment = Alignment.Start
         ) {
+
+            Spacer(modifier = Modifier.height(50.dp))
+
             Text(
                 text = "Seja bem-vindo!\nFaça cadastro abaixo",
                 style = Typography.titleLarge.copy(
@@ -107,32 +113,53 @@ fun Cadastro1Screen(
                 containerColor = tokens.secondary,
                 primaryTextColor = tokens.textPrimary,
                 secondaryTextColor = tokens.textSecondary,
-                focusColor = Color(0xFF00DC9D),
+                focusColor = tokens.success,
                 radius = 1000,
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CadastroSocialIcon { Text("G", color = tokens.textPrimary, fontWeight = FontWeight.Bold) }
-            CadastroSocialIcon { MicrosoftMark(color = tokens.textPrimary) }
-            CadastroSocialIcon { Text("✉", color = tokens.textPrimary, fontSize = 16.sp) }
+            CadastroSocialIcon(containerColor = tokens.secondary) {
+                Icon(
+                    painter = painterResource(R.drawable.social_google),
+                    contentDescription = "Continuar com Google",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+            }
+            CadastroSocialIcon(containerColor = tokens.secondary) {
+                Icon(
+                    painter = painterResource(R.drawable.social_microsoft),
+                    contentDescription = "Continuar com Microsoft",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+            }
+            CadastroSocialIcon(containerColor = tokens.secondary) {
+                Icon(
+                    painter = painterResource(R.drawable.social_mail),
+                    contentDescription = "Continuar com e-mail",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.Unspecified
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(78.dp))
 
         QuimiaButton(
             text = "Continuar",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(46.dp),
-            containerColor = Color(0xFF5ADFEA),
-            textColor = Color(0xFF3F3F3F),
+            containerColor = tokens.primary,
+            textColor = tokens.onPrimary,
             onClick = onContinue,
             iconSize = 20,
             espacamento = 0,
@@ -152,29 +179,18 @@ fun Cadastro1Screen(
 }
 
 @Composable
-private fun CadastroSocialIcon(content: @Composable () -> Unit) {
+private fun CadastroSocialIcon(
+    containerColor: Color,
+    content: @Composable () -> Unit
+) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(44.dp)
             .clip(CircleShape)
-            .background(Color(0xFFECECEC)),
+            .background(containerColor),
         contentAlignment = Alignment.Center
     ) {
         content()
-    }
-}
-
-@Composable
-private fun MicrosoftMark(color: Color) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            Box(Modifier.size(6.dp).background(color))
-            Box(Modifier.size(6.dp).background(color))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            Box(Modifier.size(6.dp).background(color))
-            Box(Modifier.size(6.dp).background(color))
-        }
     }
 }
 
