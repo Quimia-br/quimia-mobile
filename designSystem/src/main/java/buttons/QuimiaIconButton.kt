@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,8 +31,7 @@ fun QuimiaIconButton(
     iconSize: Dp,
     contentDescription: String? = null,
     padding: Dp = PaddingMedium.dp,
-    radius: Dp = RadiusFull.dp,
-    width: Dp = 1.dp
+    radius: Dp = RadiusFull.dp
 ) {
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
@@ -53,7 +53,6 @@ fun QuimiaIconButton(
             tint = actualIconColor,
             modifier = Modifier
                 .size(iconSize)
-                .width(width)
         )
     }
 }

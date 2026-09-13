@@ -118,8 +118,7 @@ private fun QuimiaSectionTitlePreview() {
                 containerColor = quimiaColorTokens().secondary,
                 iconColor = quimiaColorTokens().foregroundSecondary,
                 iconSize = 17.dp,
-                padding = 8.dp,
-                width = 2.dp
+                padding = 8.dp
             )
             QuimiaIconButton(
                 icon = Lucide.Circle,
@@ -128,8 +127,7 @@ private fun QuimiaSectionTitlePreview() {
                 containerColor = quimiaColorTokens().secondary,
                 iconColor = quimiaColorTokens().foregroundSecondary,
                 iconSize = 17.dp,
-                padding = 8.dp,
-                width = 2.dp
+                padding = 8.dp
             )
             QuimiaIconButton(
                 icon = Lucide.Circle,
@@ -138,8 +136,7 @@ private fun QuimiaSectionTitlePreview() {
                 containerColor = quimiaColorTokens().secondary,
                 iconColor = quimiaColorTokens().foregroundSecondary,
                 iconSize = 17.dp,
-                padding = 8.dp,
-                width = 2.dp
+                padding = 8.dp
             )
         }
     }
