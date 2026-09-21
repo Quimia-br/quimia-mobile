@@ -75,7 +75,7 @@ fun QuimiaEmptyState(
                 textColor = tokens.textPrimary,
                 modifier = Modifier
                     .widthIn(max = 158.dp)
-                    .height(60.dp),
+                    .height(43.dp),
                 iconSize = 20,
                 curvaCirculo = RadiusFull,
                 espacamento = 0
