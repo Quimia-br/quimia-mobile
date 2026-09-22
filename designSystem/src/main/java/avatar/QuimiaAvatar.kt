@@ -90,7 +90,7 @@ private fun QuimiaAvatarPreview() {
             .padding(PaddingSmall.dp)
     ) {
         QuimiaAvatar(
-            initials = "EP",
+            initials = "GM",
             backgroundColor = tokens.onPrimary
         )
 
@@ -101,7 +101,7 @@ private fun QuimiaAvatarPreview() {
         )
 
         QuimiaAvatar(
-            initials = "GS"
+            initials = "GB"
         )
     }
 }
