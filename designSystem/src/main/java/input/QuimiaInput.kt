@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import theme.RadiusFull
@@ -161,10 +162,8 @@ fun QuimiaInput(
                             onClick = onTrailingIconClick ?: { onValueChange("") },
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
-                            iconSize = 16.dp,
-                            contentDescription = trailingIconContentDescription ?: "Clear all",
-                            padding = 0.dp,
-                            radius = 0.dp
+                            size = QuimiaIconButtonSize.Icon,
+                            contentDescription = trailingIconContentDescription ?: "Clear all"
                         )
                     }
                 }

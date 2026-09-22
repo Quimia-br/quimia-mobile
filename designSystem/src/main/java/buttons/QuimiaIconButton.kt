@@ -1,25 +1,41 @@
 package buttons
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
-import theme.PaddingMedium
-import theme.RadiusFull
 import theme.quimiaColorTokens
+
+enum class QuimiaIconButtonSize(
+    val buttonSize: Dp,
+    val iconSize: Dp
+) {
+    Icon(
+        buttonSize = 16.dp,
+        iconSize = 16.dp
+    ),
+    Small(
+        buttonSize = 32.dp,
+        iconSize = 16.dp
+    ),
+    Medium(
+        buttonSize = 45.dp,
+        iconSize = 16.dp
+    ),
+    Large(
+        buttonSize = 56.dp,
+        iconSize = 16.dp
+    )
+}
 
 @Composable
 fun QuimiaIconButton(
@@ -28,34 +44,26 @@ fun QuimiaIconButton(
     onClick: () -> Unit = {},
     containerColor: Color? = null,
     iconColor: Color? = null,
-    iconSize: Dp,
-    contentDescription: String? = null,
-    padding: Dp = PaddingMedium.dp,
-    radius: Dp = RadiusFull.dp,
-    width: Dp = 1.dp,
-    buttonSize: Dp? = null
+    size: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
+    contentDescription: String? = null
 ) {
     val tokens = quimiaColorTokens()
-    val actualContainer = containerColor ?: tokens.primary
-    val actualIconColor = iconColor ?: tokens.textPrimary
-    val resolvedButtonSize = buttonSize ?: (iconSize + (padding * 2))
 
-    Button(
+    val actualContainerColor = containerColor ?: tokens.primary
+    val actualIconColor = iconColor ?: tokens.textPrimary
+
+    IconButton(
         onClick = onClick,
-        modifier = modifier.size(resolvedButtonSize),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = actualContainer
-        ),
-        shape = RoundedCornerShape(radius),
-        contentPadding = PaddingValues(padding)
+        modifier = modifier.size(size.buttonSize),
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = actualContainerColor,
+            contentColor = actualIconColor
+        )
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = actualIconColor,
-            modifier = Modifier
-                .size(iconSize)
-                .width(width)
+            modifier = Modifier.size(size.iconSize)
         )
     }
 }
@@ -65,7 +73,6 @@ fun QuimiaIconButton(
 fun PreviewQuimiaIconButton() {
     QuimiaIconButton(
         icon = Lucide.Circle,
-        iconSize = 20.dp,
         contentDescription = "Circle"
     )
 }

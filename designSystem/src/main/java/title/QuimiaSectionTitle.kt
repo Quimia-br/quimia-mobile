@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.BotOff
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
@@ -88,7 +89,7 @@ fun QuimiaSectionTitle(
         content?.let {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
             ) {
                 content()
             }
@@ -99,11 +100,12 @@ fun QuimiaSectionTitle(
 @Preview
 @Composable
 private fun QuimiaSectionTitlePreview() {
+    val tokens = quimiaColorTokens()
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .background(
-                color = quimiaColorTokens().surfaceBackground,
+                color = tokens.surfaceBackground,
                 shape = RoundedCornerShape(RadiusSmall.dp)
             )
             .width(400.dp)
@@ -115,28 +117,25 @@ private fun QuimiaSectionTitlePreview() {
                 icon = Lucide.BotOff,
                 onClick = {},
                 contentDescription = null,
-                containerColor = quimiaColorTokens().secondary,
-                iconColor = quimiaColorTokens().foregroundSecondary,
-                iconSize = 17.dp,
-                padding = 8.dp
+                containerColor = tokens.secondary,
+                iconColor = tokens.foregroundSecondary,
+                size = QuimiaIconButtonSize.Small
             )
             QuimiaIconButton(
                 icon = Lucide.Circle,
                 onClick = {},
                 contentDescription = null,
-                containerColor = quimiaColorTokens().secondary,
-                iconColor = quimiaColorTokens().foregroundSecondary,
-                iconSize = 17.dp,
-                padding = 8.dp
+                containerColor = tokens.secondary,
+                iconColor = tokens.foregroundSecondary,
+                size = QuimiaIconButtonSize.Small
             )
             QuimiaIconButton(
                 icon = Lucide.Circle,
                 onClick = {},
                 contentDescription = null,
-                containerColor = quimiaColorTokens().secondary,
-                iconColor = quimiaColorTokens().foregroundSecondary,
-                iconSize = 17.dp,
-                padding = 8.dp
+                containerColor = tokens.secondary,
+                iconColor = tokens.foregroundSecondary,
+                size = QuimiaIconButtonSize.Small
             )
         }
     }
