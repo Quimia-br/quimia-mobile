@@ -1,4 +1,4 @@
-package avatar
+package nav
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
@@ -40,8 +41,6 @@ fun QuimiaNavController(
     horizontalPadding: Dp = PaddingLarge.dp,
     buttonColor: Color? = null,
     iconColor: Color? = null,
-    iconSize: Dp = 20.dp,
-    iconPadding: Dp = 8.dp,
     onCloseClick: () -> Unit = {},
     builder: NavGraphBuilder.(navController: NavController) -> Unit
 ) {
@@ -68,8 +67,6 @@ fun QuimiaNavController(
                 verticalPadding = verticalPadding,
                 buttonColor = actualButtonColor,
                 iconColor = actualIconColor,
-                iconSize = iconSize,
-                iconPadding = iconPadding,
                 showBackButton = canNavigateBack,
                 onBackClick = { navController.popBackStack() },
                 onCloseClick = currentOnCloseClick
@@ -96,8 +93,7 @@ fun QuimiaNav(
     verticalPadding: Dp = PaddingMedium.dp,
     buttonColor: Color? = null,
     iconColor: Color? = null,
-    iconSize: Dp = 20.dp,
-    iconPadding: Dp = 11.dp,
+    iconButtonSize: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     onCloseClick: () -> Unit = {}
@@ -121,8 +117,7 @@ fun QuimiaNav(
                 containerColor = actualButtonColor,
                 iconColor = actualIconColor,
                 contentDescription = "Back",
-                iconSize = iconSize,
-                padding = iconPadding,
+                size = iconButtonSize
             )
         }
         QuimiaIconButton(
@@ -132,8 +127,7 @@ fun QuimiaNav(
             containerColor = actualButtonColor,
             iconColor = actualIconColor,
             contentDescription = "Close",
-            iconSize = iconSize,
-            padding = iconPadding,
+            size = iconButtonSize
         )
     }
 }
