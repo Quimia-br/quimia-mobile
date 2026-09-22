@@ -31,6 +31,7 @@ import com.composables.icons.lucide.X
 import theme.PaddingLarge
 import theme.PaddingMedium
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaNavController(
@@ -135,11 +136,13 @@ fun QuimiaNav(
 @Preview
 @Composable
 private fun QuimiaNavPreview() {
-    QuimiaNav(
-        modifier = Modifier.width(393.dp),
-        showBackButton = true,
-        backgroundColor = quimiaColorTokens().surfaceBackground,
-        onBackClick = {},
-        onCloseClick = {}
-    )
+    QuimiaTheme {
+        QuimiaNav(
+            modifier = Modifier.width(393.dp),
+            showBackButton = true,
+            backgroundColor = quimiaColorTokens().surfaceBackground,
+            onBackClick = {},
+            onCloseClick = {}
+        )
+    }
 }

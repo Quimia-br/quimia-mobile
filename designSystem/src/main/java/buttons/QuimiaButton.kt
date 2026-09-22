@@ -33,6 +33,7 @@ import theme.QuimiaFontFamily
 import theme.RadiusFull
 import theme.RadiusMedium
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,17 +132,19 @@ fun QuimiaButton(
 @Preview
 @Composable
 fun PreviewQuimiaButton() {
-    QuimiaButton(
-        iconLeftVector = Lucide.Circle,
-        iconColor = LightTokens.foregroundPrimary,
-        containerColor = LightTokens.primary,
-        text = "Adicionar",
-        textColor = LightTokens.textPrimary,
-        modifier = Modifier.width(200.dp),
-        iconSize = 20,
-        espacamento = PaddingSmall,
-        curvaCirculo = RadiusMedium,
-        fontFamily = QuimiaFontFamily,
-        fontWeight = FontWeight.Medium
-    )
+    QuimiaTheme {
+        QuimiaButton(
+            iconLeftVector = Lucide.Circle,
+            iconColor = LightTokens.foregroundPrimary,
+            containerColor = LightTokens.primary,
+            text = "Adicionar",
+            textColor = LightTokens.textPrimary,
+            modifier = Modifier.width(200.dp),
+            iconSize = 20,
+            espacamento = PaddingSmall,
+            curvaCirculo = RadiusMedium,
+            fontFamily = QuimiaFontFamily,
+            fontWeight = FontWeight.Medium
+        )
+    }
 }

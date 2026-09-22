@@ -1,5 +1,6 @@
-package avatar
+package buttons
 
+import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import avatar.QuimiaAvatar
 import theme.PaddingSmall
+import theme.QuimiaTheme
 import theme.RadiusSmall
 import theme.quimiaColorTokens
 
@@ -52,32 +55,34 @@ fun QuimiaAvatarButton(
 @Preview
 @Composable
 private fun QuimiaAvatarButtonPreview() {
-    val tokens = quimiaColorTokens()
+    QuimiaTheme {
+        val tokens = quimiaColorTokens()
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .width(64.dp)
-            .height(162.dp)
-            .clip(RoundedCornerShape(RadiusSmall.dp))
-            .background(tokens.surfaceBackground)
-            .padding(PaddingSmall.dp)
-    ) {
-        QuimiaAvatarButton(
-            initials = "EP",
-            backgroundColor = tokens.onPrimary,
-            onClick = {}
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .width(64.dp)
+                .height(162.dp)
+                .clip(RoundedCornerShape(RadiusSmall.dp))
+                .background(tokens.surfaceBackground)
+                .padding(PaddingSmall.dp)
+        ) {
+            QuimiaAvatarButton(
+                initials = "EP",
+                backgroundColor = tokens.onPrimary,
+                onClick = {}
+            )
 
-        QuimiaAvatarButton(
-            photo = painterResource(id = android.R.drawable.ic_menu_camera),
-            onClick = {}
-        )
+            QuimiaAvatarButton(
+                photo = painterResource(id = R.drawable.ic_menu_camera),
+                onClick = {}
+            )
 
-        QuimiaAvatarButton(
-            initials = "GS",
-            onClick = {}
-        )
+            QuimiaAvatarButton(
+                initials = "GS",
+                onClick = {}
+            )
+        }
     }
 }

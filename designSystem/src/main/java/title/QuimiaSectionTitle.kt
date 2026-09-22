@@ -32,6 +32,7 @@ import theme.PaddingSmall
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaSectionTitle(
@@ -100,43 +101,45 @@ fun QuimiaSectionTitle(
 @Preview
 @Composable
 private fun QuimiaSectionTitlePreview() {
-    val tokens = quimiaColorTokens()
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .background(
-                color = tokens.surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
-            )
-            .width(400.dp)
-            .height(116.dp)
-            .padding(20.dp)
-    ) {
-        QuimiaSectionTitle(title = "Title", description = "Description") {
-            QuimiaIconButton(
-                icon = Lucide.BotOff,
-                onClick = {},
-                contentDescription = null,
-                containerColor = tokens.secondary,
-                iconColor = tokens.foregroundSecondary,
-                size = QuimiaIconButtonSize.Small
-            )
-            QuimiaIconButton(
-                icon = Lucide.Circle,
-                onClick = {},
-                contentDescription = null,
-                containerColor = tokens.secondary,
-                iconColor = tokens.foregroundSecondary,
-                size = QuimiaIconButtonSize.Small
-            )
-            QuimiaIconButton(
-                icon = Lucide.Circle,
-                onClick = {},
-                contentDescription = null,
-                containerColor = tokens.secondary,
-                iconColor = tokens.foregroundSecondary,
-                size = QuimiaIconButtonSize.Small
-            )
+    QuimiaTheme {
+        val tokens = quimiaColorTokens()
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(
+                    color = tokens.surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(400.dp)
+                .height(116.dp)
+                .padding(20.dp)
+        ) {
+            QuimiaSectionTitle(title = "Title", description = "Description") {
+                QuimiaIconButton(
+                    icon = Lucide.BotOff,
+                    onClick = {},
+                    contentDescription = null,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundSecondary,
+                    size = QuimiaIconButtonSize.Small
+                )
+                QuimiaIconButton(
+                    icon = Lucide.Circle,
+                    onClick = {},
+                    contentDescription = null,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundSecondary,
+                    size = QuimiaIconButtonSize.Small
+                )
+                QuimiaIconButton(
+                    icon = Lucide.Circle,
+                    onClick = {},
+                    contentDescription = null,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundSecondary,
+                    size = QuimiaIconButtonSize.Small
+                )
+            }
         }
     }
 }

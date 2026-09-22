@@ -17,19 +17,17 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import avatar.QuimiaAvatarButton
+import buttons.QuimiaAvatarButton
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Bell
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Mic
-import nav.QuimiaSearchBar
-import nav.QuimiaSearchBarVariant
-import nav.resolveSearchBarColors
 import theme.PaddingLarge
 import theme.PaddingSmall
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaHeader(
@@ -93,23 +91,25 @@ fun QuimiaHeader(
 @Preview
 @Composable
 private fun PreviewQuimiaHeader() {
-    Column(
-        modifier = Modifier
-            .width(360.dp)
-            .height(160.dp)
-            .clip(RoundedCornerShape(RadiusSmall.dp))
-            .background(quimiaColorTokens().surfaceBackground)
-    ) {
-        QuimiaHeader(
-            value = "",
-            onValueChange = {},
-            placeholder = "Pesquisar"
-        )
-        QuimiaHeader(
-            value = "",
-            onValueChange = {},
-            placeholder = "Pesquisar",
-            searchBarVariant = QuimiaSearchBarVariant.Secondary
-        )
+    QuimiaTheme {
+        Column(
+            modifier = Modifier
+                .width(360.dp)
+                .height(160.dp)
+                .clip(RoundedCornerShape(RadiusSmall.dp))
+                .background(quimiaColorTokens().surfaceBackground)
+        ) {
+            QuimiaHeader(
+                value = "",
+                onValueChange = {},
+                placeholder = "Pesquisar"
+            )
+            QuimiaHeader(
+                value = "",
+                onValueChange = {},
+                placeholder = "Pesquisar",
+                searchBarVariant = QuimiaSearchBarVariant.Secondary
+            )
+        }
     }
 }

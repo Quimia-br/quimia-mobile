@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 enum class QuimiaShortCutType {
     Large,
@@ -162,14 +163,16 @@ fun QuimiaShortCut(
 @Preview(showBackground = true, widthDp = 360, heightDp = 400)
 @Composable
 private fun QuimiaShortCutPreview() {
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        QuimiaShortCut(
-            type = QuimiaShortCutType.Large,
-            color = QuimiaShortCutColor.Gray,
-            icon = Lucide.Circle,
-            )
+    QuimiaTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            QuimiaShortCut(
+                type = QuimiaShortCutType.Large,
+                color = QuimiaShortCutColor.Gray,
+                icon = Lucide.Circle,
+                )
+        }
     }
 }

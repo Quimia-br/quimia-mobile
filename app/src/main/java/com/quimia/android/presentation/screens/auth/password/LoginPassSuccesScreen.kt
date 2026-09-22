@@ -31,6 +31,7 @@ import com.composables.icons.lucide.ShieldCheck
 import theme.QuimiaColorTokens
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun LoginPassSuccesScreen(
@@ -156,5 +157,7 @@ private fun SuccessBenefit(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun LoginPassSuccesScreenPreview() {
-    LoginPassSuccesScreen()
+    QuimiaTheme {
+        LoginPassSuccesScreen()
+    }
 }

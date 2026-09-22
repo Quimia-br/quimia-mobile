@@ -32,6 +32,7 @@ import com.composables.icons.lucide.Sparkles
 import com.composables.icons.lucide.ToolCase
 import theme.RadiusFull
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaMenuBar(
@@ -134,5 +135,7 @@ fun QuimiaMenuBar(
 @Preview
 @Composable
 fun PreviewQuimiaMenuBar() {
-    QuimiaMenuBar()
+    QuimiaTheme {
+        QuimiaMenuBar()
+    }
 }
