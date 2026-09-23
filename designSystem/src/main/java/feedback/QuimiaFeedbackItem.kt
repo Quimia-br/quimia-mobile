@@ -30,6 +30,7 @@ import com.composables.icons.lucide.X
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaFeedbackItem(
@@ -83,21 +84,23 @@ fun QuimiaFeedbackItem(
 @Preview
 @Composable
 private fun QuimiaFeedbackItemPreview() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .width(240.dp)
-            .height(460.dp)
-            .clip(RoundedCornerShape(RadiusSmall.dp))
-            .background(quimiaColorTokens().surfaceBackground)
-            .padding(20.dp)
-    ) {
-        QuimiaFeedbackItem(
-            isSuccess = true
-        )
-        QuimiaFeedbackItem(
-            isSuccess = false
-        )
+    QuimiaTheme {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .width(240.dp)
+                .height(460.dp)
+                .clip(RoundedCornerShape(RadiusSmall.dp))
+                .background(quimiaColorTokens().surfaceBackground)
+                .padding(20.dp)
+        ) {
+            QuimiaFeedbackItem(
+                isSuccess = true
+            )
+            QuimiaFeedbackItem(
+                isSuccess = false
+            )
+        }
     }
 }

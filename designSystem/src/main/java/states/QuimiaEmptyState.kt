@@ -25,6 +25,7 @@ import theme.RadiusLarge
 import theme.RadiusMedium
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaEmptyState(
@@ -87,10 +88,12 @@ fun QuimiaEmptyState(
 @Preview
 @Composable
 fun QuimiaEmptyStatePreview() {
-    QuimiaEmptyState(
-        title = "Title",
-        description = "Description",
-        buttonLabel = "Label",
-        onButtonClick = {}
-    )
+    QuimiaTheme {
+        QuimiaEmptyState(
+            title = "Title",
+            description = "Description",
+            buttonLabel = "Label",
+            onButtonClick = {}
+        )
+    }
 }

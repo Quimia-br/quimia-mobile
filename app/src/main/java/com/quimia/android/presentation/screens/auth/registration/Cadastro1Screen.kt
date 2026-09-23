@@ -34,6 +34,7 @@ import com.quimia.android.R
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun Cadastro1Screen(
@@ -197,5 +198,7 @@ private fun CadastroSocialIcon(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun Cadastro1ScreenPreview() {
-    Cadastro1Screen()
+    QuimiaTheme {
+        Cadastro1Screen()
+    }
 }

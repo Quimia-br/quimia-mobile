@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 enum class QuimiaIconButtonSize(
     val buttonSize: Dp,
@@ -71,8 +72,10 @@ fun QuimiaIconButton(
 @Preview
 @Composable
 fun PreviewQuimiaIconButton() {
-    QuimiaIconButton(
-        icon = Lucide.Circle,
-        contentDescription = "Circle"
-    )
+    QuimiaTheme {
+        QuimiaIconButton(
+            icon = Lucide.Circle,
+            contentDescription = "Circle"
+        )
+    }
 }

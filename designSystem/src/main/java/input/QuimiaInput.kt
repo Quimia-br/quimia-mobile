@@ -40,6 +40,7 @@ import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaInput(
@@ -187,38 +188,40 @@ fun QuimiaInput(
 @Preview
 @Composable
 private fun QuimiaInputPreview() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
+    QuimiaTheme {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .background(
+                    color = quimiaColorTokens().surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(352.dp)
+                .padding(20.dp, 37.dp)
+        ) {
+            QuimiaInput(
+                value = "",
+                onValueChange = {},
+                label = "Label",
+                placeholder = "Value",
+                description = "Description"
             )
-            .width(352.dp)
-            .padding(20.dp, 37.dp)
-    ) {
-        QuimiaInput(
-            value = "",
-            onValueChange = {},
-            label = "Label",
-            placeholder = "Value",
-            description = "Description"
-        )
-        QuimiaInput(
-            value = "Value",
-            onValueChange = {},
-            label = "Label",
-            placeholder = "Value",
-            description = "Description"
-        )
-        QuimiaInput(
-            value = "Value",
-            onValueChange = {},
-            label = "Label",
-            placeholder = "Value",
-            description = "Description",
-            error = "Error Description"
-        )
+            QuimiaInput(
+                value = "Value",
+                onValueChange = {},
+                label = "Label",
+                placeholder = "Value",
+                description = "Description"
+            )
+            QuimiaInput(
+                value = "Value",
+                onValueChange = {},
+                label = "Label",
+                placeholder = "Value",
+                description = "Description",
+                error = "Error Description"
+            )
+        }
     }
 }

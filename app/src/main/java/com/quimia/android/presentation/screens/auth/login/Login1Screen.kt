@@ -35,6 +35,7 @@ import com.quimia.android.R
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun Login1Screen(
@@ -201,5 +202,7 @@ private fun SocialIcon(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun Login1ScreenPreview() {
-    Login1Screen()
+    QuimiaTheme {
+        Login1Screen()
+    }
 }

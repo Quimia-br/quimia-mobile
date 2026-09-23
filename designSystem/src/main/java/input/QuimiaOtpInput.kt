@@ -44,6 +44,7 @@ import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -234,20 +235,22 @@ fun QuimiaOtpItem(
 @Preview
 @Composable
 private fun QuimiaOtpInputPreview() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
-            )
-            .height(493.dp)
-            .padding(20.dp)
-            .width(329.dp)
-    ) {
-        QuimiaOtpInput(value = "", onValueChange = {})
-        QuimiaOtpInput(value = "1234", onValueChange = {})
-        QuimiaOtpInput(value = "1234", onValueChange = {}, error = "Error description")
+    QuimiaTheme {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .background(
+                    color = quimiaColorTokens().surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .height(493.dp)
+                .padding(20.dp)
+                .width(329.dp)
+        ) {
+            QuimiaOtpInput(value = "", onValueChange = {})
+            QuimiaOtpInput(value = "1234", onValueChange = {})
+            QuimiaOtpInput(value = "1234", onValueChange = {}, error = "Error description")
+        }
     }
 }

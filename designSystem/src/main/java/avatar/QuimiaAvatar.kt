@@ -26,13 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import theme.PaddingSmall
+import theme.QuimiaTheme
 import theme.RadiusSmall
 import theme.quimiaColorTokens
 
 @Composable
 fun QuimiaAvatar(
     modifier: Modifier = Modifier,
-    size: Dp = 40.dp,
+    size: Dp = 45.dp,
     photo: Painter? = null,
     initials: String = "",
     backgroundColor: Color? = null,
@@ -77,32 +78,34 @@ fun QuimiaAvatar(
 @Preview
 @Composable
 private fun QuimiaAvatarPreview() {
-    val tokens = quimiaColorTokens()
+    QuimiaTheme {
+        val tokens = quimiaColorTokens()
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .width(64.dp)
-            .height(162.dp)
-            .clip(RoundedCornerShape(RadiusSmall.dp))
-            .background(tokens.surfaceBackground)
-            .padding(PaddingSmall.dp)
-    ) {
-        QuimiaAvatar(
-            initials = "GM",
-            backgroundColor = tokens.onPrimary
-        )
-
-        QuimiaAvatar(
-            photo = painterResource(
-                id = android.R.drawable.ic_menu_camera
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .width(64.dp)
+                .height(162.dp)
+                .clip(RoundedCornerShape(RadiusSmall.dp))
+                .background(tokens.surfaceBackground)
+                .padding(PaddingSmall.dp)
+        ) {
+            QuimiaAvatar(
+                initials = "GM",
+                backgroundColor = tokens.onPrimary
             )
-        )
 
-        QuimiaAvatar(
-            initials = "GB"
-        )
+            QuimiaAvatar(
+                photo = painterResource(
+                    id = android.R.drawable.ic_menu_camera
+                )
+            )
+
+            QuimiaAvatar(
+                initials = "GB"
+            )
+        }
     }
 }
 

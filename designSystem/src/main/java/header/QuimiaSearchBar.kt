@@ -1,4 +1,4 @@
-package nav
+package header
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,6 +43,7 @@ import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 enum class QuimiaSearchBarVariant { Primary, Secondary }
 
@@ -170,32 +171,34 @@ fun QuimiaSearchBar(
 @Preview
 @Composable
 private fun PreviewQuimiaSearchBar() {
-    Column(
-        verticalArrangement = Arrangement.SpaceBetween,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
+    QuimiaTheme {
+        Column(
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .background(
+                    color = quimiaColorTokens().surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(315.dp)
+                .height(176.dp)
+                .padding(21.dp)
+        ) {
+            QuimiaSearchBar(
+                value = "",
+                onValueChange = {},
+                placeholder = "Pesquisar",
+                icon = Lucide.Circle,
+                iconDescription = "Botao de pesquisa"
             )
-            .width(315.dp)
-            .height(176.dp)
-            .padding(21.dp)
-    ) {
-        QuimiaSearchBar(
-            value = "",
-            onValueChange = {},
-            placeholder = "Pesquisar",
-            icon = Lucide.Circle,
-            iconDescription = "Botao de pesquisa"
-        )
-        QuimiaSearchBar(
-            value = "",
-            onValueChange = {},
-            placeholder = "Pesquisar",
-            icon = Lucide.Circle,
-            iconDescription = "Botao de pesquisa",
-            variant = QuimiaSearchBarVariant.Secondary
-        )
+            QuimiaSearchBar(
+                value = "",
+                onValueChange = {},
+                placeholder = "Pesquisar",
+                icon = Lucide.Circle,
+                iconDescription = "Botao de pesquisa",
+                variant = QuimiaSearchBarVariant.Secondary
+            )
+        }
     }
 }

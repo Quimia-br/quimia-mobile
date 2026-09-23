@@ -32,6 +32,7 @@ import com.composables.icons.lucide.Lucide
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun LoginPass2Screen(
@@ -148,5 +149,7 @@ private fun PasswordInput(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun LoginPass2ScreenPreview() {
-    LoginPass2Screen()
+    QuimiaTheme {
+        LoginPass2Screen()
+    }
 }
