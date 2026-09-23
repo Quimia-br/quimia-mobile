@@ -51,6 +51,7 @@ val PaddingNone = 0
 val PaddingSmall = 12
 val PaddingMedium = 16
 val PaddingLarge = 24
+val PaddingHuge = 32
 
 // Primary
 val PrimaryLight = Color(0xFF5ADFEA)
