@@ -1,0 +1,6 @@
+<resources>
+    <!-- Dark navigation icons are supported starting with Android 8.1 (API 27). -->
+    <style name="Theme.QuimiaAndroid" parent="Base.Theme.QuimiaAndroid">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
