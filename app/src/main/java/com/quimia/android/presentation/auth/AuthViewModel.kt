@@ -32,16 +32,16 @@ class AuthViewModel : BaseViewModel<AuthResult>() {
     }
 
     fun loginWithEmail(email: String, password: String) {
+        AnalyticsLogger.logLoginEvent("EMAIL", "STARTED")
         if (email.isBlank() || password.isBlank()) {
+            AnalyticsLogger.logLoginEvent("EMAIL", "INVALID_INPUT")
             _authState.value = AuthResult.Error("Preencha e-mail e senha antes de entrar.")
             return
         }
 
-        launchAsync {
-            _authState.value = AuthResult.Loading
-            val result = authService.loginWithEmail(email, password)
-            _authState.value = result
-        }
+        // Mock login - apenas valida se está preenchido
+        AnalyticsLogger.logLoginEvent("EMAIL", "SUCCESS")
+        _authState.value = AuthResult.Success(uid = "mock-uid-123", email = email)
     }
 
     fun registerWithEmail(email: String, password: String) {
@@ -63,18 +63,18 @@ class AuthViewModel : BaseViewModel<AuthResult>() {
     }
 
     fun loginWithGoogle(idToken: String) {
-        AnalyticsLogger.logLoginEvent("GOOGLE", "STARTED", "Token length: ${idToken.length}")
+        AnalyticsLogger.logLoginEvent("GOOGLE", "STARTED")
         if (idToken.isBlank()) {
-            AnalyticsLogger.logLoginEvent("GOOGLE", "FAILED", "Token is blank")
+            AnalyticsLogger.logLoginEvent("GOOGLE", "INVALID_TOKEN")
             _authState.value = AuthResult.Error("Token do Google inválido.")
             return
         }
 
         launchAsync {
             _authState.value = AuthResult.Loading
-            AnalyticsLogger.logLoginEvent("GOOGLE", "PROCESSING", "Sending to Firebase")
+            AnalyticsLogger.logLoginEvent("GOOGLE", "PROCESSING")
             val result = authService.loginWithGoogle(idToken)
-            AnalyticsLogger.logLoginEvent("GOOGLE", if (result is AuthResult.Success) "SUCCESS" else "FAILED", "Result: $result")
+            AnalyticsLogger.logLoginEvent("GOOGLE", if (result is AuthResult.Success) "SUCCESS" else "FAILED")
             _authState.value = result
         }
     }

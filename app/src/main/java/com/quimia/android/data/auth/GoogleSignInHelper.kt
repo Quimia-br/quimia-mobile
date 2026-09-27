@@ -17,16 +17,16 @@ class GoogleSignInHelper(private val context: Context) {
     private val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(context, googleSignInOptions)
 
     fun getSignInIntent() = googleSignInClient.signInIntent.apply {
-        AnalyticsLogger.logGoogleSignInEvent("GET_SIGN_IN_INTENT", "Creating sign-in intent")
+        AnalyticsLogger.logGoogleSignInEvent("GET_SIGN_IN_INTENT")
     }
 
     suspend fun getIdTokenFromResult(data: android.content.Intent?): String? {
         return suspendCancellableCoroutine { continuation ->
             try {
-                AnalyticsLogger.logGoogleSignInEvent("GET_ID_TOKEN", "Processing sign-in result")
+                AnalyticsLogger.logGoogleSignInEvent("GET_ID_TOKEN")
                 val task = GoogleSignIn.getSignedInAccountFromIntent(data)
                 val account = task.getResult(ApiException::class.java)
-                AnalyticsLogger.logGoogleSignInEvent("GET_ID_TOKEN", "Account: ${account?.email}, IdToken: ${account?.idToken?.substring(0, 20)}...")
+                AnalyticsLogger.logGoogleSignInEvent("ID_TOKEN_RECEIVED")
                 continuation.resume(account?.idToken)
             } catch (e: ApiException) {
                 AnalyticsLogger.logGoogleSignInError("GET_ID_TOKEN", e)
@@ -39,7 +39,7 @@ class GoogleSignInHelper(private val context: Context) {
     }
 
     fun signOut() {
-        AnalyticsLogger.logGoogleSignInEvent("SIGN_OUT", "Signing out")
+        AnalyticsLogger.logGoogleSignInEvent("SIGN_OUT")
         googleSignInClient.signOut()
     }
 }
