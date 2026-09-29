@@ -100,12 +100,12 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(276.dp)
+                .height(294.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            tokens.brandSecondary.copy(alpha = 0.86f),
-                            tokens.surfaceBackground.copy(alpha = 0.72f),
+                            tokens.brandSecondary.copy(alpha = 0.90f),
+                            tokens.brandPrimary.copy(alpha = 0.10f),
                             tokens.surfaceBackground,
                         )
                     )
@@ -124,7 +124,6 @@ fun HomeScreen(
                     .fillMaxHeight()
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(bottom = 89.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 Spacer(modifier = Modifier.height(topSpacing))
@@ -192,7 +191,7 @@ fun HomeScreen(
                     iconSize = 76.dp,
                     contentSpacing = 24.dp,
                     buttonSpacing = 24.dp,
-                    buttonTextStyle = Typography.bodyMedium,
+                    buttonTextStyle = Typography.labelMedium,
                     buttonModifier = Modifier.width(158.dp),
                     title = "Você ainda não fez\nnenhuma mistura",
                     titleTextStyle = Typography.bodyMedium.copy(
@@ -206,6 +205,8 @@ fun HomeScreen(
                         if (onMixClick != null) onMixClick() else unavailable("Misturar")
                     },
                 )
+
+                Spacer(modifier = Modifier.height(89.dp))
 
             }
 
@@ -320,8 +321,8 @@ private fun HomeQuickActions(
                     fontWeight = FontWeight.Medium,
                     lineHeight = 18.sp,
                 ),
-                descriptionTextStyle = Typography.bodySmall,
-                actionTextStyle = Typography.bodyMedium,
+                descriptionTextStyle = Typography.labelSmall,
+                actionTextStyle = Typography.labelMedium,
                 onSecondaryActionClick = onFindDropOffClick,
             )
 
@@ -340,7 +341,10 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    textStyle = Typography.bodyMedium.copy(lineHeight = 18.sp),
+                    textStyle = Typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 18.sp,
+                    ),
                     onClick = onMixturesClick,
                 )
                 QuimiaShortCut(
@@ -354,7 +358,10 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    textStyle = Typography.bodyMedium.copy(lineHeight = 18.sp),
+                    textStyle = Typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 18.sp,
+                    ),
                     onClick = onShelfClick,
                 )
             }

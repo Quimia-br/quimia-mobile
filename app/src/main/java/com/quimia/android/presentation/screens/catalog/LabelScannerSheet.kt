@@ -39,13 +39,12 @@ import com.composables.icons.lucide.Upload
 import com.composables.icons.lucide.X
 import com.quimia.android.R
 import java.io.File
-import kotlinx.coroutines.launch
 import theme.QuimiaTheme
 import theme.Typography
 import theme.quimiaColorTokens
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var imageUri by rememberSaveable { mutableStateOf<String?>(null) }
@@ -71,20 +70,23 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
 
     val tokens = quimiaColorTokens()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        sheetMaxWidth = 420.dp,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        shape = RoundedCornerShape(32.dp),
         containerColor = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
-        dragHandle = null,
+        dragHandle = {
+            Box(
+                Modifier.padding(top = 8.dp).width(64.dp).height(2.dp)
+                    .background(tokens.secondary, CircleShape),
+            )
+        },
     ) {
         LabelScannerContent(
             imageUri = imageUri,
             error = error,
-            onClose = { scope.launch { sheetState.hide(); onDismiss() } },
+            onClose = onDismiss,
             onChooseImage = {
                 error = null
                 runCatching {
@@ -105,6 +107,7 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
                 }
             },
             onImageError = { error = "Não foi possível ler esta imagem. Escolha outra foto." },
+            showDragHandle = false,
         )
     }
 }
@@ -119,22 +122,29 @@ internal fun LabelScannerContent(
     error: String? = null,
     onImageError: () -> Unit = {},
     previewImage: Painter? = null,
+    showDragHandle: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val hasImage = imageUri != null || previewImage != null
     Column(
         modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp).padding(top = 24.dp, bottom = 24.dp),
+            .padding(horizontal = 32.dp).padding(top = 32.dp, bottom = 32.dp).fillMaxHeight(),
     ) {
-        Box(Modifier.align(Alignment.CenterHorizontally).width(64.dp).height(2.dp)
-            .background(tokens.secondary, CircleShape))
-        Spacer(Modifier.height(20.dp))
+        if (showDragHandle) {
+            Box(
+                Modifier.align(Alignment.CenterHorizontally).width(262.dp).height(27.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.width(64.dp).height(2.dp).background(tokens.secondary, CircleShape))
+            }
+        }
+        Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Text("Escanear rótulo", style = Typography.titleMedium.copy(fontSize = 20.sp, fontWeight = FontWeight.Normal), color = tokens.textPrimary)
                 Spacer(Modifier.height(4.dp))
                 Text("Aponte a câmera para\no rótulo do seu produto\npara achá-lo",
-                    style = Typography.bodySmall.copy(lineHeight = 15.sp), color = tokens.textSecondary)
+                    style = Typography.bodySmall.copy(lineHeight = 18.sp), color = tokens.textSecondary)
             }
             QuimiaIconButton(
                 icon = Lucide.X, onClick = onClose, contentDescription = "Fechar scanner",
@@ -142,36 +152,39 @@ internal fun LabelScannerContent(
                 iconColor = tokens.textPrimary,
             )
         }
-        Spacer(Modifier.height(16.dp))
-        Box(
-            Modifier.fillMaxWidth().aspectRatio(0.86f).clip(RoundedCornerShape(24.dp))
-                .background(tokens.secondary), contentAlignment = Alignment.Center,
-        ) {
-            if (previewImage != null) {
-                Image(previewImage, "Imagem de exemplo do preview", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            } else if (imageUri != null) {
-                AsyncImage(
-                    model = Uri.parse(imageUri), contentDescription = "Foto selecionada do rótulo",
-                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
-                    onError = { onImageError() },
-                )
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(64.dp).background(tokens.surfaceBase, CircleShape), contentAlignment = Alignment.Center) {
-                        Icon(Lucide.CameraOff, null, Modifier.size(22.dp), tint = tokens.textPrimary)
-                    }
-                    Spacer(Modifier.height(20.dp))
-                    Text("Câmera desabilitada", style = Typography.bodyMedium, color = tokens.textPrimary)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Abra a câmera para\nfotografar o rótulo", style = Typography.bodySmall,
-                        color = tokens.textSecondary, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(16.dp))
-                    QuimiaButton(
-                        modifier = Modifier.width(144.dp).heightIn(min = 40.dp),
-                        text = "Configurar", textStyle = Typography.bodySmall,
-                        iconSize = 0, espacamento = 0, containerColor = tokens.surfaceBase,
-                        onClick = onConfigureCamera,
+        Spacer(Modifier.height(28.dp))
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val photoHeight = (maxWidth / 0.86f).coerceAtMost(320.dp)
+            Box(
+                Modifier.fillMaxWidth().height(photoHeight).clip(RoundedCornerShape(24.dp))
+                    .background(tokens.secondary), contentAlignment = Alignment.Center,
+            ) {
+                if (previewImage != null) {
+                    Image(previewImage, "Imagem de exemplo do preview", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                } else if (imageUri != null) {
+                    AsyncImage(
+                        model = Uri.parse(imageUri), contentDescription = "Foto selecionada do rótulo",
+                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
+                        onError = { onImageError() },
                     )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.size(64.dp).background(tokens.surfaceBase, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Lucide.CameraOff, null, Modifier.size(22.dp), tint = tokens.textPrimary)
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Text("Câmera desabilitada", style = Typography.bodyMedium, color = tokens.textPrimary)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Abra a câmera para\nfotografar o rótulo", style = Typography.bodySmall,
+                            color = tokens.textSecondary, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(16.dp))
+                        QuimiaButton(
+                            modifier = Modifier.width(144.dp).heightIn(min = 40.dp),
+                            text = "Configurar", textStyle = Typography.bodySmall,
+                            iconSize = 0, espacamento = 0, containerColor = tokens.surfaceBase,
+                            onClick = onConfigureCamera,
+                        )
+                    }
                 }
             }
         }
