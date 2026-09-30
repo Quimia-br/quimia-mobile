@@ -6,10 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quimia.android.domain.auth.AuthResult
@@ -22,10 +26,15 @@ import com.quimia.android.presentation.screens.auth.password.LoginPassCodeScreen
 import com.quimia.android.presentation.screens.auth.password.LoginPassSuccesScreen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
+import com.quimia.android.presentation.screens.home.HomeScreen
+import com.quimia.android.presentation.screens.catalog.CatalogScreen
+import com.quimia.android.utils.AnalyticsLogger
+import theme.QuimiaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AnalyticsLogger.logEvent("APP_STARTED")
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
@@ -36,7 +45,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            QuimiaApp()
+            QuimiaTheme(darkTheme = false) {
+                QuimiaApp()
+            }
         }
     }
 }
@@ -52,10 +63,60 @@ private fun QuimiaApp() {
     var showLoginPassSucces by rememberSaveable { mutableStateOf(false) }
     var showCadastro1 by rememberSaveable { mutableStateOf(false) }
     var showCadastro2 by rememberSaveable { mutableStateOf(false) }
+    var selectedMainTab by rememberSaveable { mutableStateOf(0) }
+    var showAiNotice by rememberSaveable { mutableStateOf(false) }
+    var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
+    val onMainTabSelected: (Int) -> Unit = { index ->
+        if (index == 0 || index == 1) selectedMainTab = index
+        else unavailableTab = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
+            .getOrElse(index) { "Esta tela" }
+    }
+
+    val currentScreen = when {
+        authState is AuthResult.Success -> if (selectedMainTab == 1) "catalog" else "home"
+        showLoginHome -> "login_welcome"
+        showCadastro2 -> "registration_details"
+        showCadastro1 -> "registration"
+        showLoginPass1 -> "password_recovery_email"
+        showLoginPassCode -> "password_recovery_code"
+        showLoginPass2 -> "password_recovery_new_password"
+        showLoginPassSucces -> "password_recovery_success"
+        else -> "login"
+    }
+
+    LaunchedEffect(currentScreen) {
+        AnalyticsLogger.logScreenView(currentScreen)
+    }
 
     when (authState) {
         is AuthResult.Success -> {
-            LoginHomeScreen()
+            if (selectedMainTab == 1) {
+                CatalogScreen(
+                    onMenuItemSelected = onMainTabSelected,
+                    onAiClick = { showAiNotice = true },
+                )
+            } else {
+                HomeScreen(
+                    onMenuItemSelected = onMainTabSelected,
+                    onAiClick = { showAiNotice = true },
+                )
+            }
+            if (showAiNotice) {
+                AlertDialog(
+                    onDismissRequest = { showAiNotice = false },
+                    title = { Text("Assistente de IA") },
+                    text = { Text("O acesso ao assistente está preparado, mas ainda não há um serviço de IA conectado neste app.") },
+                    confirmButton = { TextButton(onClick = { showAiNotice = false }) { Text("Entendi") } },
+                )
+            }
+            unavailableTab?.let { name ->
+                AlertDialog(
+                    onDismissRequest = { unavailableTab = null },
+                    title = { Text(name) },
+                    text = { Text("Esta tela ainda não está disponível.") },
+                    confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
+                )
+            }
         }
         else -> {
             if (showLoginHome) {
@@ -117,7 +178,9 @@ private fun QuimiaApp() {
                 )
             } else {
                 Login1Screen(
-                    onContinue = { /* handle continue or navigate further */ },
+                    onContinue = { email, password ->
+                        authViewModel.loginWithEmail(email, password)
+                    },
                     onCreateAccount = {
                         showCadastro1 = true
                     },

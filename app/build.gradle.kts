@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(project(":designSystem"))
+    implementation(libs.coil.compose)
     
     // Retrofit e Networking
     implementation(libs.retrofit)

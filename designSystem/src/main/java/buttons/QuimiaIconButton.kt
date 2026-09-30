@@ -22,7 +22,7 @@ enum class QuimiaIconButtonSize(
 ) {
     Icon(
         buttonSize = 16.dp,
-        iconSize = 16.dp
+        iconSize = 12.dp
     ),
     Small(
         buttonSize = 32.dp,
@@ -30,11 +30,11 @@ enum class QuimiaIconButtonSize(
     ),
     Medium(
         buttonSize = 45.dp,
-        iconSize = 16.dp
+        iconSize = 20.dp
     ),
     Large(
         buttonSize = 56.dp,
-        iconSize = 16.dp
+        iconSize = 24.dp
     )
 }
 
@@ -46,6 +46,7 @@ fun QuimiaIconButton(
     containerColor: Color? = null,
     iconColor: Color? = null,
     size: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
+    iconSize: Dp? = null,
     contentDescription: String? = null
 ) {
     val tokens = quimiaColorTokens()
@@ -64,7 +65,8 @@ fun QuimiaIconButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(size.iconSize)
+            tint = actualIconColor,
+            modifier = Modifier.size(iconSize ?: size.iconSize)
         )
     }
 }
@@ -75,7 +77,7 @@ fun PreviewQuimiaIconButton() {
     QuimiaTheme {
         QuimiaIconButton(
             icon = Lucide.Circle,
-            contentDescription = "Circle"
+            contentDescription = "Circle",
         )
     }
 }
