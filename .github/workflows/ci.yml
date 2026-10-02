@@ -1,0 +1,345 @@
+name: Quimia Mobile CI and APK Release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_VERSION_NAME: 0.0.0-ci
+  ANDROID_VERSION_CODE: '1'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Set up Temurin Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle and its cache
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Compile and assemble the debug APK
+        id: build
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace --console=plain
+          test -f app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload the debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: quimia-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Explain the Build check
+        if: always()
+        env:
+          CHECK_RESULT: ${{ job.status }}
+        run: |
+          {
+            echo '### Build'
+            echo
+            echo "**Resultado:** ${CHECK_RESULT}"
+            echo
+            echo '**O que valida:** compilação Kotlin/Compose, merge de recursos e empacotamento do APK de debug.'
+            echo
+            echo '**Critério de aprovação:** `./gradlew assembleDebug` termina sem erro e `app-debug.apk` existe.'
+            if [ "${CHECK_RESULT}" = success ]; then
+              echo
+              echo 'O APK de debug foi produzido e publicado como artefato.'
+            else
+              echo
+              echo 'Não passou. Abra o passo de build acima; os logs indicam o erro de compilação, a dependência ou o recurso que falhou.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Set up Temurin Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle and its cache
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Run JVM unit tests
+        id: tests
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace --console=plain
+
+      - name: Preserve test reports for diagnosis
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Explain the Unit tests check
+        if: always()
+        env:
+          CHECK_RESULT: ${{ job.status }}
+        run: |
+          {
+            echo '### Unit tests'
+            echo
+            echo "**Resultado:** ${CHECK_RESULT}"
+            echo
+            echo '**O que valida:** testes JUnit executados na JVM (`app/src/test`).'
+            echo
+            echo '**Critério de aprovação:** `./gradlew testDebugUnitTest` termina sem testes com falha ou erro.'
+            if [ "${CHECK_RESULT}" = success ]; then
+              echo
+              echo 'Todos os testes executados passaram.'
+            else
+              echo
+              echo 'Não passou. Consulte o log do Gradle e baixe `unit-test-reports` para ver a classe e a asserção que falharam.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  lint:
+    name: Android lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Set up Temurin Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle and its cache
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Run Android lint
+        id: lint
+        run: |
+          chmod +x gradlew
+          ./gradlew lintDebug --no-daemon --stacktrace --console=plain
+
+      - name: Preserve lint reports for diagnosis
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-reports
+          path: app/build/reports/lint-results-*.*
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Explain the Android lint check
+        if: always()
+        env:
+          CHECK_RESULT: ${{ job.status }}
+        run: |
+          {
+            echo '### Android lint'
+            echo
+            echo "**Resultado:** ${CHECK_RESULT}"
+            echo
+            echo '**O que valida:** análise estática do Android Lint sobre código, recursos e manifesto.'
+            echo
+            echo '**Critério de aprovação:** `./gradlew lintDebug` termina sem issues de severidade error.'
+            if [ "${CHECK_RESULT}" = success ]; then
+              echo
+              echo 'Nenhum problema bloqueante foi encontrado.'
+            else
+              echo
+              echo 'Não passou. Baixe `lint-reports` (HTML) para ver cada issue, arquivo e linha.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  release-apk:
+    name: Signed release APK
+    needs: [build, unit-tests, lint]
+    if: github.event_name == 'release' && github.event.action == 'published'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    environment:
+      name: android-release
+    steps:
+      - name: Checkout the released source
+        uses: actions/checkout@v7
+
+      - name: Derive the version from the release tag
+        id: version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo 'Invalid release tag.' >&2
+            exit 1
+          fi
+          {
+            echo "ANDROID_VERSION_NAME=${TAG_NAME#v}"
+            echo "ANDROID_VERSION_CODE=${GITHUB_RUN_NUMBER}"
+          } >> "$GITHUB_ENV"
+
+      - name: Set up Temurin Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle and its cache
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Validate release secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "Missing KEYSTORE_BASE64"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "Missing KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing KEY_ALIAS"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Missing KEY_PASSWORD"; exit 1; }
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "Missing GOOGLE_SERVICES_JSON"; exit 1; }
+
+      - name: Prepare signing and Firebase configuration
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/quimia-release.jks"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/quimia-release.jks"
+            printf 'storePassword=%s\n' "$KEYSTORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+          } > keystore.properties
+          printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          chmod 600 keystore.properties app/google-services.json "$RUNNER_TEMP/quimia-release.jks"
+
+      - name: Build the release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew clean assembleRelease --no-daemon --stacktrace --console=plain
+
+      - name: Verify the APK signature
+        run: |
+          apksigner_path=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          "$apksigner_path" verify --verbose app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload the signed APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: quimia-release-${{ env.ANDROID_VERSION_NAME }}
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach the APK to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "quimia-${TAG_NAME}.apk"
+          gh release upload "$TAG_NAME" "quimia-${TAG_NAME}.apk" --clobber
+
+      - name: Explain the release APK check
+        if: always()
+        env:
+          CHECK_RESULT: ${{ job.status }}
+        run: |
+          {
+            echo '### Signed release APK'
+            echo
+            echo "**Resultado:** ${CHECK_RESULT}"
+            echo
+            echo '**O que valida:** geração do APK de release assinado com a versão da tag e anexação à GitHub Release.'
+            echo
+            echo '**Critério de aprovação:** `assembleRelease` termina sem erro, `apksigner verify` aprova a assinatura e o APK é anexado à Release.'
+            if [ "${CHECK_RESULT}" = success ]; then
+              echo
+              echo 'O APK assinado está disponível na GitHub Release e como artefato do workflow.'
+            else
+              echo
+              echo 'Não passou. Verifique os secrets de assinatura (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`, `GOOGLE_SERVICES_JSON`) e o log do Gradle.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  workflow-summary:
+    name: CI summary
+    needs: [build, unit-tests, lint, release-apk]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize every gate and enforce the workflow result
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          TESTS_RESULT: ${{ needs.unit-tests.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          RELEASE_RESULT: ${{ needs.release-apk.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## Resultado geral do workflow'
+            echo
+            echo '| Check | Resultado | O que prova |'
+            echo '|---|---|---|'
+            printf '| Build | `%s` | APK de debug compilado e empacotado. |\n' "$BUILD_RESULT"
+            printf '| Unit tests | `%s` | Testes JUnit na JVM. |\n' "$TESTS_RESULT"
+            printf '| Android lint | `%s` | Lint sem issues de severidade error. |\n' "$LINT_RESULT"
+            if [ "$EVENT_NAME" = 'release' ]; then
+              printf '| Signed release APK | `%s` | APK assinado, verificado e anexado à Release. |\n' "$RELEASE_RESULT"
+            else
+              printf '| Signed release APK | `%s` | Ignorado: só executa em Release publicada. |\n' "$RELEASE_RESULT"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$BUILD_RESULT" != success ] \
+            || [ "$TESTS_RESULT" != success ] \
+            || [ "$LINT_RESULT" != success ]; then
+            echo 'At least one required CI gate did not succeed.' >&2
+            exit 1
+          fi
+
+          if [ "$EVENT_NAME" = 'release' ] && [ "$RELEASE_RESULT" != success ]; then
+            echo 'The published release did not produce the signed APK.' >&2
+            exit 1
+          fi
+
+          echo 'All checks required for this event succeeded.'
