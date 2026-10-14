@@ -1,5 +1,7 @@
 package states
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,7 +28,6 @@ import shapeIcon.QuimiaShapeIconSize
 import theme.RadiusFull
 import theme.RadiusLarge
 import theme.RadiusMedium
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -42,9 +42,9 @@ fun QuimiaEmptyState(
     contentSpacing: Dp = 32.dp,
     buttonSpacing: Dp = 36.dp,
     buttonModifier: Modifier = Modifier,
-    titleTextStyle: TextStyle = Typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
-    descriptionTextStyle: TextStyle = Typography.titleLarge.copy(fontWeight = FontWeight.Medium),
-    buttonTextStyle: TextStyle = Typography.labelLarge,
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium16,
+    descriptionTextStyle: TextStyle = QuimiaTextStyles.medium15,
+    buttonTextStyle: TextStyle = QuimiaTextStyles.medium16,
     fillAvailableSpace: Boolean = true,
     onButtonClick: () -> Unit = {}
 ) {

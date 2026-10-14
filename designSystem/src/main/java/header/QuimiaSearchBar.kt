@@ -1,5 +1,7 @@
 package header
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +43,6 @@ import theme.PaddingSmall
 import theme.QuimiaColorTokens
 import theme.RadiusFull
 import theme.RadiusSmall
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -92,9 +93,7 @@ fun QuimiaSearchBar(
     verticalPadding: Dp = PaddingSmall.dp,
     spacedBy: Dp = 20.dp,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    textStyle: TextStyle = Typography.titleMedium.copy(
-        lineHeight = TextUnit.Unspecified
-    ),
+    textStyle: TextStyle = QuimiaTextStyles.medium16,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     enabled: Boolean = true
