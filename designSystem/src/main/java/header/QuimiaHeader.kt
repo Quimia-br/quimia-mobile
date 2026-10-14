@@ -3,6 +3,7 @@ package header
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,7 @@ import theme.PaddingSmall
 import theme.RadiusSmall
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
+import theme.Typography
 
 @Composable
 fun QuimiaHeader(
@@ -45,6 +49,9 @@ fun QuimiaHeader(
     avatarInitials: String = "",
     avatarPhoto: Painter? = null,
     actionButtonsSize: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
+    contentPadding: PaddingValues = PaddingValues(PaddingLarge.dp, PaddingSmall.dp),
+    searchTextStyle: TextStyle = Typography.titleMedium,
+    actionContainerColor: Color? = null,
 ) {
     val tokens = quimiaColorTokens()
     val colors = resolveSearchBarColors(searchBarVariant, tokens)
@@ -52,7 +59,7 @@ fun QuimiaHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(PaddingLarge.dp, PaddingSmall.dp),
+            .padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -69,18 +76,19 @@ fun QuimiaHeader(
             variant = searchBarVariant,
             horizontalPadding = searchBarPadding,
             verticalPadding = searchBarPadding,
+            textStyle = searchTextStyle,
         )
         QuimiaIconButton(
             icon = Lucide.Bell,
             onClick = { onBellClick?.invoke() },
-            containerColor = colors.sticky,
+            containerColor = actionContainerColor ?: colors.sticky,
             iconColor = colors.icon,
             size = actionButtonsSize,
             contentDescription = "Notification"
         )
         QuimiaAvatarButton(
             size = actionButtonsSize.buttonSize,
-            backgroundColor = colors.sticky,
+            backgroundColor = actionContainerColor ?: colors.sticky,
             initials = avatarInitials,
             photo = avatarPhoto,
             onClick = { onAvatarClick?.invoke() }
