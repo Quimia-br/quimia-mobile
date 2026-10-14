@@ -1,5 +1,7 @@
 package buttons
 
+import theme.QuimiaTextStyles
+
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,7 +14,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -44,7 +45,7 @@ fun QuimiaButton(
     iconLeftVector: ImageVector? = null,
     iconRightVector: ImageVector? = null,
     text: String,
-    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    textStyle: TextStyle = QuimiaTextStyles.medium15,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     onClick: () -> Unit = { },

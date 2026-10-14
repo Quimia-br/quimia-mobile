@@ -1,5 +1,7 @@
 package states
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,13 +16,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
@@ -30,7 +29,6 @@ import shapeIcon.QuimiaShapeIconTheme
 import theme.RadiusFull
 import theme.RadiusLarge
 import theme.RadiusMedium
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -47,18 +45,9 @@ fun QuimiaEmptyState(
     contentSpacing: Dp = 24.dp,
     buttonSpacing: Dp = 24.dp,
     buttonModifier: Modifier = Modifier,
-    titleTextStyle: TextStyle = Typography.titleMedium.copy(
-        lineHeight = 19.sp, letterSpacing = 0.sp,
-        platformStyle = PlatformTextStyle(includeFontPadding = false),
-    ),
-    descriptionTextStyle: TextStyle = Typography.titleMedium.copy(
-        fontSize = 15.sp, lineHeight = 18.sp, letterSpacing = 0.sp,
-        platformStyle = PlatformTextStyle(includeFontPadding = false),
-    ),
-    buttonTextStyle: TextStyle = Typography.titleMedium.copy(
-        lineHeight = 19.sp, letterSpacing = 0.sp,
-        platformStyle = PlatformTextStyle(includeFontPadding = false),
-    ),
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium16,
+    descriptionTextStyle: TextStyle = QuimiaTextStyles.medium15,
+    buttonTextStyle: TextStyle = QuimiaTextStyles.medium16,
     fillAvailableSpace: Boolean = false,
     theme: QuimiaEmptyStateTheme = QuimiaEmptyStateTheme.Secondary,
     onButtonClick: () -> Unit = {}
