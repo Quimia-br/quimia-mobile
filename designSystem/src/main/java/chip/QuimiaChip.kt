@@ -28,7 +28,6 @@ import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
 
-/** Figma Chip: a white filter, or a primary filter with a trailing remove icon. */
 @Composable
 fun QuimiaChip(
     label: String,
@@ -63,12 +62,11 @@ fun QuimiaChip(
                 imageVector = Lucide.X,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = if (enabled) tokens.black else tokens.foregroundDisabled,
+                tint = if (enabled) tokens.foregroundPrimary else tokens.foregroundDisabled,
             )
         }
     }
 }
-
 @Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
 @Composable
 private fun QuimiaChipPreview() {
