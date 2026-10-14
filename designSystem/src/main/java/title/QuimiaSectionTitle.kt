@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.BotOff
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
@@ -31,6 +32,7 @@ import theme.PaddingSmall
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaSectionTitle(
@@ -88,7 +90,7 @@ fun QuimiaSectionTitle(
         content?.let {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
             ) {
                 content()
             }
@@ -99,45 +101,45 @@ fun QuimiaSectionTitle(
 @Preview
 @Composable
 private fun QuimiaSectionTitlePreview() {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
-            )
-            .width(400.dp)
-            .height(116.dp)
-            .padding(20.dp)
-    ) {
-        QuimiaSectionTitle(title = "Title", description = "Description") {
-            QuimiaIconButton(
-                icon = Lucide.BotOff,
-                onClick = {},
-                contentDescription = null,
-                containerColor = quimiaColorTokens().secondary,
-                iconColor = quimiaColorTokens().foregroundSecondary,
-                iconSize = 17.dp,
-                padding = 8.dp
-            )
-            QuimiaIconButton(
-                icon = Lucide.Circle,
-                onClick = {},
-                contentDescription = null,
-                containerColor = quimiaColorTokens().secondary,
-                iconColor = quimiaColorTokens().foregroundSecondary,
-                iconSize = 17.dp,
-                padding = 8.dp
-            )
-            QuimiaIconButton(
-                icon = Lucide.Circle,
-                onClick = {},
-                contentDescription = null,
-                containerColor = quimiaColorTokens().secondary,
-                iconColor = quimiaColorTokens().foregroundSecondary,
-                iconSize = 17.dp,
-                padding = 8.dp
-            )
+    QuimiaTheme {
+        val tokens = quimiaColorTokens()
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(
+                    color = tokens.surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(400.dp)
+                .height(116.dp)
+                .padding(20.dp)
+        ) {
+            QuimiaSectionTitle(title = "Title", description = "Description") {
+                QuimiaIconButton(
+                    icon = Lucide.BotOff,
+                    onClick = {},
+                    contentDescription = null,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundSecondary,
+                    size = QuimiaIconButtonSize.Small
+                )
+                QuimiaIconButton(
+                    icon = Lucide.Circle,
+                    onClick = {},
+                    contentDescription = null,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundSecondary,
+                    size = QuimiaIconButtonSize.Small
+                )
+                QuimiaIconButton(
+                    icon = Lucide.Circle,
+                    onClick = {},
+                    contentDescription = null,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundSecondary,
+                    size = QuimiaIconButtonSize.Small
+                )
+            }
         }
     }
 }

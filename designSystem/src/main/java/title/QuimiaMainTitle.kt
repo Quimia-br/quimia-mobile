@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaMainTitle(
@@ -69,21 +70,23 @@ fun QuimiaMainTitle(
 @Preview
 @Composable
 private fun QuimiaMainTitlePreview() {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
+    QuimiaTheme {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(
+                    color = quimiaColorTokens().surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(420.dp)
+                .height(360.dp)
+                .padding(20.dp)
+        ) {
+            QuimiaMainTitle(
+                overline = "Overline",
+                title = "Title",
+                description = "Description"
             )
-            .width(420.dp)
-            .height(360.dp)
-            .padding(20.dp)
-    ) {
-        QuimiaMainTitle(
-            overline = "Overline",
-            title = "Title",
-            description = "Description"
-        )
+        }
     }
 }

@@ -33,12 +33,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaInput(
@@ -161,10 +163,8 @@ fun QuimiaInput(
                             onClick = onTrailingIconClick ?: { onValueChange("") },
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
-                            iconSize = 16.dp,
-                            contentDescription = trailingIconContentDescription ?: "Clear all",
-                            padding = 0.dp,
-                            radius = 0.dp
+                            size = QuimiaIconButtonSize.Icon,
+                            contentDescription = trailingIconContentDescription ?: "Clear all"
                         )
                     }
                 }
@@ -188,38 +188,40 @@ fun QuimiaInput(
 @Preview
 @Composable
 private fun QuimiaInputPreview() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(RadiusSmall.dp)
+    QuimiaTheme {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .background(
+                    color = quimiaColorTokens().surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(352.dp)
+                .padding(20.dp, 37.dp)
+        ) {
+            QuimiaInput(
+                value = "",
+                onValueChange = {},
+                label = "Label",
+                placeholder = "Value",
+                description = "Description"
             )
-            .width(352.dp)
-            .padding(20.dp, 37.dp)
-    ) {
-        QuimiaInput(
-            value = "",
-            onValueChange = {},
-            label = "Label",
-            placeholder = "Value",
-            description = "Description"
-        )
-        QuimiaInput(
-            value = "Value",
-            onValueChange = {},
-            label = "Label",
-            placeholder = "Value",
-            description = "Description"
-        )
-        QuimiaInput(
-            value = "Value",
-            onValueChange = {},
-            label = "Label",
-            placeholder = "Value",
-            description = "Description",
-            error = "Error Description"
-        )
+            QuimiaInput(
+                value = "Value",
+                onValueChange = {},
+                label = "Label",
+                placeholder = "Value",
+                description = "Description"
+            )
+            QuimiaInput(
+                value = "Value",
+                onValueChange = {},
+                label = "Label",
+                placeholder = "Value",
+                description = "Description",
+                error = "Error Description"
+            )
+        }
     }
 }

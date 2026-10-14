@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.Lucide
 import theme.QuimiaColorTokens
@@ -39,11 +39,8 @@ internal fun PasswordHeader(
                 onClick = onBack,
                 containerColor = tokens.secondary,
                 iconColor = tokens.textPrimary,
-                iconSize = 20.dp,
+                size = QuimiaIconButtonSize.Medium,
                 contentDescription = "Voltar",
-                padding = 8.dp,
-                radius = 1000.dp,
-                buttonSize = 45.dp
             )
         }
     }

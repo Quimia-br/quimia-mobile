@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaTag(
@@ -63,8 +64,10 @@ fun QuimiaTag(
 @Preview(showBackground = true)
 @Composable
 private fun QuimiaTagPreview() {
-        QuimiaTag(
-            size = 50.dp,
-            icon = Lucide.Circle,
-        )
+    QuimiaTheme {
+            QuimiaTag(
+                size = 50.dp,
+                icon = Lucide.Circle,
+            )
+    }
 }

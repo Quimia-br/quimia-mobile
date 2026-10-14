@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaHorizontalDivider(
@@ -30,13 +31,15 @@ fun QuimiaHorizontalDivider(
 @Preview
 @Composable
 private fun QuimiaHorizontalDividerPreview() {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(32.dp)
-            .background(quimiaColorTokens().surfaceBackground)
-    ) {
-        QuimiaHorizontalDivider()
+    QuimiaTheme {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(32.dp)
+                .background(quimiaColorTokens().surfaceBackground)
+        ) {
+            QuimiaHorizontalDivider()
+        }
     }
 }

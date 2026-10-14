@@ -32,6 +32,7 @@ import buttons.QuimiaButton
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun Cadastro2Screen(
@@ -252,5 +253,7 @@ private fun UfField(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun Cadastro2ScreenPreview() {
-    Cadastro2Screen()
+    QuimiaTheme {
+        Cadastro2Screen()
+    }
 }

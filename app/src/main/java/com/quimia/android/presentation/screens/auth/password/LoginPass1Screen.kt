@@ -25,6 +25,7 @@ import buttons.QuimiaButton
 import input.QuimiaInput
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun LoginPass1Screen(
@@ -111,5 +112,7 @@ fun LoginPass1Screen(
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
 private fun LoginPass1ScreenPreview() {
-    LoginPass1Screen()
+    QuimiaTheme {
+        LoginPass1Screen()
+    }
 }

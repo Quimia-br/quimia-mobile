@@ -1,10 +1,6 @@
 package theme
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 // Tokens moved from Color.kt — top-level vals for backward compatibility
 
@@ -51,6 +47,7 @@ val PaddingNone = 0
 val PaddingSmall = 12
 val PaddingMedium = 16
 val PaddingLarge = 24
+val PaddingHuge = 32
 
 // Primary
 val PrimaryLight = Color(0xFF5ADFEA)

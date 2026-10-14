@@ -21,12 +21,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
+import theme.Typography
 
 enum class QuimiaShortCutType {
     Large,
@@ -47,6 +51,11 @@ fun QuimiaShortCut(
     modifier: Modifier = Modifier,
     text: String = "ShortCut",
     tagText: String = "Tag",
+    showTag: Boolean = true,
+    useDefaultSize: Boolean = true,
+    contentPadding: Dp = 16.dp,
+    iconSize: Dp = 20.dp,
+    textStyle: TextStyle = Typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
     onClick: () -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
@@ -62,9 +71,10 @@ fun QuimiaShortCut(
     val indicatorColor = if (isGreen) tokens.white else tokens.brandAccent
     val indicatorContentColor = if (isGreen) tokens.foregroundPrimary else tokens.white
 
-    val componentModifier = when (type) {
-        QuimiaShortCutType.Large -> modifier.size(width = 104.dp, height = 104.dp)
-        QuimiaShortCutType.Small -> modifier.size(width = 160.dp, height = 56.dp)
+    val componentModifier = when {
+        !useDefaultSize -> modifier
+        type == QuimiaShortCutType.Large -> modifier.size(width = 104.dp, height = 104.dp)
+        else -> modifier.size(width = 160.dp, height = 56.dp)
     }
     val shape = when (type) {
         QuimiaShortCutType.Large -> RoundedCornerShape(24.dp)
@@ -82,7 +92,7 @@ fun QuimiaShortCut(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(contentPadding),
                     verticalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Row(
@@ -94,31 +104,31 @@ fun QuimiaShortCut(
                             imageVector = icon,
                             contentDescription = null,
                             tint = iconColor,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(iconSize),
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .background(indicatorColor, CircleShape)
-                                .padding(horizontal = 7.dp, vertical = 2.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = tagText,
-                                color = indicatorContentColor,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                lineHeight = 14.sp,
-                            )
+                        if (showTag) {
+                            Box(
+                                modifier = Modifier
+                                    .background(indicatorColor, CircleShape)
+                                    .padding(horizontal = 7.dp, vertical = 2.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = tagText,
+                                    color = indicatorContentColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    lineHeight = 14.sp,
+                                )
+                            }
                         }
                     }
 
                     Text(
                         text = text,
                         color = textColor,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 24.sp,
+                        style = textStyle,
                     )
                 }
             }
@@ -134,7 +144,7 @@ fun QuimiaShortCut(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(iconSize),
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -142,9 +152,7 @@ fun QuimiaShortCut(
                     Text(
                         text = text,
                         color = textColor,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 24.sp,
+                        style = textStyle,
                         modifier = Modifier.weight(1f),
                     )
 
@@ -162,14 +170,16 @@ fun QuimiaShortCut(
 @Preview(showBackground = true, widthDp = 360, heightDp = 400)
 @Composable
 private fun QuimiaShortCutPreview() {
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        QuimiaShortCut(
-            type = QuimiaShortCutType.Large,
-            color = QuimiaShortCutColor.Gray,
-            icon = Lucide.Circle,
-            )
+    QuimiaTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            QuimiaShortCut(
+                type = QuimiaShortCutType.Large,
+                color = QuimiaShortCutColor.Gray,
+                icon = Lucide.Circle,
+                )
+        }
     }
 }

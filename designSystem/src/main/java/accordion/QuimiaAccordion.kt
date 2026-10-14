@@ -35,6 +35,7 @@ import theme.PaddingMedium
 import theme.PaddingSmall
 import theme.TextMedium
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaAccordion(
@@ -133,89 +134,91 @@ data class AccordionItem(
 @Preview
 @Composable
 fun PreviewQuimiaAccordion() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LightTokens.primary),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .padding(PaddingMedium.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    QuimiaTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightTokens.primary),
+            contentAlignment = Alignment.Center
         ) {
-            QuimiaAccordionGroup(
-                backgroundColor = Color.Transparent,
-                items = listOf(
-                    AccordionItem(
-                        title = "Opções",
-                        titleColor = LightTokens.textPrimary,
-                        iconColor = LightTokens.black,
-                        content = {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                QuimiaButton(
-                                    text = "Adicionar",
-                                    iconLeftVector = Lucide.Plus,
-                                    containerColor = LightTokens.primary,
-                                    textColor = LightTokens.textPrimary,
-                                    iconColor = LightTokens.black,
-                                    iconSize = 24,
-                                    onClick = { },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+            Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .padding(PaddingMedium.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                QuimiaAccordionGroup(
+                    backgroundColor = Color.Transparent,
+                    items = listOf(
+                        AccordionItem(
+                            title = "Opções",
+                            titleColor = LightTokens.textPrimary,
+                            iconColor = LightTokens.black,
+                            content = {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    QuimiaButton(
+                                        text = "Adicionar",
+                                        iconLeftVector = Lucide.Plus,
+                                        containerColor = LightTokens.primary,
+                                        textColor = LightTokens.textPrimary,
+                                        iconColor = LightTokens.black,
+                                        iconSize = 24,
+                                        onClick = { },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
-                        }
-                    ),
-                    AccordionItem(
-                        title = "Confirmação",
-                        titleColor = LightTokens.textPrimary,
-                        iconColor = LightTokens.black,
-                        content = {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                QuimiaButton(
-                                    text = "Confirmar",
-                                    iconLeftVector = Lucide.Check,
-                                    containerColor = LightTokens.primary,
-                                    textColor = LightTokens.textPrimary,
-                                    iconColor = LightTokens.black,
-                                    iconSize = 24,
-                                    onClick = { },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                androidx.compose.foundation.layout.Spacer(
-                                    modifier = Modifier.height(PaddingSmall.dp)
-                                )
-                                QuimiaButton(
-                                    text = "Cancelar",
-                                    iconLeftVector = Lucide.X,
-                                    containerColor = LightTokens.error,
-                                    textColor = LightTokens.textPrimary,
-                                    iconColor = LightTokens.black,
-                                    iconSize = 24,
-                                    onClick = { },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                        ),
+                        AccordionItem(
+                            title = "Confirmação",
+                            titleColor = LightTokens.textPrimary,
+                            iconColor = LightTokens.black,
+                            content = {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    QuimiaButton(
+                                        text = "Confirmar",
+                                        iconLeftVector = Lucide.Check,
+                                        containerColor = LightTokens.primary,
+                                        textColor = LightTokens.textPrimary,
+                                        iconColor = LightTokens.black,
+                                        iconSize = 24,
+                                        onClick = { },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    androidx.compose.foundation.layout.Spacer(
+                                        modifier = Modifier.height(PaddingSmall.dp)
+                                    )
+                                    QuimiaButton(
+                                        text = "Cancelar",
+                                        iconLeftVector = Lucide.X,
+                                        containerColor = LightTokens.error,
+                                        textColor = LightTokens.textPrimary,
+                                        iconColor = LightTokens.black,
+                                        iconSize = 24,
+                                        onClick = { },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
-                        }
-                    ),
-                    AccordionItem(
-                        title = "Mais Informações",
-                        titleColor = LightTokens.textPrimary,
-                        iconColor = LightTokens.black,
-                        content = {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = "HAUAHUAUHAUHAUHUHA SLA SEM IDEIA",
-                                    color = LightTokens.textPrimary
-                                )
+                        ),
+                        AccordionItem(
+                            title = "Mais Informações",
+                            titleColor = LightTokens.textPrimary,
+                            iconColor = LightTokens.black,
+                            content = {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = "HAUAHUAUHAUHAUHUHA SLA SEM IDEIA",
+                                        color = LightTokens.textPrimary
+                                    )
+                                }
                             }
-                        }
+                        )
                     )
                 )
-            )
 
-            Spacer(modifier = Modifier.height(PaddingMedium.dp))
+                Spacer(modifier = Modifier.height(PaddingMedium.dp))
+            }
         }
     }
 }

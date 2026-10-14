@@ -1,4 +1,4 @@
-package nav
+package header
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
@@ -39,18 +40,21 @@ import theme.PaddingMedium
 import theme.PaddingSmall
 import theme.QuimiaColorTokens
 import theme.RadiusFull
+import theme.RadiusSmall
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 enum class QuimiaSearchBarVariant { Primary, Secondary }
 
-private data class SearchBarColors(
+data class SearchBarColors(
     val container: Color,
     val sticky: Color,
     val icon: Color
 )
 
-private fun resolveColors(
+@Composable
+fun resolveSearchBarColors(
     variant: QuimiaSearchBarVariant,
     tokens: QuimiaColorTokens
 ): SearchBarColors = when (variant) {
@@ -72,12 +76,12 @@ fun QuimiaSearchBar(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     onSearch: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
     placeholder: String? = null,
     icon: ImageVector? = null,
-    iconSize: Dp = 20.dp,
-    iconSpacing: Dp = 6.dp,
-    searchIconSize: Dp = 24.dp,
     iconDescription: String? = null,
+    iconButtonSize: QuimiaIconButtonSize = QuimiaIconButtonSize.Small,
+    searchIconSize: Dp = 20.dp,
     variant: QuimiaSearchBarVariant = QuimiaSearchBarVariant.Primary,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
     keyboardActions: KeyboardActions = KeyboardActions(
@@ -85,7 +89,7 @@ fun QuimiaSearchBar(
     ),
     radius: Dp = RadiusFull.dp,
     horizontalPadding: Dp = PaddingMedium.dp,
-    verticalPadding: Dp = 14.dp,
+    verticalPadding: Dp = PaddingSmall.dp,
     spacedBy: Dp = 20.dp,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     textStyle: TextStyle = Typography.titleMedium.copy(
@@ -96,7 +100,7 @@ fun QuimiaSearchBar(
     enabled: Boolean = true
 ) {
     val tokens = quimiaColorTokens()
-    val colors = resolveColors(variant, tokens)
+    val colors = resolveSearchBarColors(variant, tokens)
 
     val shape = RoundedCornerShape(radius)
 
@@ -154,12 +158,11 @@ fun QuimiaSearchBar(
         icon?.let {
             QuimiaIconButton(
                 icon = icon,
-                onClick = { onSearch?.invoke() },
+                onClick = { onClick?.invoke() },
                 containerColor = colors.sticky,
                 iconColor = colors.icon,
-                iconSize = iconSize,
-                contentDescription = iconDescription,
-                padding = iconSpacing
+                size = iconButtonSize,
+                contentDescription = iconDescription
             )
         }
     }
@@ -168,32 +171,34 @@ fun QuimiaSearchBar(
 @Preview
 @Composable
 private fun PreviewQuimiaSearchBar() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .background(
-                color = quimiaColorTokens().surfaceBackground,
-                shape = RoundedCornerShape(PaddingSmall.dp)
+    QuimiaTheme {
+        Column(
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .background(
+                    color = quimiaColorTokens().surfaceBackground,
+                    shape = RoundedCornerShape(RadiusSmall.dp)
+                )
+                .width(315.dp)
+                .height(176.dp)
+                .padding(21.dp)
+        ) {
+            QuimiaSearchBar(
+                value = "",
+                onValueChange = {},
+                placeholder = "Pesquisar",
+                icon = Lucide.Circle,
+                iconDescription = "Botao de pesquisa"
             )
-            .width(315.dp)
-            .height(176.dp)
-            .padding(21.dp)
-    ) {
-        QuimiaSearchBar(
-            value = "",
-            onValueChange = {},
-            placeholder = "Pesquisar",
-            icon = Lucide.Circle,
-            iconDescription = "Botao de pesquisa"
-        )
-        QuimiaSearchBar(
-            value = "",
-            onValueChange = {},
-            placeholder = "Pesquisar",
-            icon = Lucide.Circle,
-            iconDescription = "Botao de pesquisa",
-            variant = QuimiaSearchBarVariant.Secondary
-        )
+            QuimiaSearchBar(
+                value = "",
+                onValueChange = {},
+                placeholder = "Pesquisar",
+                icon = Lucide.Circle,
+                iconDescription = "Botao de pesquisa",
+                variant = QuimiaSearchBarVariant.Secondary
+            )
+        }
     }
 }

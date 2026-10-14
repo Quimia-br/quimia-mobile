@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 
 enum class QuimiaShapeIconSize(val value: Dp) {
@@ -54,23 +55,25 @@ fun QuimiaShapeIcon(
 @Preview(showBackground = true)
 @Composable
 private fun QuimiaShapeIconPreview() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        QuimiaShapeIcon(
-            size = QuimiaShapeIconSize.Big.value,
-            icon = Lucide.Circle,
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        QuimiaShapeIcon(
-            size = QuimiaShapeIconSize.Medium.value,
-            icon = Lucide.Circle,
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        QuimiaShapeIcon(
-            size = QuimiaShapeIconSize.Small.value,
-            icon = Lucide.Circle,
-        )
-    }
+    QuimiaTheme {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            QuimiaShapeIcon(
+                size = QuimiaShapeIconSize.Big.value,
+                icon = Lucide.Circle,
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            QuimiaShapeIcon(
+                size = QuimiaShapeIconSize.Medium.value,
+                icon = Lucide.Circle,
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            QuimiaShapeIcon(
+                size = QuimiaShapeIconSize.Small.value,
+                icon = Lucide.Circle,
+            )
+        }
 
+    }
 }
