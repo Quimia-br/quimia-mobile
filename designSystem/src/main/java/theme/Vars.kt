@@ -116,8 +116,8 @@ val TextSecondaryLight = TextColorSecondaryLight
 val TextSecondaryDark = TextColorSecondaryDark
 
 // Feedback tokens (common names used by Theme/ColorTokens)
-val ErrorLight = Color(0xFFFF2B7C)
-val ErrorDark = Color(0xFFFF2B7C)
+val ErrorLight = Color(0xFFFF2B6B)
+val ErrorDark = Color(0xFFFF2B6B)
 
 val SuccessLight = Color(0xFF1EEE97)
 val SuccessDark = Color(0xFF1EEE97)
