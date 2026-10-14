@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
 
-/** A determinate, animated progress indicator for the Quimia design system. */
 @Composable
 fun QuimiaProgressBar(
     progress: Float,
