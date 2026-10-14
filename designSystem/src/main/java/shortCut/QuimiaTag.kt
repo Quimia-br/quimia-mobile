@@ -1,5 +1,7 @@
 package shortCut
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -16,11 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
@@ -54,9 +54,7 @@ fun QuimiaTag(
         Text(
             text = "Tag",
             color = tokens.white,
-            fontSize = (size.value * 0.50f).sp,
-            fontWeight = FontWeight.Medium,
-            lineHeight = (size.value * 0.50f).sp,
+            style = QuimiaTextStyles.tagForDiameter(size.value),
         )
     }
 }
