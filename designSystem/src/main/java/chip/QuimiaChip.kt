@@ -1,6 +1,7 @@
 package chip
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -14,15 +15,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.X
 import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.Typography
 import theme.quimiaColorTokens
 
-/** A compact, selectable filter chip that follows the active Quimia color tokens. */
+private val ChipLabelStyle = Typography.titleMedium.copy(
+    fontSize = 15.sp,
+    lineHeight = 18.sp,
+    letterSpacing = 0.sp,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+)
+
+/** Figma Chip: a white filter, or a primary filter with a trailing remove icon. */
 @Composable
 fun QuimiaChip(
     label: String,
@@ -30,20 +41,20 @@ fun QuimiaChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    showSelectedIcon: Boolean = false,
+    showSelectedIcon: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val containerColor = when {
         !enabled -> tokens.surfaceDisabled
         selected -> tokens.primary
-        else -> tokens.secondary
+        else -> tokens.surfaceBase
     }
-    val contentColor = if (enabled) tokens.textPrimary else tokens.foregroundDisabled
+    val contentColor = if (enabled) tokens.foregroundPrimary else tokens.foregroundDisabled
 
     Surface(
         onClick = onClick,
         modifier = modifier
-            .sizeIn(minHeight = 36.dp)
+            .sizeIn(minHeight = 42.dp)
             .semantics { this.selected = selected },
         enabled = enabled,
         shape = RoundedCornerShape(RadiusFull.dp),
@@ -51,33 +62,33 @@ fun QuimiaChip(
         contentColor = contentColor,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Text(text = label, style = ChipLabelStyle, color = contentColor, maxLines = 1)
             if (selected && showSelectedIcon) {
                 Icon(
-                    imageVector = Lucide.Check,
+                    imageVector = Lucide.X,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = contentColor,
+                    modifier = Modifier.size(16.dp),
+                    tint = if (enabled) tokens.black else tokens.foregroundDisabled,
                 )
             }
-            Text(text = label, style = Typography.labelMedium, color = contentColor)
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
 @Composable
 private fun QuimiaChipPreview() {
     QuimiaTheme {
-        androidx.compose.foundation.layout.Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(16.dp),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier.padding(20.dp),
         ) {
-            QuimiaChip(label = "Todos", selected = true, onClick = {}, showSelectedIcon = true)
-            QuimiaChip(label = "Favoritos", selected = false, onClick = {})
+            QuimiaChip(label = "Label", selected = true, onClick = {})
+            QuimiaChip(label = "Label", selected = false, onClick = {})
         }
     }
 }
