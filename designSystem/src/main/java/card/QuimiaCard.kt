@@ -1,5 +1,7 @@
 package card
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,7 +31,6 @@ import buttons.QuimiaButton
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.RadiusLarge
-import theme.Typography
 import theme.quimiaColorTokens
 import menuBar.QuimiaMenuBar
 
@@ -55,9 +55,9 @@ fun QuimiaCard(
     sectionSpacing: Dp = 24.dp,
     actionHeight: Dp = 48.dp,
     iconSize: Dp = 28.dp,
-    titleTextStyle: TextStyle = Typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-    descriptionTextStyle: TextStyle = Typography.bodyLarge,
-    actionTextStyle: TextStyle = Typography.labelLarge,
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium15,
+    descriptionTextStyle: TextStyle = QuimiaTextStyles.medium15,
+    actionTextStyle: TextStyle = QuimiaTextStyles.medium15,
     onPrimaryActionClick: () -> Unit = {},
     onSecondaryActionClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit = {},

@@ -1,5 +1,7 @@
 package input
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,7 +40,6 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import theme.RadiusFull
 import theme.RadiusSmall
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -58,9 +59,7 @@ fun QuimiaInput(
     trailingIconContentDescription: String? = null,
     onTrailingIconClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-    textStyle: TextStyle = Typography.titleMedium.copy(
-        lineHeight = TextUnit.Unspecified
-    ),
+    textStyle: TextStyle = QuimiaTextStyles.medium16,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     containerColor: Color? = null,

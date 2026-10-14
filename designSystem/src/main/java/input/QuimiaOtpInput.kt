@@ -1,5 +1,7 @@
 package input
 
+import theme.QuimiaTextStyles
+
 import android.annotation.SuppressLint
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -38,11 +40,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import theme.LightTokens
 import theme.RadiusFull
 import theme.RadiusSmall
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -62,10 +62,7 @@ fun QuimiaOtpInput(
     itemHeight: Dp = 123.dp,
     itemSpacing: Dp = 4.dp,
     length: Int = 4,
-    textStyle: TextStyle = Typography.titleLarge.copy(
-        fontSize = 36.sp,
-        lineHeight = TextUnit.Unspecified
-    ),
+    textStyle: TextStyle = QuimiaTextStyles.medium36,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     containerColor: Color? = null,
@@ -74,9 +71,7 @@ fun QuimiaOtpInput(
     textMargin: Int = 7,
     error: String? = null,
     errorColor: Color? = null,
-    errorTextStyle: TextStyle = Typography.titleMedium.copy(
-        lineHeight = TextUnit.Unspecified
-    ),
+    errorTextStyle: TextStyle = QuimiaTextStyles.medium16,
 ) {
     val isFieldFocused by interactionSource.collectIsFocusedAsState()
 
@@ -172,10 +167,7 @@ fun QuimiaOtpInput(
 fun QuimiaOtpItem(
     value: String?,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = Typography.titleLarge.copy(
-        fontSize = 36.sp,
-        lineHeight = TextUnit.Unspecified
-    ),
+    textStyle: TextStyle = QuimiaTextStyles.medium36,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     containerColor: Color? = null,
