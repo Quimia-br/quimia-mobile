@@ -1,6 +1,7 @@
 package card
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,22 +23,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.RadiusLarge
 import theme.Typography
 import theme.quimiaColorTokens
-import menuBar.QuimiaMenuBar
+import theme.QuimiaTheme
 
 enum class QuimiaCardLayout {
     Default,
     Stacked,
 }
+
+enum class QuimiaCardTheme { Primary, Secondary }
 
 @Composable
 fun QuimiaCard(
@@ -50,16 +55,24 @@ fun QuimiaCard(
     showTitle: Boolean = true,
     showDescription: Boolean = true,
     layout: QuimiaCardLayout = QuimiaCardLayout.Default,
-    contentPadding: Dp = 24.dp,
+    contentPadding: Dp = 16.dp,
     paddingValues: PaddingValues? = null,
     sectionSpacing: Dp = 24.dp,
-    actionHeight: Dp = 48.dp,
-    iconSize: Dp = 28.dp,
-    titleTextStyle: TextStyle = Typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-    descriptionTextStyle: TextStyle = Typography.bodyLarge,
-    actionTextStyle: TextStyle = Typography.labelLarge,
+    actionHeight: Dp = 42.dp,
+    iconSize: Dp = 24.dp,
+    titleTextStyle: TextStyle = Typography.titleMedium.copy(
+        fontSize = 15.sp, lineHeight = 18.sp, letterSpacing = 0.sp,
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+    ),
+    descriptionTextStyle: TextStyle = titleTextStyle,
+    actionTextStyle: TextStyle = titleTextStyle,
     onPrimaryActionClick: () -> Unit = {},
     onSecondaryActionClick: () -> Unit = {},
+    theme: QuimiaCardTheme = QuimiaCardTheme.Primary,
+    outline: Boolean = false,
+    endIcon: ImageVector? = Lucide.Circle,
+    onEndIconClick: () -> Unit = {},
+    headerContent: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
@@ -69,8 +82,10 @@ fun QuimiaCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
-            .background(tokens.surfaceBase)
+            .background(if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.surfaceBackground)
+            .then(if (outline) Modifier.border(3.dp, tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
             .padding(paddingValues ?: PaddingValues(contentPadding)),
+        verticalArrangement = if (layout == QuimiaCardLayout.Default) Arrangement.SpaceBetween else Arrangement.Top,
     ) {
         if (layout == QuimiaCardLayout.Stacked) {
             icon?.let {
@@ -103,42 +118,12 @@ fun QuimiaCard(
                 )
             }
         } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = tokens.foregroundDisabled,
-                        modifier = Modifier.size(iconSize),
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-                }
-
-                Column(verticalArrangement = Arrangement.Center) {
-                    if (showTitle) {
-                        Text(
-                            text = title,
-                            color = tokens.textPrimary,
-                            style = titleTextStyle,
-                        )
-                    }
-
-                    if (showDescription && description != null) {
-                        if (showTitle) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
-                        Text(
-                            text = description,
-                            color = tokens.textSecondary,
-                            style = descriptionTextStyle,
-                        )
-                    }
-                }
-            }
+            if (headerContent != null) headerContent() else QuimiaCardHeader(
+                icon = icon, title = title, description = description,
+                showTitle = showTitle, showDescription = showDescription,
+                titleTextStyle = titleTextStyle, descriptionTextStyle = descriptionTextStyle,
+                iconSize = iconSize, endIcon = endIcon, onEndIconClick = onEndIconClick,
+            )
         }
 
         if (layout == QuimiaCardLayout.Default) {
@@ -155,7 +140,7 @@ fun QuimiaCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (!secondaryActionLabel.isNullOrBlank()) {
                     QuimiaButton(
@@ -164,8 +149,8 @@ fun QuimiaCard(
                             .height(actionHeight),
                         text = secondaryActionLabel,
                         textStyle = actionTextStyle,
-                        containerColor = tokens.secondary,
-                        textColor = tokens.textPrimary,
+                        containerColor = if (theme == QuimiaCardTheme.Primary) tokens.secondary else tokens.surfaceBase,
+                        textColor = tokens.foregroundPrimary,
                         iconSize = 20,
                         espacamento = 0,
                         onClick = onSecondaryActionClick,
@@ -180,7 +165,7 @@ fun QuimiaCard(
                         text = primaryActionLabel,
                         textStyle = actionTextStyle,
                         containerColor = tokens.primary,
-                        textColor = tokens.textPrimary,
+                        textColor = tokens.foregroundPrimary,
                         iconSize = 20,
                         espacamento = 0,
                         onClick = onPrimaryActionClick,
@@ -193,20 +178,28 @@ fun QuimiaCard(
 
 @Preview(
     showBackground = true,
-    backgroundColor = 0xFFF7F6F5,
-    widthDp = 392,
+    backgroundColor = 0xFFF9F9F9,
+    widthDp = 664,
 )
 @Composable
 private fun QuimiaCardPreview() {
-    Box(modifier = Modifier.padding(16.dp)) {
-        QuimiaCard(
-            title = "Title",
-            description = "Description",
-            icon = Lucide.Circle,
-            primaryActionLabel = "Label",
-            secondaryActionLabel = "Label",
-        ) {
-           QuimiaMenuBar {  }
+    QuimiaTheme {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            listOf(false, true).forEach { outlined ->
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    QuimiaCardTheme.entries.forEach { theme ->
+                        QuimiaCard(
+                            modifier = Modifier.width(302.dp).height(248.dp),
+                            title = "Title", description = "Description", icon = Lucide.Circle,
+                            primaryActionLabel = "Label", secondaryActionLabel = "Label",
+                            theme = theme, outline = outlined,
+                        ) {
+                            Box(Modifier.fillMaxWidth().height(80.dp)
+                                .background(quimiaColorTokens().secondary, RoundedCornerShape(8.dp)))
+                        }
+                    }
+                }
+            }
         }
     }
 }
