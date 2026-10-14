@@ -3,8 +3,11 @@ package progressBar
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -25,7 +28,7 @@ import theme.quimiaColorTokens
 fun QuimiaProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    height: Dp = 8.dp,
+    height: Dp = 6.dp,
     progressColor: Color? = null,
     trackColor: Color? = null,
     animationDurationMillis: Int = 250,
@@ -37,8 +40,8 @@ fun QuimiaProgressBar(
         animationSpec = tween(durationMillis = animationDurationMillis.coerceAtLeast(0)),
         label = "QuimiaProgress",
     )
-    val resolvedProgressColor = progressColor ?: tokens.primary
-    val resolvedTrackColor = trackColor ?: tokens.surfaceDisabled
+    val resolvedProgressColor = progressColor ?: tokens.brandAccent
+    val resolvedTrackColor = trackColor ?: tokens.secondary
     val layoutDirection = LocalLayoutDirection.current
 
     Canvas(
@@ -70,10 +73,17 @@ fun QuimiaProgressBar(
     }
 }
 
-@Preview(showBackground = true, widthDp = 320)
+@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 400)
 @Composable
 private fun QuimiaProgressBarPreview() {
     QuimiaTheme {
-        QuimiaProgressBar(progress = 0.68f, modifier = Modifier.fillMaxWidth())
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            listOf(0.1f, 0.5f, 0.8f, 1f).forEach { progress ->
+                QuimiaProgressBar(progress = progress)
+            }
+        }
     }
 }
