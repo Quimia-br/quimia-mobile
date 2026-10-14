@@ -82,7 +82,7 @@ fun QuimiaCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
-            .background(if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.surfaceBackground)
+            .background(if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
             .then(if (outline) Modifier.border(3.dp, tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
             .padding(paddingValues ?: PaddingValues(contentPadding)),
         verticalArrangement = if (layout == QuimiaCardLayout.Default) Arrangement.SpaceBetween else Arrangement.Top,
