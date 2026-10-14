@@ -1,6 +1,5 @@
 package theme
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -160,10 +159,6 @@ val DarkTokens = QuimiaColorTokens(
 // Função para acessar os tokens do tema atual
 @Composable
 fun quimiaColorTokens(forceDark: Boolean? = null): QuimiaColorTokens {
-    // Prefer explicit override, otherwise fall back to system dark flag.
-    // Comparing Color objects (previous implementation) can be unreliable because
-    // colorScheme values may be mutated or created at runtime. Using isSystemInDarkTheme
-    // aligns token selection with the active UI mode.
-    val useDark = forceDark ?: androidx.compose.foundation.isSystemInDarkTheme()
+    val useDark = forceDark ?: LocalQuimiaDarkTheme.current
     return if (!useDark) LightTokens else DarkTokens
 }
