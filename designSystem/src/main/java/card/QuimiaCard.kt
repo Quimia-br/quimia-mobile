@@ -1,5 +1,7 @@
 package card
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -23,17 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.RadiusLarge
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -60,10 +58,7 @@ fun QuimiaCard(
     sectionSpacing: Dp = 24.dp,
     actionHeight: Dp = 42.dp,
     iconSize: Dp = 24.dp,
-    titleTextStyle: TextStyle = Typography.titleMedium.copy(
-        fontSize = 15.sp, lineHeight = 18.sp, letterSpacing = 0.sp,
-        platformStyle = PlatformTextStyle(includeFontPadding = false),
-    ),
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium15,
     descriptionTextStyle: TextStyle = titleTextStyle,
     actionTextStyle: TextStyle = titleTextStyle,
     onPrimaryActionClick: () -> Unit = {},

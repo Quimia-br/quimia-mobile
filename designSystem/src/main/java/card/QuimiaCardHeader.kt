@@ -1,5 +1,7 @@
 package card
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,16 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import avatar.QuimiaAvatar
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -43,10 +42,7 @@ fun QuimiaCardHeader(
     onEndIconClick: () -> Unit = {},
     endIconContentDescription: String? = null,
     iconSize: androidx.compose.ui.unit.Dp = 24.dp,
-    titleTextStyle: TextStyle = Typography.titleMedium.copy(
-        fontSize = 15.sp, lineHeight = 18.sp, letterSpacing = 0.sp,
-        platformStyle = PlatformTextStyle(includeFontPadding = false),
-    ),
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium15,
     descriptionTextStyle: TextStyle = titleTextStyle,
 ) {
     val tokens = quimiaColorTokens()
