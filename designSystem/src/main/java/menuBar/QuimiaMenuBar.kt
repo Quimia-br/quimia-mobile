@@ -6,17 +6,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,118 +22,87 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import com.composables.icons.lucide.Bath
 import com.composables.icons.lucide.GalleryVerticalEnd
 import com.composables.icons.lucide.House
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MapPin
-import com.composables.icons.lucide.Sparkles
-import com.composables.icons.lucide.ToolCase
+import com.composables.icons.lucide.SoapDispenserDroplet
+import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
-import theme.QuimiaTheme
 
 @Composable
 fun QuimiaMenuBar(
     modifier: Modifier = Modifier,
     items: List<Any>? = null,
-    defaultIndex: Int = 0,
-    onItemSelected: (index: Int) -> Unit = {}
+    selectedIndex: Int = 0,
+    onItemSelected: (index: Int) -> Unit = {},
+    fabSpacing: Dp = 12.dp,
+    fab: (@Composable () -> Unit)? = null,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
     val tokens = quimiaColorTokens()
-
     val icons = items ?: listOf(
         Lucide.House,
+        SoapDispenserDroplet,
         Lucide.GalleryVerticalEnd,
-        Lucide.ToolCase,
         Lucide.MapPin,
-        Lucide.Sparkles
+        Lucide.Bath,
     )
+    val labels = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
+    val interactionSource = remember { MutableInteractionSource() }
 
-    var selectedIndex by remember {
-        mutableIntStateOf(
-            defaultIndex.coerceIn(
-                0,
-                icons.lastIndex.coerceAtLeast(0)
-            )
-        )
-    }
-
-    Row(
-        modifier = modifier
-            .width(317.dp)
-            .height(73.dp)
-            .background(
-                color = tokens.white,
-                shape = RoundedCornerShape(RadiusFull.dp)
-            )
-            .padding(
-                horizontal = 10.dp,
-                vertical = 12.dp
-            ),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        icons.forEachIndexed { index, element ->
-
-            val isActive = index == selectedIndex
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(49.dp)
-                    .clip(CircleShape)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) {
-                        selectedIndex = index
-                        onItemSelected(index)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-
-                if (isActive) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                color = tokens.surfaceBackground,
-                                shape = RoundedCornerShape(RadiusFull.dp)
-                            )
-                    )
-                }
-
-                if (element is ImageVector) {
-                    Icon(
-                        imageVector = element,
-                        contentDescription = null,
-                        tint = tokens.foregroundSubtle,
-                        modifier = Modifier
-                            .width(22.dp)
-                            .height(22.dp)
-                    )
-                } else if (element is Int) {
-                    Icon(
-                        painter = painterResource(id = element),
-                        contentDescription = null,
-                        tint = tokens.foregroundSubtle,
-                        modifier = Modifier
-                            .width(22.dp)
-                            .height(22.dp)
-                    )
+    Box(modifier = modifier.fillMaxWidth().height(if (fab == null) 73.dp else 73.dp + 64.dp + fabSpacing)) {
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(73.dp)
+                .background(tokens.secondary, RoundedCornerShape(RadiusFull.dp))
+                .padding(horizontal = 10.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            icons.forEachIndexed { index, element ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(49.dp)
+                        .clip(CircleShape)
+                        .background(if (index == selectedIndex) tokens.white else tokens.secondary)
+                        .clickable(interactionSource = interactionSource, indication = null) {
+                            onItemSelected(index)
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when (element) {
+                        is ImageVector -> Icon(
+                            imageVector = element,
+                            contentDescription = labels.getOrNull(index),
+                            tint = tokens.foregroundSubtle,
+                            modifier = Modifier.size(22.dp),
+                        )
+                        is Int -> Icon(
+                            painter = painterResource(element),
+                            contentDescription = labels.getOrNull(index),
+                            tint = tokens.foregroundSubtle,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
             }
+        }
+        fab?.let {
+            Box(
+                modifier = Modifier.align(Alignment.TopEnd),
+            ) { it() }
         }
     }
 }
 
 @Preview
 @Composable
-fun PreviewQuimiaMenuBar() {
-    QuimiaTheme {
-        QuimiaMenuBar()
-    }
+private fun PreviewQuimiaMenuBar() {
+    QuimiaTheme(darkTheme = false) { QuimiaMenuBar() }
 }
