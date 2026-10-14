@@ -1,5 +1,7 @@
 package bottomSheet
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +22,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
@@ -32,7 +32,6 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import dragger.QuimiaDragger
 import theme.QuimiaTheme
-import theme.Typography
 import theme.quimiaColorTokens
 
 enum class QuimiaBottomSheetTheme { Primary, Secondary }
@@ -121,11 +120,9 @@ fun QuimiaBottomSheetContent(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (!title.isNullOrBlank()) Text(text = title, color = tokens.textPrimary,
-                        style = Typography.titleLarge.copy(fontSize = 24.sp, lineHeight = 29.sp,
-                            letterSpacing = 0.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                        style = QuimiaTextStyles.medium24)
                     if (!description.isNullOrBlank()) Text(text = description, color = tokens.textSecondary,
-                        style = Typography.titleMedium.copy(lineHeight = 19.sp, letterSpacing = 0.sp,
-                            platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                        style = QuimiaTextStyles.medium16)
                 }
                 if (showCloseButton) QuimiaIconButton(icon = Lucide.X, onClick = onClose,
                     size = QuimiaIconButtonSize.Small, containerColor = secondary,
@@ -135,8 +132,7 @@ fun QuimiaBottomSheetContent(
         Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), content = content)
         if (!primaryActionLabel.isNullOrBlank() || !secondaryActionLabel.isNullOrBlank()) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                val actionStyle = Typography.titleMedium.copy(fontSize = 15.sp, lineHeight = 18.sp,
-                    letterSpacing = 0.sp, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                val actionStyle = QuimiaTextStyles.medium15
                 if (!secondaryActionLabel.isNullOrBlank()) QuimiaButton(
                     text = secondaryActionLabel, textStyle = actionStyle,
                     modifier = Modifier.weight(1f).height(52.dp), iconSize = 20, espacamento = 0,
@@ -162,7 +158,7 @@ private fun QuimiaBottomSheetPreview() {
                     QuimiaBottomSheetContent(modifier = Modifier.fillMaxSize(), title = "Title",
                         description = "Description", theme = theme,
                         primaryActionLabel = "Label", secondaryActionLabel = "Label") {
-                        Text("Conteúdo", style = Typography.bodyMedium)
+                        Text("Conteúdo", style = QuimiaTextStyles.medium14)
                     }
                 }
             }

@@ -1,5 +1,7 @@
 package accordion
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronDown
@@ -33,7 +34,6 @@ import com.composables.icons.lucide.X
 import theme.LightTokens
 import theme.PaddingMedium
 import theme.PaddingSmall
-import theme.TextMedium
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -66,7 +66,7 @@ fun QuimiaAccordion(
         ) {
             Text(
                 text = title,
-                fontSize = TextMedium.sp,
+                style = QuimiaTextStyles.medium16,
                 color = actualTitleColor,
                 modifier = Modifier.weight(1f)
             )

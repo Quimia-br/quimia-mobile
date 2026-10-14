@@ -1,5 +1,7 @@
 package shortCut
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,18 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
-import theme.Typography
-
 enum class QuimiaShortCutType {
     Large,
     Small,
@@ -55,7 +53,7 @@ fun QuimiaShortCut(
     useDefaultSize: Boolean = true,
     contentPadding: Dp = 16.dp,
     iconSize: Dp = 20.dp,
-    textStyle: TextStyle = Typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+    textStyle: TextStyle = QuimiaTextStyles.medium16,
     onClick: () -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
@@ -117,9 +115,7 @@ fun QuimiaShortCut(
                                 Text(
                                     text = tagText,
                                     color = indicatorContentColor,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    lineHeight = 14.sp,
+                                    style = QuimiaTextStyles.medium11,
                                 )
                             }
                         }

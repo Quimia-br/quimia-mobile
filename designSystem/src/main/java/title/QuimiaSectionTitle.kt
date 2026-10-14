@@ -1,5 +1,7 @@
 package title
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +32,6 @@ import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.PaddingSmall
 import theme.RadiusSmall
-import theme.Typography
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -41,9 +42,7 @@ fun QuimiaSectionTitle(
     description: String? = null,
     titleSize: TextUnit = 24.sp,
     descriptionSize: TextUnit = 16.sp,
-    textStyle: TextStyle = Typography.titleMedium.copy(
-        lineHeight = TextUnit.Unspecified
-    ),
+    textStyle: TextStyle = QuimiaTextStyles.medium16,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     textPrimary: Color? = null,
