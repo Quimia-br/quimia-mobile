@@ -31,7 +31,6 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Bolt
 import com.composables.icons.lucide.Droplet
 import com.composables.icons.lucide.Lucide
@@ -166,12 +165,9 @@ fun QuimiaListItem(
 
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                val subtitleStyle = QuimiaTextStyles.medium16.copy(
+                val subtitleStyle = QuimiaTextStyles.medium14.copy(
                     color = resolvedSubtitleColor,
-                    fontSize = 14.sp,
-                    lineHeight = 17.sp,
-                    letterSpacing = 0.sp,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = subtitle,
