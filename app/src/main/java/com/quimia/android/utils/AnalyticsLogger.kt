@@ -5,6 +5,23 @@ import android.util.Log
 object AnalyticsLogger {
     private const val TAG = "QUIMIA_ANALYTICS"
 
+    fun logScreenView(screenName: String) {
+        logEvent(
+            event = "SCREEN_VIEW",
+            data = mapOf("screen" to screenName)
+        )
+    }
+
+    fun logInteraction(screenName: String, action: String) {
+        logEvent(
+            event = "USER_INTERACTION",
+            data = mapOf(
+                "screen" to screenName,
+                "action" to action,
+            )
+        )
+    }
+
     fun logEvent(event: String, message: String = "", data: Map<String, String>? = null) {
         val formattedMessage = buildString {
             append("[EVENT: $event] ")
@@ -28,11 +45,10 @@ object AnalyticsLogger {
         Log.w(TAG, message)
     }
 
-    fun logLoginEvent(source: String, status: String, details: String = "") {
+    fun logLoginEvent(source: String, status: String) {
         logEvent(
             "LOGIN_ATTEMPT",
-            "$source - $status - $details",
-            mapOf(
+            data = mapOf(
                 "source" to source,
                 "status" to status,
                 "timestamp" to System.currentTimeMillis().toString()
@@ -40,11 +56,10 @@ object AnalyticsLogger {
         )
     }
 
-    fun logGoogleSignInEvent(step: String, details: String = "") {
+    fun logGoogleSignInEvent(step: String) {
         logEvent(
             "GOOGLE_SIGNIN",
-            "$step: $details",
-            mapOf(
+            data = mapOf(
                 "step" to step,
                 "timestamp" to System.currentTimeMillis().toString()
             )

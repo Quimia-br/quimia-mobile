@@ -108,7 +108,7 @@ val Typography = Typography(
     labelSmall = TextStyle(
         fontFamily = QuimiaFontFamily,
         fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         lineHeight = 16.sp
     )
 )
