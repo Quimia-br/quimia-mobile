@@ -1,5 +1,7 @@
 package header
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,8 +33,6 @@ import theme.PaddingSmall
 import theme.RadiusSmall
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
-import theme.Typography
-
 @Composable
 fun QuimiaHeader(
     value: String,
@@ -50,7 +50,7 @@ fun QuimiaHeader(
     avatarPhoto: Painter? = null,
     actionButtonsSize: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
     contentPadding: PaddingValues = PaddingValues(PaddingLarge.dp, PaddingSmall.dp),
-    searchTextStyle: TextStyle = Typography.titleMedium,
+    searchTextStyle: TextStyle = QuimiaTextStyles.medium16,
     actionContainerColor: Color? = null,
 ) {
     val tokens = quimiaColorTokens()

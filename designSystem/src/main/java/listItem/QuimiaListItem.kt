@@ -1,5 +1,7 @@
 package listItem
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Bolt
 import com.composables.icons.lucide.Droplet
 import com.composables.icons.lucide.Lucide
@@ -35,7 +36,6 @@ import com.composables.icons.lucide.PackageCheck
 import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.Zap
 import theme.QuimiaTheme
-import theme.Typography
 import theme.quimiaColorTokens
 import com.composables.icons.lucide.ToolCase
 import theme.QuimiaColorTokens
@@ -136,7 +136,7 @@ fun QuimiaListItem(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
         ) {
-            val titleStyle = Typography.titleMedium.copy(
+            val titleStyle = QuimiaTextStyles.medium16.copy(
                 color = resolvedTitleColor,
                 fontWeight = FontWeight.Medium
             )
@@ -149,9 +149,9 @@ fun QuimiaListItem(
 
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
-                val subtitleStyle = Typography.bodyMedium.copy(
+                val subtitleStyle = QuimiaTextStyles.medium14.copy(
                     color = resolvedSubtitleColor,
-                    fontWeight = FontWeight.Normal
+                    fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = subtitle,

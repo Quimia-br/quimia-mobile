@@ -1,5 +1,7 @@
 package card
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,13 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import avatar.QuimiaAvatar
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
-import theme.Typography
 import theme.quimiaColorTokens
 
 @Composable
@@ -72,7 +72,7 @@ fun QuimiaCardHeader(
                 Text(
                     text = title,
                     color = tokens.textPrimary,
-                    style = Typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    style = QuimiaTextStyles.medium15,
                 )
             }
 
@@ -83,7 +83,7 @@ fun QuimiaCardHeader(
                 Text(
                     text = description,
                     color = tokens.textSecondary,
-                    style = Typography.bodyLarge,
+                    style = QuimiaTextStyles.medium15,
                 )
             }
         }
