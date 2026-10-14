@@ -1,5 +1,7 @@
 package chip
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,23 +20,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import theme.QuimiaTheme
 import theme.RadiusFull
-import theme.Typography
 import theme.quimiaColorTokens
-
-private val ChipLabelStyle = Typography.titleMedium.copy(
-    fontSize = 15.sp,
-    lineHeight = 18.sp,
-    letterSpacing = 0.sp,
-    platformStyle = PlatformTextStyle(includeFontPadding = false),
-)
 
 /** Figma Chip: a white filter, or a primary filter with a trailing remove icon. */
 @Composable
@@ -65,7 +57,7 @@ fun QuimiaChip(
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = label, style = ChipLabelStyle, color = contentColor, maxLines = 1)
+        Text(text = label, style = QuimiaTextStyles.medium15, color = contentColor, maxLines = 1)
         if (selected && showSelectedIcon) {
             Icon(
                 imageVector = Lucide.X,

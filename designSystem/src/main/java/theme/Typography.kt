@@ -41,6 +41,11 @@ object QuimiaTextStyles {
     val medium36 = medium(36, 43)
     val medium45 = medium(45, 54)
     val medium57 = medium(57, 68)
+
+    fun tagForDiameter(diameter: Float) = medium16.copy(
+        fontSize = (diameter * 0.50f).sp,
+        lineHeight = (diameter * 0.50f).sp,
+    )
 }
 
 /** Material consumers use the same Aeonik Medium family and metrics. */
