@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -27,6 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,7 +43,7 @@ import theme.QuimiaTheme
 @Composable
 fun Login1Screen(
     modifier: Modifier = Modifier,
-    onContinue: () -> Unit = {},
+    onContinue: (email: String, password: String) -> Unit = { _, _ -> },
     onCreateAccount: () -> Unit = {},
     onForgotPassword: () -> Unit = {}
 ) {
@@ -84,6 +87,7 @@ fun Login1Screen(
                 onValueChange = { email = it },
                 label = "E-mail",
                 placeholder = "exemplo@quimia.com",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 textStyle = Typography.bodySmall,
                 containerColor = tokens.secondary,
                 primaryTextColor = tokens.textPrimary,
@@ -99,6 +103,8 @@ fun Login1Screen(
                 onValueChange = { password = it },
                 label = "Senha",
                 placeholder = "123456",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = PasswordVisualTransformation(),
                 textStyle = Typography.bodySmall,
                 containerColor = tokens.secondary,
                 primaryTextColor = tokens.textPrimary,
@@ -159,7 +165,7 @@ fun Login1Screen(
                 .height(46.dp),
             containerColor = tokens.primary,
             textColor = tokens.onPrimary,
-            onClick = onContinue,
+            onClick = { onContinue(email, password) },
             iconSize = 20,
             espacamento = 0,
             textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)

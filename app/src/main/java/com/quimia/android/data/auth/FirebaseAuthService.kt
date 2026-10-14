@@ -63,7 +63,7 @@ class FirebaseAuthService {
             
             val uid = result.user?.uid ?: ""
             val email = result.user?.email
-            AnalyticsLogger.logInfo("FirebaseAuthService: Login success - UID: $uid, Email: $email")
+            AnalyticsLogger.logInfo("FirebaseAuthService: Login with Google succeeded")
             
             AuthResult.Success(uid = uid, email = email)
         } catch (e: FirebaseAuthException) {
