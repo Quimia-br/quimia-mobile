@@ -1,5 +1,7 @@
 package toast
 
+import theme.QuimiaTextStyles
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,10 +24,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Info
 import com.composables.icons.lucide.Lucide
@@ -36,7 +36,6 @@ import shapeIcon.QuimiaShapeIconSize
 import shapeIcon.QuimiaShapeIconTheme
 import theme.QuimiaTheme
 import theme.RadiusFull
-import theme.Typography
 import theme.quimiaColorTokens
 
 enum class QuimiaToastType { Info, Success, Warning, Error }
@@ -99,22 +98,13 @@ fun QuimiaToast(
                 Text(
                     text = message,
                     color = tokens.foregroundPrimary,
-                    style = Typography.titleMedium.copy(
-                        lineHeight = 19.sp,
-                        letterSpacing = 0.sp,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    ),
+                    style = QuimiaTextStyles.medium16,
                 )
                 if (!description.isNullOrBlank()) {
                     Text(
                         text = description,
                         color = tokens.foregroundSubtle,
-                        style = Typography.titleMedium.copy(
-                            fontSize = 14.sp,
-                            lineHeight = 17.sp,
-                            letterSpacing = 0.sp,
-                            platformStyle = PlatformTextStyle(includeFontPadding = false),
-                        ),
+                        style = QuimiaTextStyles.medium14,
                     )
                 }
             }
