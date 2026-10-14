@@ -4,7 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -19,7 +21,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import theme.QuimiaTheme
-import theme.RadiusMedium
+import com.composables.icons.lucide.CameraOff
+import com.composables.icons.lucide.Lucide
+import com.quimia.designsystem.R
+import states.QuimiaEmptyState
+import states.QuimiaEmptyStateTheme
 import theme.quimiaColorTokens
 
 /**
@@ -31,18 +37,31 @@ fun QuimiaImage(
     painter: Painter?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Fit,
+    contentScale: ContentScale = ContentScale.Crop,
     alignment: Alignment = Alignment.Center,
-    shape: Shape = RoundedCornerShape(RadiusMedium.dp),
+    shape: Shape? = null,
     backgroundColor: Color? = null,
-    placeholder: @Composable BoxScope.() -> Unit = {},
+    onConfigure: () -> Unit = {},
+    placeholder: @Composable BoxScope.() -> Unit = {
+        QuimiaEmptyState(
+            modifier = Modifier.matchParentSize(),
+            title = "Câmera desabilitada",
+            description = "Permita o acesso à\ncâmera",
+            buttonLabel = "Configurar",
+            icon = Lucide.CameraOff,
+            fillAvailableSpace = true,
+            theme = QuimiaEmptyStateTheme.OnColor,
+            onButtonClick = onConfigure,
+        )
+    },
 ) {
     val tokens = quimiaColorTokens()
 
     Box(
         modifier = modifier
-            .clip(shape)
-            .background(backgroundColor ?: tokens.surfaceDisabled),
+            .size(width = 264.dp, height = 310.dp)
+            .clip(shape ?: RoundedCornerShape(if (painter == null) 24.dp else 32.dp))
+            .background(backgroundColor ?: if (painter == null) tokens.secondary else Color.Transparent),
         contentAlignment = Alignment.Center,
     ) {
         if (painter != null) {
@@ -59,14 +78,13 @@ fun QuimiaImage(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
 @Composable
 private fun QuimiaImagePreview() {
     QuimiaTheme {
-        QuimiaImage(
-            painter = painterResource(android.R.drawable.ic_menu_camera),
-            contentDescription = "Imagem de exemplo",
-            modifier = Modifier.size(120.dp),
-        )
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            QuimiaImage(painter = painterResource(R.drawable.login_image), contentDescription = "Imagem de exemplo")
+            QuimiaImage(painter = null, contentDescription = null, onConfigure = {})
+        }
     }
 }
