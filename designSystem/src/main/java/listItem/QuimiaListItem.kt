@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,9 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Bolt
 import com.composables.icons.lucide.Droplet
 import com.composables.icons.lucide.Lucide
@@ -39,6 +42,8 @@ import theme.QuimiaTheme
 import theme.quimiaColorTokens
 import com.composables.icons.lucide.ToolCase
 import theme.QuimiaColorTokens
+
+enum class QuimiaListItemTheme { Secondary, Primary, OnColor }
 
 data class QuimiaListItemData(
     val icon: Any? = null,
@@ -51,6 +56,9 @@ data class QuimiaListItemData(
     val titleColor: Color? = null,
     val subtitleColor: Color? = null,
     val containerColor: Color? = null,
+    val theme: QuimiaListItemTheme = QuimiaListItemTheme.Secondary,
+    val leadingContent: (@Composable () -> Unit)? = null,
+    val trailingContent: (@Composable () -> Unit)? = null,
     val onClick: (() -> Unit)? = null
 )
 
@@ -95,30 +103,40 @@ fun QuimiaListItem(
     titleColor: Color? = null,
     subtitleColor: Color? = null,
     containerColor: Color? = null,
+    theme: QuimiaListItemTheme = QuimiaListItemTheme.Secondary,
+    contentPadding: PaddingValues = PaddingValues(24.dp),
+    leadingContent: (@Composable () -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
     val tokens = quimiaColorTokens(forceDark = forceDark)
     val resolvedLeftIcon = leftIcon ?: icon
-    val resolvedContainerColor = containerColor ?: tokens.surfaceBackground
-    val resolvedIconBackground = iconBackgroundColor ?: tokens.surfaceBase.copy(alpha = 0.8f)
+    val resolvedContainerColor = containerColor ?: when (theme) {
+        QuimiaListItemTheme.Secondary -> tokens.surfaceBackground
+        QuimiaListItemTheme.Primary -> tokens.surfaceBase
+        QuimiaListItemTheme.OnColor -> tokens.secondary
+    }
+    val resolvedIconBackground = iconBackgroundColor ?: tokens.surfaceBase
     val resolvedIconTint = iconTint ?: tokens.foregroundPrimary
-    val resolvedTitleColor = titleColor ?: tokens.textPrimary
+    val resolvedTitleColor = titleColor ?: tokens.foregroundPrimary
     val resolvedSubtitleColor = subtitleColor ?: tokens.foregroundSubtle
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(32.dp))
             .background(resolvedContainerColor)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (resolvedLeftIcon != null) {
+        if (leadingContent != null) {
+            leadingContent()
+        } else if (resolvedLeftIcon != null) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
                     .background(resolvedIconBackground),
                 contentAlignment = Alignment.Center
@@ -126,7 +144,7 @@ fun QuimiaListItem(
                 QuimiaIconSource(
                     source = resolvedLeftIcon,
                     tint = resolvedIconTint,
-                    size = 22,
+                    size = 24,
                     modifier = Modifier
                 )
             }
@@ -138,7 +156,10 @@ fun QuimiaListItem(
         ) {
             val titleStyle = QuimiaTextStyles.medium16.copy(
                 color = resolvedTitleColor,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                lineHeight = 19.sp,
+                letterSpacing = 0.sp,
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
             )
             Text(
                 text = title,
@@ -148,7 +169,7 @@ fun QuimiaListItem(
             )
 
             if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 val subtitleStyle = QuimiaTextStyles.medium14.copy(
                     color = resolvedSubtitleColor,
                     fontWeight = FontWeight.Medium
@@ -162,18 +183,20 @@ fun QuimiaListItem(
             }
         }
 
-        if (rightIcon != null) {
+        if (trailingContent != null) {
+            trailingContent()
+        } else if (rightIcon != null) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(resolvedIconBackground.copy(alpha = 0.55f)),
+                    .background(iconBackgroundColor ?: Color.Transparent),
                 contentAlignment = Alignment.Center
             ) {
                 QuimiaIconSource(
                     source = rightIcon,
                     tint = resolvedIconTint,
-                    size = 22,
+                    size = 24,
                     modifier = Modifier
                 )
             }
@@ -203,41 +226,29 @@ fun QuimiaListItemGroup(
                 titleColor = item.titleColor,
                 subtitleColor = item.subtitleColor,
                 containerColor = item.containerColor,
+                theme = item.theme,
+                leadingContent = item.leadingContent,
+                trailingContent = item.trailingContent,
                 onClick = item.onClick
             )
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 302)
 @Composable
 private fun QuimiaListItemPreview() {
-    QuimiaTheme(darkTheme = true) {
+    QuimiaTheme {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            QuimiaListItem(
-                leftIcon = Lucide.Zap,
-                title = "Agilidade nas suas\nlimpezas",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            QuimiaListItem(
-                leftIcon = Lucide.ToolCase,
-                title = "Organização & Saúde",
-                subtitle = "Utilize a funcionalidade cômodos",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            QuimiaListItem(
-                leftIcon = Lucide.Droplet,
-                title = "Precisão",
-                subtitle = "Saiba a quantidade ideal de cada produto",
-                modifier = Modifier.fillMaxWidth()
-            )
+            QuimiaListItemTheme.entries.forEach { theme ->
+                QuimiaListItem(title = "Title", subtitle = "Description", theme = theme,
+                    trailingContent = { Box(Modifier.size(44.dp)) })
+            }
         }
     }
 }
