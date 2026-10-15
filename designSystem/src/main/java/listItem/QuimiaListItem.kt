@@ -57,6 +57,7 @@ data class QuimiaListItemData(
     val subtitleColor: Color? = null,
     val containerColor: Color? = null,
     val theme: QuimiaListItemTheme = QuimiaListItemTheme.Secondary,
+    val leadingContent: (@Composable () -> Unit)? = null,
     val trailingContent: (@Composable () -> Unit)? = null,
     val onClick: (() -> Unit)? = null
 )
@@ -104,6 +105,7 @@ fun QuimiaListItem(
     containerColor: Color? = null,
     theme: QuimiaListItemTheme = QuimiaListItemTheme.Secondary,
     contentPadding: PaddingValues = PaddingValues(24.dp),
+    leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
@@ -129,7 +131,9 @@ fun QuimiaListItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (resolvedLeftIcon != null) {
+        if (leadingContent != null) {
+            leadingContent()
+        } else if (resolvedLeftIcon != null) {
             Box(
                 modifier = Modifier
                     .size(50.dp)
@@ -223,6 +227,7 @@ fun QuimiaListItemGroup(
                 subtitleColor = item.subtitleColor,
                 containerColor = item.containerColor,
                 theme = item.theme,
+                leadingContent = item.leadingContent,
                 trailingContent = item.trailingContent,
                 onClick = item.onClick
             )
