@@ -28,7 +28,10 @@ Para gerar o Base64 no PowerShell:
 
 ## Gerar e publicar
 
-- Para testar manualmente: abra `Actions > Release APK > Run workflow` e informe `version_name` e `version_code`.
-- Para publicar automaticamente no GitHub: crie e envie uma tag, por exemplo `v1.0.0`.
+O APK assinado é gerado pelo workflow `Quimia Mobile CI and APK Release` (`ci.yml`) quando uma Release é publicada no GitHub.
 
-O workflow gera `app-release.apk`, verifica a assinatura e publica o APK como artifact. Quando acionado por uma tag, também cria uma GitHub Release com o APK anexado.
+1. Em `Releases > Draft a new release`, crie uma tag no formato `vMAJOR.MINOR.PATCH` (por exemplo `v1.0.0`) e publique a Release.
+2. Build, Unit tests e Android lint precisam passar. Em seguida o job `Signed release APK` gera o `app-release.apk`, verifica a assinatura com `apksigner` e anexa o arquivo `quimia-<tag>.apk` à Release.
+3. `versionName` vem da tag (sem o `v`) e `versionCode` é o número da execução do workflow.
+
+O APK também fica disponível como artifact do workflow por 30 dias. Pull requests e pushes na `main` geram apenas o APK de debug, sem usar os secrets de assinatura.
