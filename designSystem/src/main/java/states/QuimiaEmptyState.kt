@@ -27,8 +27,6 @@ import shapeIcon.QuimiaShapeIcon
 import shapeIcon.QuimiaShapeIconSize
 import shapeIcon.QuimiaShapeIconTheme
 import theme.RadiusFull
-import theme.RadiusLarge
-import theme.RadiusMedium
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
 
@@ -104,15 +102,44 @@ fun QuimiaEmptyState(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 360)
+@Preview(name = "Celular compacto", showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 320, heightDp = 720)
 @Composable
-fun QuimiaEmptyStatePreview() {
+private fun QuimiaEmptyStateCompactPhonePreview() {
+    QuimiaEmptyStatePreviewContent()
+}
+
+@Preview(name = "Celular", showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 393, heightDp = 852)
+@Composable
+private fun QuimiaEmptyStatePhonePreview() {
+    QuimiaEmptyStatePreviewContent()
+}
+
+@Preview(name = "Tablet", showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 800, heightDp = 1280)
+@Composable
+private fun QuimiaEmptyStateTabletPreview() {
+    QuimiaEmptyStatePreviewContent()
+}
+
+@Composable
+private fun QuimiaEmptyStatePreviewContent() {
     QuimiaTheme {
-        Column {
-            QuimiaEmptyStateTheme.entries.forEach { theme ->
-                QuimiaEmptyState(title = "Title", description = "Description",
-                    buttonLabel = "Label", theme = theme, onButtonClick = {})
-            }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(20.dp),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            QuimiaEmptyState(
+                title = "Title",
+                description = "Description",
+                buttonLabel = "Label",
+                theme = QuimiaEmptyStateTheme.Secondary,
+            )
+            QuimiaEmptyState(
+                title = "Title",
+                description = "Description",
+                buttonLabel = "Label",
+                theme = QuimiaEmptyStateTheme.OnColor,
+            )
         }
     }
 }
