@@ -22,16 +22,12 @@ if (keystorePropertiesFile.exists()) {
     }
 }
 
-// Apply Google Services plugin only when google-services.json is present
-// This prevents CI/local builds failing when the file is intentionally omitted (it's gitignored).
 if (file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
 apply {
     from("$rootDir/plugins/android-commons.gradle")
-    // Nota: feature-dependencies.gradle só tem efeito quando o módulo :presentation existir
-    // e for declarado no settings.gradle.kts
     from("$rootDir/plugins/feature-dependencies.gradle")
 }
 
@@ -78,7 +74,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
     
-    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
@@ -89,21 +84,17 @@ dependencies {
     implementation(project(":designSystem"))
     implementation(libs.coil.compose)
     
-    // Retrofit e Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
     
-    // Serialization
     implementation(libs.kotlinx.serialization.json)
     
-    // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
     implementation(libs.play.services.auth)
     
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

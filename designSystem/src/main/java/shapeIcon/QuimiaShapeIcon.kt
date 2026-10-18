@@ -70,19 +70,40 @@ fun QuimiaShapeIcon(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
+@Preview(name = "Celular compacto", showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 320, heightDp = 720)
 @Composable
-private fun QuimiaShapeIconPreview() {
+private fun QuimiaShapeIconCompactPhonePreview() {
+    QuimiaShapeIconPreviewContent()
+}
+
+@Preview(name = "Celular", showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 393, heightDp = 852)
+@Composable
+private fun QuimiaShapeIconPhonePreview() {
+    QuimiaShapeIconPreviewContent()
+}
+
+@Preview(name = "Tablet", showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 800, heightDp = 1280)
+@Composable
+private fun QuimiaShapeIconTabletPreview() {
+    QuimiaShapeIconPreviewContent()
+}
+
+@Composable
+private fun QuimiaShapeIconPreviewContent() {
     QuimiaTheme {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             QuimiaShapeIconSize.entries.forEach { size ->
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    QuimiaShapeIconTheme.entries.forEach { theme ->
-                        Box(Modifier.size(size = QuimiaShapeIconSize.Big.value), contentAlignment = Alignment.Center) {
-                            QuimiaShapeIcon(size = size.value, icon = Lucide.Circle, theme = theme)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    QuimiaShapeIconTheme.entries.chunked(2).forEach { themes ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            themes.forEach { theme ->
+                                Box(Modifier.size(100.dp), contentAlignment = Alignment.Center) {
+                                    QuimiaShapeIcon(size = size.value, icon = Lucide.Circle, theme = theme)
+                                }
+                            }
                         }
                     }
                 }

@@ -25,7 +25,6 @@ dependencies {
 
     api(libs.androidx.compose.ui.tooling)
 
-    // Lucide icons for Jetpack Compose - Android variant
     api("com.composables:icons-lucide-android:1.1.0")
     implementation(libs.androidx.navigation.compose)
 }

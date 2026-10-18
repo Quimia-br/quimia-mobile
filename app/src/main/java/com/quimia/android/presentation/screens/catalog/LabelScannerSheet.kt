@@ -94,7 +94,6 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
                 }.onFailure { error = "Não foi possível abrir a galeria. Tente novamente." }
             },
             onConfigureCamera = {
-                // The system camera owns camera permission; no broad media permission is needed.
                 runCatching {
                     val directory = File(context.cacheDir, "label-images").apply { mkdirs() }
                     val photo = File.createTempFile("label-", ".jpg", directory)

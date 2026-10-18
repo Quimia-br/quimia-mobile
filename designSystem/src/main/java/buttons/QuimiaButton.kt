@@ -55,20 +55,24 @@ fun QuimiaButton(
     iconColor: Color? = null,
     iconSize: Int,
     espacamento: Int = PaddingSmall,
-    curvaCirculo: Int = RadiusFull
+    curvaCirculo: Int = RadiusFull,
+    enabled: Boolean = true,
 ) {
 
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
     val actualIndicator = indicatorColor ?: tokens.textSecondary
     val actualTextColor = textColor ?: tokens.textPrimary
-    val actualIconColor = iconColor ?: tokens.textPrimary
+    val actualIconColor = if (enabled) iconColor ?: tokens.textPrimary else tokens.foregroundDisabled
 
     Button(
         modifier = modifier,
         onClick = onClick,
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = actualContainer
+            containerColor = actualContainer,
+            disabledContainerColor = if (actualContainer == tokens.primary) tokens.primaryDisabled else tokens.surfaceDisabled,
+            disabledContentColor = tokens.foregroundDisabled,
         ),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo.dp),
         contentPadding = PaddingValues(
@@ -101,7 +105,7 @@ fun QuimiaButton(
                 Spacer(modifier = Modifier.width(espacamento.dp))
             }
             val resolvedTextStyle = textStyle.copy(
-                color = actualTextColor,
+                color = if (enabled) actualTextColor else tokens.foregroundDisabled,
                 fontFamily = fontFamily ?: textStyle.fontFamily,
                 fontWeight = fontWeight ?: textStyle.fontWeight
             )
