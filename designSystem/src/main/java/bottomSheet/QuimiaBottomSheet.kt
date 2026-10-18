@@ -23,24 +23,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import buttons.QuimiaButton
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
+import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import dragger.QuimiaDragger
+import listItem.QuimiaListItem
 import theme.QuimiaTheme
+import theme.QuimiaFontFamily
 import theme.quimiaColorTokens
 
 enum class QuimiaBottomSheetTheme { Primary, Secondary }
 
-/**
- * Modal bottom sheet styled with Quimia surface and text tokens.
- * It supports the standard Material drag gesture and dismisses through
- * [onDismissRequest] when the user swipes it down or taps outside it.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuimiaBottomSheet(
@@ -91,7 +90,6 @@ fun QuimiaBottomSheet(
     }
 }
 
-/** The same sheet body is available to Compose Preview without opening a dialog. */
 @Composable
 fun QuimiaBottomSheetContent(
     modifier: Modifier = Modifier,
@@ -135,12 +133,16 @@ fun QuimiaBottomSheetContent(
                 val actionStyle = QuimiaTextStyles.medium15
                 if (!secondaryActionLabel.isNullOrBlank()) QuimiaButton(
                     text = secondaryActionLabel, textStyle = actionStyle,
+                    fontFamily = QuimiaFontFamily, fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f).height(52.dp), iconSize = 20, espacamento = 0,
-                    containerColor = secondary, onClick = onSecondaryActionClick)
+                    containerColor = secondary, textColor = tokens.foregroundPrimary,
+                    onClick = onSecondaryActionClick)
                 if (!primaryActionLabel.isNullOrBlank()) QuimiaButton(
                     text = primaryActionLabel, textStyle = actionStyle,
+                    fontFamily = QuimiaFontFamily, fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f).height(52.dp), iconSize = 20, espacamento = 0,
-                    enabled = primaryActionEnabled, onClick = onPrimaryActionClick)
+                    enabled = primaryActionEnabled, textColor = tokens.foregroundPrimary,
+                    onClick = onPrimaryActionClick)
             }
         }
     }
@@ -158,7 +160,11 @@ private fun QuimiaBottomSheetPreview() {
                     QuimiaBottomSheetContent(modifier = Modifier.fillMaxSize(), title = "Title",
                         description = "Description", theme = theme,
                         primaryActionLabel = "Label", secondaryActionLabel = "Label") {
-                        Text("Conteúdo", style = QuimiaTextStyles.medium14)
+                        QuimiaListItem(
+                            icon = Lucide.Circle,
+                            title = "Componente de exemplo",
+                            subtitle = "Conteúdo dentro do BottomSheet",
+                        )
                     }
                 }
             }

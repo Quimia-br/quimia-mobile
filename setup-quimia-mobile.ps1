@@ -43,18 +43,11 @@ include(":app", ":designSystem")
 '@
 
 $defaultAndroidCommons = @'
-// Placeholder android-commons.gradle
-// Add common Android configuration here if needed.
-// This placeholder prevents build failures when the shared script is missing.
 
-// No-op
 '@
 
 $defaultFeatureDependencies = @'
-// Placeholder feature-dependencies.gradle
-// Add feature dependency logic here if needed.
 
-// No-op
 '@
 
 try {

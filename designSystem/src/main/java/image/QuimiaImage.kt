@@ -28,10 +28,6 @@ import states.QuimiaEmptyState
 import states.QuimiaEmptyStateTheme
 import theme.quimiaColorTokens
 
-/**
- * Quimia image surface with consistent clipping and a configurable empty state.
- * The caller owns image loading and supplies the resulting [Painter].
- */
 @Composable
 fun QuimiaImage(
     painter: Painter?,

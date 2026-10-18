@@ -9,12 +9,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-/**
- * Lucide Astroid icon.
- *
- * Kept locally because this icon was released after the Lucide Compose
- * dependency currently used by the project.
- */
 val Lucide.Astroid: ImageVector
     get() {
         if (_astroid != null) return _astroid!!

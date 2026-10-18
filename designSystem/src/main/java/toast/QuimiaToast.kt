@@ -40,7 +40,6 @@ import theme.quimiaColorTokens
 
 enum class QuimiaToastType { Info, Success, Warning, Error }
 
-/** Visual content for a toast. The host controls placement, visibility, and duration. */
 @Composable
 fun QuimiaToast(
     message: String,

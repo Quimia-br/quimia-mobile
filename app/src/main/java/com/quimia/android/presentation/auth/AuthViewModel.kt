@@ -39,7 +39,6 @@ class AuthViewModel : BaseViewModel<AuthResult>() {
             return
         }
 
-        // Mock login - apenas valida se está preenchido
         AnalyticsLogger.logLoginEvent("EMAIL", "SUCCESS")
         _authState.value = AuthResult.Success(uid = "mock-uid-123", email = email)
     }

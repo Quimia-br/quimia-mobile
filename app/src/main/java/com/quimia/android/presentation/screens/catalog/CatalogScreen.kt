@@ -160,7 +160,6 @@ fun CatalogScreen(
                 .statusBarsPadding().navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Keep the design's top position without counting the status bar twice.
             Spacer(Modifier.height((78.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(16.dp)))
             if (successMessage != null) {
                 Row(
