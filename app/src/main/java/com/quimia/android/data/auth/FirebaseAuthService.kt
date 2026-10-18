@@ -7,8 +7,6 @@ import com.quimia.android.utils.AnalyticsLogger
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthService {
-    // The app can be previewed/run without google-services.json. In that case
-    // Firebase Auth is unavailable, but the authentication screen must still open.
     private val auth: FirebaseAuth? = runCatching {
         FirebaseAuth.getInstance()
     }.getOrNull()

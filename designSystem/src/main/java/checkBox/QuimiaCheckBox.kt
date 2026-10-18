@@ -26,7 +26,6 @@ import com.composables.icons.lucide.Lucide
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
 
-/** Controlled checkbox using Quimia colors; state is owned by the caller. */
 @Composable
 fun QuimiaCheckBox(
     checked: Boolean,
