@@ -1,6 +1,7 @@
 package shapeIcon
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
+import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
 import theme.QuimiaTheme
@@ -49,7 +51,7 @@ fun QuimiaShapeIcon(
         QuimiaShapeIconTheme.Primary -> tokens.surfaceBase
         QuimiaShapeIconTheme.Critical -> tokens.error
         QuimiaShapeIconTheme.Warning -> tokens.warning
-        QuimiaShapeIconTheme.Success -> tokens.success
+        QuimiaShapeIconTheme.Success -> tokens.secondary
     }
     val foreground = iconColor ?: if (theme == QuimiaShapeIconTheme.Critical)
         tokens.foregroundError else tokens.foregroundPrimary
@@ -58,7 +60,14 @@ fun QuimiaShapeIcon(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(background),
+            .background(background)
+            .then(
+                if (theme == QuimiaShapeIconTheme.Success) {
+                    Modifier.border(width = 2.dp, color = tokens.success, shape = CircleShape)
+                } else {
+                    Modifier
+                }
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -101,7 +110,11 @@ private fun QuimiaShapeIconPreviewContent() {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             themes.forEach { theme ->
                                 Box(Modifier.size(100.dp), contentAlignment = Alignment.Center) {
-                                    QuimiaShapeIcon(size = size.value, icon = Lucide.Circle, theme = theme)
+                                    QuimiaShapeIcon(
+                                        size = size.value,
+                                        icon = if (theme == QuimiaShapeIconTheme.Success) Lucide.Check else Lucide.Circle,
+                                        theme = theme,
+                                    )
                                 }
                             }
                         }
