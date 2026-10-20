@@ -19,7 +19,6 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
@@ -78,7 +77,7 @@ fun QuimiaCheckBox(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaCheckBoxPreview() {
     QuimiaTheme {

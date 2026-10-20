@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
@@ -67,7 +66,7 @@ fun QuimiaChip(
         }
     }
 }
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaChipPreview() {
     QuimiaTheme {

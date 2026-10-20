@@ -2,7 +2,6 @@ package card
 
 import theme.QuimiaTextStyles
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,21 +10,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import avatar.QuimiaAvatar
+import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.QuimiaTheme
 
 @Composable
 fun QuimiaCardHeader(
@@ -36,74 +35,80 @@ fun QuimiaCardHeader(
     description: String? = null,
     showTitle: Boolean = true,
     showDescription: Boolean = true,
+    showStartIcon: Boolean = true,
+    endIcon: ImageVector? = Lucide.Circle,
+    onEndIconClick: () -> Unit = {},
+    endIconContentDescription: String? = null,
+    iconSize: androidx.compose.ui.unit.Dp = 24.dp,
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium15,
+    descriptionTextStyle: TextStyle = titleTextStyle,
 ) {
     val tokens = quimiaColorTokens()
-    val hasLeadingContent = avatar != null || icon != null
 
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .height(176.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(tokens.surfaceBase)
-            .padding(horizontal = 24.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        if (avatar != null) {
+        if (showStartIcon && avatar != null) {
             avatar()
-        } else if (icon != null) {
+        } else if (showStartIcon && icon != null) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = tokens.foregroundDisabled,
-                modifier = Modifier.size(28.dp),
+                tint = tokens.foregroundPrimary,
+                modifier = Modifier.size(iconSize),
             )
         }
 
-        if (hasLeadingContent) {
-            Spacer(modifier = Modifier.width(16.dp))
-        }
-
         Column(
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center,
         ) {
             if (showTitle && title != null) {
                 Text(
                     text = title,
-                    color = tokens.textPrimary,
-                    style = QuimiaTextStyles.medium15,
+                    color = tokens.foregroundPrimary,
+                    style = titleTextStyle,
                 )
             }
 
             if (showDescription && description != null) {
                 if (showTitle && title != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(7.dp))
                 }
                 Text(
                     text = description,
-                    color = tokens.textSecondary,
-                    style = QuimiaTextStyles.medium15,
+                    color = tokens.foregroundSubtle,
+                    style = descriptionTextStyle,
                 )
             }
+        }
+        if (endIcon != null) {
+            QuimiaIconButton(icon = endIcon, size = QuimiaIconButtonSize.Small,
+                onClick = onEndIconClick, contentDescription = endIconContentDescription)
         }
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaCardHeaderPreview() {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    QuimiaTheme {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         QuimiaCardHeader(
+            modifier = Modifier.fillMaxWidth(),
             icon = Lucide.Circle,
             title = "Title",
             description = "Description",
         )
 
         QuimiaCardHeader(
+            modifier = Modifier.fillMaxWidth(),
             avatar = {
                 QuimiaAvatar(
-                    size = 56.dp,
+                    size = 39.dp,
                     initials = "PP",
                     backgroundColor = quimiaColorTokens().surfaceBase,
                     foregroundColor = quimiaColorTokens().foregroundPrimary,
@@ -112,5 +117,6 @@ private fun QuimiaCardHeaderPreview() {
             title = "Title",
             description = "Description",
         )
+        }
     }
 }

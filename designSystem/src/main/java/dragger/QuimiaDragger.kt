@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import theme.PaddingMedium
@@ -51,7 +50,7 @@ fun QuimiaDragger(
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 private fun PreviewQuimiaDragger() {
     QuimiaTheme {
@@ -61,7 +60,7 @@ private fun PreviewQuimiaDragger() {
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .width(294.dp)
+                .fillMaxWidth()
                 .height(106.dp)
                 .clip(RoundedCornerShape(RadiusSmall.dp))
                 .background(color = tokens.surfaceBackground)

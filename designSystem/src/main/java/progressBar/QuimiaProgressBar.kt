@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -72,7 +71,7 @@ fun QuimiaProgressBar(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 400)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaProgressBarPreview() {
     QuimiaTheme {

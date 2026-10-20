@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import theme.QuimiaTheme
@@ -61,7 +60,7 @@ fun QuimiaAvatarGroup(
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 private fun PreviewQuimiaAvatarGroup() {
     QuimiaTheme {

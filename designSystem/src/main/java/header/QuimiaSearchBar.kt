@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -29,7 +28,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -167,7 +165,7 @@ fun QuimiaSearchBar(
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 private fun PreviewQuimiaSearchBar() {
     QuimiaTheme {
@@ -179,7 +177,7 @@ private fun PreviewQuimiaSearchBar() {
                     color = quimiaColorTokens().surfaceBackground,
                     shape = RoundedCornerShape(RadiusSmall.dp)
                 )
-                .width(315.dp)
+                .fillMaxWidth()
                 .height(176.dp)
                 .padding(21.dp)
         ) {

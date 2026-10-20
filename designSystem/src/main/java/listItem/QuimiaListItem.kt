@@ -29,7 +29,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Bolt
@@ -235,7 +234,7 @@ fun QuimiaListItemGroup(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 302)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaListItemPreview() {
     QuimiaTheme {

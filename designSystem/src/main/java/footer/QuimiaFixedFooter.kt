@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import theme.PaddingHuge
 import theme.QuimiaTheme
@@ -43,11 +41,11 @@ fun QuimiaFixedFooter(
     )
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 private fun PreviewQuimiaFixedFooter() {
     QuimiaTheme {
-        QuimiaFixedFooter(modifier = Modifier.width(262.dp)) {
+        QuimiaFixedFooter(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

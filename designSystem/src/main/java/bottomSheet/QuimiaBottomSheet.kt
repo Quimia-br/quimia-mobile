@@ -5,12 +5,12 @@ import theme.QuimiaTextStyles
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +22,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -148,26 +147,50 @@ fun QuimiaBottomSheetContent(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 702)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaBottomSheetPreview() {
     QuimiaTheme {
-        Row(modifier = Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            QuimiaBottomSheetTheme.entries.forEach { theme ->
-                Surface(modifier = Modifier.width(326.dp).height(547.dp),
-                    shape = RoundedCornerShape(40.dp),
-                    color = if (theme == QuimiaBottomSheetTheme.Primary) quimiaColorTokens().surfaceBase else quimiaColorTokens().secondary) {
-                    QuimiaBottomSheetContent(modifier = Modifier.fillMaxSize(), title = "Title",
-                        description = "Description", theme = theme,
-                        primaryActionLabel = "Label", secondaryActionLabel = "Label") {
-                        QuimiaListItem(
-                            icon = Lucide.Circle,
-                            title = "Componente de exemplo",
-                            subtitle = "Conteúdo dentro do BottomSheet",
-                        )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+            val themes = if (maxWidth >= 600.dp) QuimiaBottomSheetTheme.entries else listOf(QuimiaBottomSheetTheme.Primary)
+            if (maxWidth >= 600.dp) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    themes.forEach { theme ->
+                        QuimiaBottomSheetPreviewItem(theme, Modifier.weight(1f))
                     }
                 }
+            } else {
+                themes.forEach { theme ->
+                    QuimiaBottomSheetPreviewItem(theme, Modifier.fillMaxWidth())
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun QuimiaBottomSheetPreviewItem(
+    theme: QuimiaBottomSheetTheme,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.height(547.dp),
+        shape = RoundedCornerShape(40.dp),
+        color = if (theme == QuimiaBottomSheetTheme.Primary) quimiaColorTokens().surfaceBase else quimiaColorTokens().secondary,
+    ) {
+        QuimiaBottomSheetContent(
+            modifier = Modifier.fillMaxSize(),
+            title = "Title",
+            description = "Description",
+            theme = theme,
+            primaryActionLabel = "Label",
+            secondaryActionLabel = "Label",
+        ) {
+            QuimiaListItem(
+                icon = Lucide.Circle,
+                title = "Componente de exemplo",
+                subtitle = "Conteúdo dentro do BottomSheet",
+            )
         }
     }
 }
