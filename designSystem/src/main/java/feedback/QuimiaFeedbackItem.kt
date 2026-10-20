@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.X
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.quimiaColorTokens
@@ -40,7 +39,7 @@ fun QuimiaFeedbackItem(
     iconSize: Dp = 40.dp,
     shape: Shape = RoundedCornerShape(RadiusFull.dp),
     iconSuccess: ImageVector = Lucide.Check,
-    iconError: ImageVector = Lucide.X,
+    iconError: ImageVector = Lucide.Check,
     backgroundColor: Color? = null,
     iconSuccessColor: Color? = null,
     iconErrorColor: Color? = null,
@@ -59,7 +58,7 @@ fun QuimiaFeedbackItem(
     )
 
     val borderColor by animateColorAsState(
-        targetValue = if (!isSuccess) tokens.error else Color.Transparent,
+        targetValue = if (isSuccess) tokens.success else tokens.error,
         animationSpec = tween(durationMillis = 300),
         label = "BorderColorAnimation"
     )
@@ -81,7 +80,7 @@ fun QuimiaFeedbackItem(
     }
 }
 
-@Preview
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun QuimiaFeedbackItemPreview() {
     QuimiaTheme {
@@ -92,7 +91,6 @@ private fun QuimiaFeedbackItemPreview() {
                 .width(240.dp)
                 .height(460.dp)
                 .clip(RoundedCornerShape(RadiusSmall.dp))
-                .background(quimiaColorTokens().surfaceBackground)
                 .padding(20.dp)
         ) {
             QuimiaFeedbackItem(

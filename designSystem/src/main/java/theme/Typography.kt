@@ -17,7 +17,6 @@ val QuimiaFontFamily = FontFamily(
     Font(R.font.aeonik_thin, FontWeight.Thin),
 )
 
-/** Aeonik Medium styles shared by components; sizes are Figma logical pixels (sp). */
 object QuimiaTextStyles {
     private fun medium(size: Int, lineHeight: Int) = TextStyle(
         fontFamily = QuimiaFontFamily,
@@ -48,7 +47,6 @@ object QuimiaTextStyles {
     )
 }
 
-/** Material consumers use the same Aeonik Medium family and metrics. */
 val Typography = Typography(
     displayLarge = QuimiaTextStyles.medium57,
     displayMedium = QuimiaTextStyles.medium45,
