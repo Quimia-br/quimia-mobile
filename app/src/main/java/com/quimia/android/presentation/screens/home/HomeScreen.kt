@@ -369,16 +369,11 @@ private fun HomeQuickActions(
     }
 }
 
-@Preview(name = "Reference 360", showBackground = true, showSystemUi = true, widthDp = 360, heightDp = 900)
-@Preview(name = "Android 420", showBackground = true, showSystemUi = true, widthDp = 420, heightDp = 911)
-@Preview(name = "Compact 320", showBackground = true, showSystemUi = true, widthDp = 320, heightDp = 640)
-
+@com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Preview(name = "Tab A7 Lite portrait - assumed 240 dpi", group = "Tablet QA", showBackground = true,
     device = "spec:width=800px,height=1340px,dpi=240", showSystemUi = true)
 @Preview(name = "Tab A7 Lite landscape - assumed 240 dpi", group = "Tablet QA", showBackground = true,
     device = "spec:width=1340px,height=800px,dpi=240", showSystemUi = true)
-@Preview(name = "Tablet 800 dp", group = "Tablet QA", showBackground = true,
-    widthDp = 800, heightDp = 1340, showSystemUi = true)
 @Composable
 private fun HomeScreenPreview() {
     QuimiaTheme(darkTheme = false) {

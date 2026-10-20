@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaButton
@@ -171,30 +170,51 @@ fun QuimiaCard(
     }
 }
 
-@Preview(
-    showBackground = true,
-    backgroundColor = 0xFFF9F9F9,
-    widthDp = 664,
-)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaCardPreview() {
     QuimiaTheme {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            listOf(false, true).forEach { outlined ->
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+            val cardVariants = listOf(
+                QuimiaCardTheme.Primary to false,
+                QuimiaCardTheme.Secondary to true,
+            )
+            if (maxWidth >= 600.dp) {
                 Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    QuimiaCardTheme.entries.forEach { theme ->
-                        QuimiaCard(
-                            modifier = Modifier.width(302.dp).height(248.dp),
-                            title = "Title", description = "Description", icon = Lucide.Circle,
-                            primaryActionLabel = "Label", secondaryActionLabel = "Label",
-                            theme = theme, outline = outlined,
-                        ) {
-                            Box(Modifier.fillMaxWidth().height(80.dp)
-                                .background(quimiaColorTokens().secondary, RoundedCornerShape(8.dp)))
-                        }
+                    cardVariants.forEach { (theme, outline) ->
+                        QuimiaCardPreviewItem(theme, outline, Modifier.weight(1f))
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                    cardVariants.forEach { (theme, outline) ->
+                        QuimiaCardPreviewItem(theme, outline, Modifier.fillMaxWidth())
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun QuimiaCardPreviewItem(
+    theme: QuimiaCardTheme,
+    outline: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    QuimiaCard(
+        modifier = modifier.height(248.dp),
+        title = "Title",
+        description = "Description",
+        icon = Lucide.Circle,
+        primaryActionLabel = "Label",
+        secondaryActionLabel = "Label",
+        theme = theme,
+        outline = outline,
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(80.dp)
+                .background(quimiaColorTokens().secondary, RoundedCornerShape(8.dp)),
+        )
     }
 }

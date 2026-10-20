@@ -36,7 +36,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -224,7 +223,7 @@ fun QuimiaOtpItem(
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaOtpInputPreview() {
     QuimiaTheme {
@@ -238,7 +237,7 @@ private fun QuimiaOtpInputPreview() {
                 )
                 .height(493.dp)
                 .padding(20.dp)
-                .width(329.dp)
+                .fillMaxWidth()
         ) {
             QuimiaOtpInput(value = "", onValueChange = {})
             QuimiaOtpInput(value = "1234", onValueChange = {})

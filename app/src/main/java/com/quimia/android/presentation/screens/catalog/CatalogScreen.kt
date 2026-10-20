@@ -51,7 +51,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.unit.dp
@@ -516,15 +515,13 @@ private fun CatalogProductDetailsDialog(
     }
 }
 
-@Preview(name = "Catálogo referência · 360 × 800", widthDp = 360, heightDp = 800, showSystemUi = true)
+@com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Composable
 private fun CatalogSinglePreview() {
     QuimiaTheme(darkTheme = false) { CatalogScreen(previewItemLimit = 1) }
 }
 
-@Preview(name = "Catálogo lista · 360 × 800", widthDp = 360, heightDp = 800, showSystemUi = true)
-@Preview(name = "Catálogo compacto · 320 × 640", widthDp = 320, heightDp = 640, showSystemUi = true)
-@Preview(name = "Catálogo tablet", widthDp = 800, heightDp = 1340, showSystemUi = true)
+@com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Composable
 private fun CatalogListPreview() {
     QuimiaTheme(darkTheme = false) { CatalogScreen() }

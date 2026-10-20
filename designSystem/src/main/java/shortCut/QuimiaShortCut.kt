@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
@@ -163,7 +162,7 @@ fun QuimiaShortCut(
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 400)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaShortCutPreview() {
     QuimiaTheme {

@@ -22,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaButton
 import com.composables.icons.lucide.Check
@@ -131,7 +130,7 @@ data class AccordionItem(
     val iconColor: Color? = null
 )
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 fun PreviewQuimiaAccordion() {
     QuimiaTheme {

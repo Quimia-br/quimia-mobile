@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Info
@@ -128,7 +127,7 @@ fun QuimiaToast(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6, widthDp = 370)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaToastPreview() {
     QuimiaTheme {

@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import theme.QuimiaTheme
 import com.composables.icons.lucide.CameraOff
@@ -74,7 +73,7 @@ fun QuimiaImage(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaImagePreview() {
     QuimiaTheme {

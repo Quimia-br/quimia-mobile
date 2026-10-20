@@ -23,7 +23,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
@@ -134,7 +133,7 @@ fun QuimiaButton(
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 fun PreviewQuimiaButton() {
     QuimiaTheme {
@@ -144,7 +143,7 @@ fun PreviewQuimiaButton() {
             containerColor = LightTokens.primary,
             text = "Adicionar",
             textColor = LightTokens.textPrimary,
-            modifier = Modifier.width(200.dp),
+            modifier = Modifier.fillMaxWidth(),
             iconSize = 20,
             espacamento = PaddingSmall,
             curvaCirculo = RadiusMedium,

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import avatar.QuimiaAvatar
 import buttons.QuimiaIconButton
@@ -94,20 +92,20 @@ fun QuimiaCardHeader(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@preview.QuimiaDevicePreviews
 @Composable
 private fun QuimiaCardHeaderPreview() {
     QuimiaTheme {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         QuimiaCardHeader(
-            modifier = Modifier.width(154.dp),
+            modifier = Modifier.fillMaxWidth(),
             icon = Lucide.Circle,
             title = "Title",
             description = "Description",
         )
 
         QuimiaCardHeader(
-            modifier = Modifier.width(169.dp),
+            modifier = Modifier.fillMaxWidth(),
             avatar = {
                 QuimiaAvatar(
                     size = 39.dp,

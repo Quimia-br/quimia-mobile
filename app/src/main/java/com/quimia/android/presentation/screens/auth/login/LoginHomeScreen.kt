@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaButton
 import com.composables.icons.lucide.Droplet
@@ -115,12 +114,7 @@ fun LoginHomeScreen(
     }
 }
 
-@Preview(
-    showBackground = false,
-    widthDp = 393,
-    heightDp = 852,
-    name = "LoginHome com imagem"
-)
+@com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Composable
 private fun LoginHomeScreenPreview() {
     QuimiaTheme(darkTheme = true) {
