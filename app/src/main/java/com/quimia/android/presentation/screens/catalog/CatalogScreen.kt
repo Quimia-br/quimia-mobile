@@ -32,9 +32,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,64 +45,44 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.annotation.DrawableRes
-import com.quimia.android.R
 import kotlinx.coroutines.delay
 import buttons.QuimiaButton
 import buttons.QuimiaFAB
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
+import card.QuimiaCard
 import com.composables.icons.lucide.Camera
+import com.composables.icons.lucide.Copy
 import com.composables.icons.lucide.Info
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Mic
-import com.composables.icons.lucide.Copy
 import com.composables.icons.lucide.X
+import com.quimia.android.R
 import header.QuimiaSearchBar
+import image.QuimiaImage
 import menuBar.QuimiaMenuBar
 import theme.QuimiaTheme
 import theme.Typography
 import theme.quimiaColorTokens
 import title.QuimiaSectionTitle
-
-private data class CatalogProduct(
-    val id: String,
-    val name: String,
-    val category: String,
-    @param:DrawableRes val imageRes: Int,
-    @param:DrawableRes val logoRes: Int,
-    @param:DrawableRes val detailImageRes: Int = imageRes,
-    val description: String = "Descrição não disponível para este produto.",
-    val barcode: String = "",
-)
-
-private val mrMusculoProduct = CatalogProduct(
-        "squeeze", "Limpador Cozinha Squeeze", "Limpador multiuso",
-        R.drawable.catalog_mr_musculo, R.drawable.catalog_logo_mr_musculo,
-        detailImageRes = R.drawable.catalog_mr_musculo_detail,
-        description = "O Mr Músculo Tira Limo contém uma espuma para acabar com manchas de mofo e umidade que penetra e remove as sujeiras mais difíceis do banheiro, para você limpar menos e viver mais.",
-        barcode = "4784784837498",
-    )
-
-private val sampleProducts = listOf(
-    mrMusculoProduct,
-    CatalogProduct("veja", "Limpador Multiuso Veja", "Limpador multiuso", R.drawable.catalog_veja, R.drawable.catalog_logo_veja),
-    CatalogProduct("omo", "Lava-Roupas Líquido Omo", "Lava-roupas", R.drawable.catalog_omo, R.drawable.catalog_logo_omo),
-    mrMusculoProduct.copy(id = "squeeze-2"),
-    CatalogProduct("omo-2", "Lava-Roupas Líquido Omo", "Lava-roupas", R.drawable.catalog_omo, R.drawable.catalog_logo_omo),
-)
 
 @Composable
 fun CatalogScreen(
@@ -111,13 +91,15 @@ fun CatalogScreen(
     onAiClick: (() -> Unit)? = null,
     showFab: Boolean = true,
     previewItemLimit: Int = Int.MAX_VALUE,
+    initialSavedProductIds: List<String> = emptyList(),
+    onSavedProductIdsChange: (List<String>) -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable { mutableStateOf("") }
     var bannerVisible by rememberSaveable { mutableStateOf(true) }
     var showLabelScanner by rememberSaveable { mutableStateOf(false) }
-    var savedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var savedIds by remember(initialSavedProductIds) { mutableStateOf(initialSavedProductIds.toSet()) }
     var selectedIds by remember { mutableStateOf(setOf<String>()) }
     var detailProduct by remember { mutableStateOf<CatalogProduct?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
@@ -129,7 +111,7 @@ fun CatalogScreen(
         }
     }
     val filtered = remember(query, previewItemLimit) {
-        sampleProducts.take(previewItemLimit).filter {
+        sampleCatalogProducts.take(previewItemLimit).filter {
             it.name.contains(query.trim(), ignoreCase = true) || it.category.contains(query.trim(), ignoreCase = true)
         }
     }
@@ -156,9 +138,10 @@ fun CatalogScreen(
 
         Column(
             modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth().fillMaxHeight()
-                .statusBarsPadding().navigationBarsPadding()
+                .statusBarsPadding().navigationBarsPadding().padding(bottom = 100.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Keep the design's top position without counting the status bar twice.
             Spacer(Modifier.height((78.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(16.dp)))
             if (successMessage != null) {
                 Row(
@@ -167,7 +150,7 @@ fun CatalogScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(40.dp).background(tokens.success, CircleShape), contentAlignment = Alignment.Center) {
-                        Text("✓", color = tokens.onForeground, style = Typography.titleMedium)
+                        Text("✓", color = tokens.textPrimary, style = Typography.titleMedium)
                     }
                     Text(successMessage.orEmpty(), Modifier.weight(1f).padding(horizontal = 12.dp), style = Typography.bodySmall, color = tokens.textPrimary)
                     IconButton(onClick = { successMessage = null }, modifier = Modifier.size(32.dp)) {
@@ -250,11 +233,11 @@ fun CatalogScreen(
                                             ProductCard(
                                                 paired, paired.id in savedIds,
                                                 onSave = {
-                                                    if (paired.id in savedIds) savedIds = savedIds - paired.id
-                                                    else {
-                                                        savedIds = savedIds + paired.id
-                                                        successMessage = "Produto adicionado com sucesso"
-                                                    }
+                                                    val wasSaved = paired.id in savedIds
+                                                    val nextSavedIds = if (wasSaved) savedIds - paired.id else savedIds + paired.id
+                                                    savedIds = nextSavedIds
+                                                    onSavedProductIdsChange(nextSavedIds.toList())
+                                                    if (!wasSaved) successMessage = "Produto adicionado com sucesso"
                                                 },
                                                 onInfo = { detailProduct = paired },
                                                 selected = paired.id in selectedIds,
@@ -268,11 +251,11 @@ fun CatalogScreen(
                                     ProductCard(
                                         product, product.id in savedIds,
                                         onSave = {
-                                            if (product.id in savedIds) savedIds = savedIds - product.id
-                                            else {
-                                                savedIds = savedIds + product.id
-                                                successMessage = "Produto adicionado com sucesso"
-                                            }
+                                            val wasSaved = product.id in savedIds
+                                            val nextSavedIds = if (wasSaved) savedIds - product.id else savedIds + product.id
+                                            savedIds = nextSavedIds
+                                            onSavedProductIdsChange(nextSavedIds.toList())
+                                            if (!wasSaved) successMessage = "Produto adicionado com sucesso"
                                         },
                                         onInfo = { detailProduct = product },
                                         selected = product.id in selectedIds,
@@ -286,17 +269,15 @@ fun CatalogScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(24.dp))
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(124.dp))
         }
 
-        if (!showLabelScanner) Box(
+        Box(
             modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = 600.dp)
                 .fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp),
         ) {
             if (selectedIds.isEmpty()) {
                 QuimiaMenuBar(
-                    modifier = Modifier.align(Alignment.BottomCenter),
                     selectedIndex = 1, onItemSelected = onMenuItemSelected,
                     fabSpacing = 24.dp,
                     fab = if (showFab) ({ QuimiaFAB(onClick = {
@@ -306,8 +287,7 @@ fun CatalogScreen(
             } else {
                 Row(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(32.dp)).background(tokens.surfaceBase)
-                        .padding(8.dp),
+                        .clip(RoundedCornerShape(32.dp)).background(tokens.surfaceBase).padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -323,16 +303,15 @@ fun CatalogScreen(
                         textStyle = Typography.bodyMedium, containerColor = tokens.primary,
                         iconSize = 0, espacamento = 0,
                         onClick = {
-                            val count = selectedIds.size
-                            savedIds = (savedIds + selectedIds).distinct()
+                            savedIds = savedIds + selectedIds
+                            onSavedProductIdsChange(savedIds.toList())
+                            successMessage = "Produtos adicionados com sucesso"
                             selectedIds = emptySet()
-                            successMessage = if (count == 1) "Produto adicionado com sucesso" else "$count produtos adicionados com sucesso"
                         },
                     )
                 }
             }
         }
-
     }
 
     LabelScannerSheet(
@@ -346,9 +325,12 @@ fun CatalogScreen(
             saved = product.id in savedIds,
             onDismiss = { detailProduct = null },
             onSave = {
-                savedIds = savedIds + product.id
+                val wasSaved = product.id in savedIds
+                val nextSavedIds = if (wasSaved) savedIds - product.id else savedIds + product.id
+                savedIds = nextSavedIds
+                onSavedProductIdsChange(nextSavedIds.toList())
+                if (!wasSaved) successMessage = "Produto adicionado com sucesso"
                 detailProduct = null
-                successMessage = "${product.name} adicionado com sucesso"
             },
         )
     }
@@ -377,58 +359,72 @@ private fun ProductCard(
     compact: Boolean,
 ) {
     val tokens = quimiaColorTokens()
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(24.dp))
-            .background(tokens.surfaceBase)
+    QuimiaCard(
+        modifier = modifier
             .then(if (selected) Modifier.border(2.dp, tokens.success, RoundedCornerShape(24.dp)) else Modifier)
             .combinedClickable(
                 onClick = { if (selectionMode) onLongSelect() else onInfo() },
                 onLongClick = onLongSelect,
-            )
-            .padding(16.dp),
+            ),
+        title = product.name,
+        description = product.category,
+        primaryActionLabel = null,
+        secondaryActionLabel = null,
+        showTitle = false,
+        showDescription = false,
+        contentPadding = 0.dp,
+        sectionSpacing = 0.dp,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(product.logoRes),
-                contentDescription = null,
-                modifier = Modifier.size(if (compact) 28.dp else 44.dp).clip(CircleShape),
-                contentScale = ContentScale.Fit,
-            )
-            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                QuimiaImage(
+                    painter = painterResource(product.logoRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(if (compact) 30.dp else 42.dp),
+                    shape = CircleShape,
+                    backgroundColor = tokens.surfaceBackground,
+                )
+                Column(Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(
                     product.name, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = (if (compact) Typography.bodySmall else Typography.bodyMedium).copy(fontWeight = FontWeight.Normal),
+                    style = (if (compact) Typography.bodySmall else Typography.bodyMedium).copy(fontWeight = FontWeight.Medium),
                     color = tokens.textPrimary,
                 )
                 Text(product.category, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = if (compact) Typography.bodySmall else Typography.bodyMedium, color = tokens.textSecondary)
-            }
-        }
-        Box(
-            modifier = Modifier.fillMaxWidth().height(if (compact) 150.dp else 170.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Image(
-                painter = painterResource(product.imageRes),
-                contentDescription = product.name,
-                modifier = Modifier.size(if (compact) 112.dp else 148.dp),
-                contentScale = ContentScale.Fit,
-            )
-            Box(Modifier.align(Alignment.BottomEnd).size(44.dp).background(tokens.secondary, CircleShape),
-                contentAlignment = Alignment.Center) {
-                IconButton(onClick = onInfo, modifier = Modifier.size(44.dp)) {
-                    Icon(Lucide.Info, contentDescription = "Informações sobre ${product.name}", modifier = Modifier.size(20.dp))
                 }
             }
+            Box(
+                modifier = Modifier.fillMaxWidth().height(if (compact) 148.dp else 174.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                QuimiaImage(
+                    painter = painterResource(product.imageRes),
+                    contentDescription = product.name,
+                    modifier = Modifier.size(if (compact) 116.dp else 146.dp),
+                    contentScale = ContentScale.Fit,
+                    shape = RoundedCornerShape(12.dp),
+                    backgroundColor = tokens.surfaceBase,
+                )
+                Box(Modifier.align(Alignment.BottomEnd).size(40.dp).background(tokens.secondary, CircleShape),
+                    contentAlignment = Alignment.Center) {
+                    IconButton(onClick = onInfo, modifier = Modifier.size(40.dp)) {
+                        Icon(Lucide.Info, contentDescription = "Informações sobre ${product.name}", modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            if (selected) {
+                Text("Selecionado", style = Typography.bodySmall, color = tokens.success,
+                    modifier = Modifier.padding(bottom = 8.dp))
+            }
+            QuimiaButton(
+                modifier = Modifier.fillMaxWidth().height(43.dp),
+                text = if (saved) "Guardado" else "Guardar",
+                textStyle = Typography.bodyMedium,
+                containerColor = tokens.primary, textColor = tokens.onPrimary,
+                iconSize = 0, espacamento = 0, onClick = onSave,
+            )
         }
-        Spacer(Modifier.height(24.dp))
-        QuimiaButton(
-            modifier = Modifier.fillMaxWidth().height(43.dp),
-            text = if (saved) "Guardado" else "Guardar",
-            textStyle = Typography.bodyMedium,
-            containerColor = tokens.primary, textColor = tokens.textPrimary,
-            iconSize = 0, espacamento = 0, onClick = onSave,
-        )
     }
 }
 
@@ -443,61 +439,68 @@ private fun CatalogProductDetailsDialog(
     val clipboard = LocalClipboardManager.current
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         BoxWithConstraints(
-            Modifier.fillMaxSize().padding(horizontal = 17.dp, vertical = 26.dp),
+            Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 28.dp),
             contentAlignment = Alignment.Center,
         ) {
             Surface(
-                Modifier.fillMaxWidth().widthIn(max = 520.dp).heightIn(max = 747.dp).fillMaxHeight(),
-                shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase,
+                Modifier.fillMaxWidth().widthIn(max = 520.dp).heightIn(max = 740.dp).fillMaxHeight(),
+                shape = RoundedCornerShape(36.dp), color = tokens.surfaceBase,
                 contentColor = tokens.textPrimary, shadowElevation = 16.dp,
             ) {
-                Column(
-                    Modifier.fillMaxSize().padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
+                Column(Modifier.fillMaxSize().padding(24.dp)) {
                     Row(verticalAlignment = Alignment.Top) {
                         Column(Modifier.weight(1f)) {
-                            Text(product.name, style = Typography.titleMedium.copy(fontSize = 24.sp), color = tokens.textPrimary)
+                            Text(product.name, style = Typography.titleMedium, color = tokens.textPrimary)
                             Spacer(Modifier.height(4.dp))
                             Text(product.category, style = Typography.bodySmall, color = tokens.textSecondary)
                         }
                         QuimiaIconButton(
-                            icon = Lucide.X, onClick = onDismiss, contentDescription = "Fechar detalhes",
-                            size = QuimiaIconButtonSize.Medium, containerColor = tokens.secondary,
+                            icon = Lucide.X,
+                            onClick = onDismiss,
+                            contentDescription = "Fechar detalhes",
+                            size = QuimiaIconButtonSize.Medium,
+                            containerColor = tokens.secondary,
                             iconColor = tokens.textPrimary,
                         )
                     }
                     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                        Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
-                            Image(
-                                painter = painterResource(product.detailImageRes),
-                                contentDescription = product.name,
-                                modifier = Modifier.width(147.dp).height(172.dp),
-                                contentScale = ContentScale.Crop,
-                            )
-                        }
-                        Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
-                                .background(tokens.surfaceBackground).padding(24.dp),
-                        ) {
-                            Text("Descrição", style = Typography.bodyMedium, color = tokens.textPrimary)
-                            Spacer(Modifier.height(8.dp))
-                            Text(product.description, style = Typography.bodySmall, color = tokens.textSecondary)
-                        }
-                        Spacer(Modifier.height(16.dp))
+                        QuimiaImage(
+                            painter = painterResource(product.detailImageRes),
+                            contentDescription = product.name,
+                            modifier = Modifier.fillMaxWidth().height(224.dp).padding(18.dp),
+                            contentScale = ContentScale.Fit,
+                            backgroundColor = tokens.surfaceBase,
+                        )
+                        QuimiaCard(
+                            title = "Descrição",
+                            description = product.description,
+                            primaryActionLabel = null,
+                            secondaryActionLabel = null,
+                            contentPadding = 20.dp,
+                            sectionSpacing = 8.dp,
+                            titleTextStyle = Typography.bodyMedium,
+                            descriptionTextStyle = Typography.bodySmall,
+                        )
                         if (product.barcode.isNotBlank()) {
-                            Row(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
-                                    .background(tokens.surfaceBackground).padding(24.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                            Spacer(Modifier.height(12.dp))
+                            QuimiaCard(
+                                title = "Código de barras",
+                                description = product.barcode,
+                                icon = Lucide.Info,
+                                primaryActionLabel = null,
+                                secondaryActionLabel = null,
+                                contentPadding = 18.dp,
+                                sectionSpacing = 0.dp,
+                                titleTextStyle = Typography.bodyMedium,
+                                descriptionTextStyle = Typography.bodySmall,
                             ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("Código de barras", style = Typography.bodyMedium, color = tokens.textPrimary)
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(product.barcode, style = Typography.bodySmall, color = tokens.textSecondary)
-                                }
-                                IconButton(onClick = { clipboard.setText(AnnotatedString(product.barcode)) }) {
-                                    Icon(Lucide.Copy, contentDescription = "Copiar código de barras", tint = tokens.textPrimary)
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                    QuimiaIconButton(
+                                        icon = Lucide.Copy,
+                                        onClick = { clipboard.setText(AnnotatedString(product.barcode)) },
+                                        contentDescription = "Copiar código de barras",
+                                        containerColor = tokens.secondary,
+                                    )
                                 }
                             }
                         }
@@ -505,8 +508,12 @@ private fun CatalogProductDetailsDialog(
                     Spacer(Modifier.height(16.dp))
                     QuimiaButton(
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        text = if (saved) "Guardado" else "Guardar", textStyle = Typography.bodyMedium,
-                        containerColor = tokens.primary, iconSize = 0, espacamento = 0,
+                        text = if (saved) "Guardado" else "Guardar",
+                        textStyle = Typography.bodyMedium,
+                        containerColor = tokens.primary,
+                        textColor = tokens.onPrimary,
+                        iconSize = 0,
+                        espacamento = 0,
                         onClick = onSave,
                     )
                 }
@@ -522,6 +529,12 @@ private fun CatalogSinglePreview() {
 }
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
+@Preview(name = "Catálogo lista · 360 × 800", widthDp = 360, heightDp = 800, showSystemUi = true)
+@Preview(name = "Catálogo compacto · 320 × 640", widthDp = 320, heightDp = 640, showSystemUi = true)
+@Preview(name = "Catálogo celular grande · 420 × 911", widthDp = 420, heightDp = 911, showSystemUi = true)
+@Preview(name = "Catálogo tablet", widthDp = 800, heightDp = 1340, showSystemUi = true)
+@Preview(name = "Catálogo tablet paisagem", widthDp = 1340, heightDp = 800, showSystemUi = true)
+@Preview(name = "GitHub · Catálogo preenchido · 360 × 900", group = "GitHub Screens", widthDp = 360, heightDp = 900, showSystemUi = true)
 @Composable
 private fun CatalogListPreview() {
     QuimiaTheme(darkTheme = false) { CatalogScreen() }
