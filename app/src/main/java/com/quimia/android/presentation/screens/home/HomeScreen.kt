@@ -17,9 +17,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.statusBars
@@ -48,12 +50,14 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowInsetsControllerCompat
 import card.QuimiaCard
 import card.QuimiaCardLayout
+import buttons.QuimiaAvatarButton
 import com.composables.icons.lucide.Atom
 import com.composables.icons.lucide.GalleryVerticalEnd
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Mic
 import com.composables.icons.lucide.MapPin
 import com.quimia.android.utils.AnalyticsLogger
-import header.QuimiaHeader
+import header.QuimiaSearchBar
 import menuBar.QuimiaMenuBar
 import buttons.QuimiaFAB
 import shortCut.QuimiaShortCut
@@ -81,6 +85,7 @@ fun HomeScreen(
     onMixClick: (() -> Unit)? = null,
     onMenuItemSelected: ((Int) -> Unit)? = null,
     onAiClick: (() -> Unit)? = null,
+    showMockHistory: Boolean = false,
 ) {
     HomeSystemBarsEffect()
 
@@ -100,12 +105,12 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(294.dp)
+                .height(276.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            tokens.brandSecondary.copy(alpha = 0.90f),
-                            tokens.brandPrimary.copy(alpha = 0.10f),
+                            tokens.brandSecondary.copy(alpha = 0.86f),
+                            tokens.surfaceBackground.copy(alpha = 0.72f),
                             tokens.surfaceBackground,
                         )
                     )
@@ -124,39 +129,53 @@ fun HomeScreen(
                     .fillMaxHeight()
                     .statusBarsPadding()
                     .navigationBarsPadding()
+                    .padding(bottom = 89.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 Spacer(modifier = Modifier.height(topSpacing))
 
-                QuimiaHeader(
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    QuimiaAvatarButton(
+                        onClick = {
+                            AnalyticsLogger.logInteraction("home", "profile_tapped")
+                            if (onAvatarClick != null) onAvatarClick() else unavailable("Perfil")
+                        },
+                        size = 42.dp,
+                        photo = avatarPhoto,
+                        initials = avatarInitials,
+                        backgroundColor = tokens.surfaceBase,
+                        foregroundColor = tokens.foregroundPrimary,
+                        contentDescription = "Abrir perfil",
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                QuimiaSearchBar(
                     value = searchValue,
                     onValueChange = { searchValue = it },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(48.dp),
                     placeholder = "Pesquisar",
-                    searchBarPadding = 12.dp,
-                    contentPadding = PaddingValues(horizontal = 24.dp),
-                    searchTextStyle = Typography.bodyMedium,
-                    actionContainerColor = tokens.surfaceBase,
+                    icon = Lucide.Mic,
+                    iconDescription = "Pesquisar por voz",
+                    horizontalPadding = 14.dp,
+                    verticalPadding = 8.dp,
+                    spacedBy = 12.dp,
+                    textStyle = Typography.bodyMedium,
                     onSearch = {
                         AnalyticsLogger.logInteraction("home", "search_submitted")
                         if (onSearch != null) onSearch(searchValue) else unavailable("Busca")
                     },
-                    onMicClick = {
+                    onClick = {
                         AnalyticsLogger.logInteraction("home", "microphone_tapped")
                         if (onMicClick != null) onMicClick() else unavailable("Busca por voz")
                     },
-                    onBellClick = {
-                        AnalyticsLogger.logInteraction("home", "notifications_tapped")
-                        if (onBellClick != null) onBellClick() else unavailable("Notificações")
-                    },
-                    onAvatarClick = {
-                        AnalyticsLogger.logInteraction("home", "profile_tapped")
-                        if (onAvatarClick != null) onAvatarClick() else unavailable("Perfil")
-                    },
-                    avatarInitials = avatarInitials,
-                    avatarPhoto = avatarPhoto,
                 )
 
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 HomeQuickActions(
                     onFindDropOffClick = {
@@ -184,14 +203,22 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                QuimiaEmptyState(
+                if (showMockHistory) {
+                    HomeMockMixtureCard(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                        onClick = {
+                            AnalyticsLogger.logInteraction("home", "mixture_history_tapped")
+                            if (onMixturesClick != null) onMixturesClick() else unavailable("Detalhes da mistura")
+                        },
+                    )
+                } else QuimiaEmptyState(
                     modifier = Modifier.fillMaxWidth(),
                     fillAvailableSpace = false,
                     icon = Lucide.Atom,
                     iconSize = 76.dp,
                     contentSpacing = 24.dp,
                     buttonSpacing = 24.dp,
-                    buttonTextStyle = Typography.labelMedium,
+                    buttonTextStyle = Typography.bodyMedium,
                     buttonModifier = Modifier.width(158.dp),
                     title = "Você ainda não fez\nnenhuma mistura",
                     titleTextStyle = Typography.bodyMedium.copy(
@@ -205,8 +232,6 @@ fun HomeScreen(
                         if (onMixClick != null) onMixClick() else unavailable("Misturar")
                     },
                 )
-
-                Spacer(modifier = Modifier.height(89.dp))
 
             }
 
@@ -321,8 +346,8 @@ private fun HomeQuickActions(
                     fontWeight = FontWeight.Medium,
                     lineHeight = 18.sp,
                 ),
-                descriptionTextStyle = Typography.labelSmall,
-                actionTextStyle = Typography.labelMedium,
+                descriptionTextStyle = Typography.bodySmall,
+                actionTextStyle = Typography.bodyMedium,
                 onSecondaryActionClick = onFindDropOffClick,
             )
 
@@ -341,10 +366,7 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    textStyle = Typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 18.sp,
-                    ),
+                    textStyle = Typography.bodyMedium.copy(lineHeight = 18.sp),
                     onClick = onMixturesClick,
                 )
                 QuimiaShortCut(
@@ -358,16 +380,66 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    textStyle = Typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 18.sp,
-                    ),
+                    textStyle = Typography.bodyMedium.copy(lineHeight = 18.sp),
                     onClick = onShelfClick,
                 )
             }
         }
     }
 }
+
+@Composable
+private fun HomeMockMixtureCard(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val tokens = quimiaColorTokens()
+    QuimiaCard(
+        modifier = modifier,
+        title = "Limpador Cozinha Squeeze & Lava-Roupas Líquido Omo",
+        description = "Mistura criada recentemente",
+        primaryActionLabel = "Ver mistura",
+        secondaryActionLabel = null,
+        contentPadding = 16.dp,
+        sectionSpacing = 14.dp,
+        actionHeight = 42.dp,
+        titleTextStyle = Typography.bodyMedium.copy(fontWeight = FontWeight.Medium, lineHeight = 18.sp),
+        descriptionTextStyle = Typography.bodySmall,
+        actionTextStyle = Typography.bodySmall,
+        onPrimaryActionClick = onClick,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            image.QuimiaImage(
+                painter = androidx.compose.ui.res.painterResource(com.quimia.android.R.drawable.catalog_mr_musculo),
+                contentDescription = "Limpador multiuso",
+                modifier = Modifier.weight(1f).height(86.dp),
+                shape = RoundedCornerShape(20.dp),
+                backgroundColor = tokens.surfaceBackground,
+            )
+            androidx.compose.material3.Icon(
+                imageVector = Lucide.Atom,
+                contentDescription = "Mistura de produtos",
+                tint = tokens.primary,
+                modifier = Modifier.size(28.dp),
+            )
+            image.QuimiaImage(
+                painter = androidx.compose.ui.res.painterResource(com.quimia.android.R.drawable.catalog_omo),
+                contentDescription = "Lava-roupas líquido",
+                modifier = Modifier.weight(1f).height(86.dp),
+                shape = RoundedCornerShape(20.dp),
+                backgroundColor = tokens.surfaceBackground,
+            )
+        }
+    }
+}
+
+@Preview(name = "Reference 360", showBackground = true, showSystemUi = true, widthDp = 360, heightDp = 900)
+@Preview(name = "Android 420", showBackground = true, showSystemUi = true, widthDp = 420, heightDp = 911)
+@Preview(name = "Compact 320", showBackground = true, showSystemUi = true, widthDp = 320, heightDp = 640)
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Preview(name = "Tab A7 Lite portrait - assumed 240 dpi", group = "Tablet QA", showBackground = true,
@@ -378,5 +450,14 @@ private fun HomeQuickActions(
 private fun HomeScreenPreview() {
     QuimiaTheme(darkTheme = false) {
         HomeScreen()
+    }
+}
+
+@Preview(name = "GitHub · Home preenchida · 360 × 900", group = "GitHub Screens", showBackground = true, showSystemUi = true, widthDp = 360, heightDp = 900)
+@Preview(name = "Home tablet · mistura recente", group = "Tablet QA", showBackground = true, showSystemUi = true, widthDp = 800, heightDp = 1340)
+@Composable
+private fun HomeHistoryPreview() {
+    QuimiaTheme(darkTheme = false) {
+        HomeScreen(avatarInitials = "G", showMockHistory = true)
     }
 }
