@@ -42,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,13 +61,21 @@ import com.composables.icons.lucide.MapPin
 import com.quimia.android.utils.AnalyticsLogger
 import header.QuimiaSearchBar
 import menuBar.QuimiaMenuBar
-import buttons.QuimiaFAB
+import menuBar.QuimiaMenuBarBackdrop
+import menuBar.QuimiaMenuBarBottomSpacing
+import menuBar.QuimiaMenuBarHeight
+import buttons.QuimiaButton
+import com.composables.icons.lucide.Skull
+import com.quimia.android.R
+import shapeIcon.QuimiaShapeIcon
 import shortCut.QuimiaShortCut
 import shortCut.QuimiaShortCutColor
 import shortCut.QuimiaShortCutType
 import states.QuimiaEmptyState
+import states.QuimiaEmptyStateTheme
 import theme.QuimiaTheme
 import theme.Typography
+import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 import title.QuimiaSectionTitle
 import kotlinx.coroutines.launch
@@ -90,6 +100,7 @@ fun HomeScreen(
     HomeSystemBarsEffect()
 
     val tokens = quimiaColorTokens()
+    val isPreview = LocalInspectionMode.current
     var searchValue by rememberSaveable { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -118,7 +129,7 @@ fun HomeScreen(
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
-            val topSpacing = (72.dp - WindowInsets.statusBars.asPaddingValues()
+            val topSpacing = if (isPreview) 48.dp else (72.dp - WindowInsets.statusBars.asPaddingValues()
                 .calculateTopPadding()).coerceAtLeast(16.dp)
 
             Column(
@@ -127,9 +138,9 @@ fun HomeScreen(
                     .widthIn(max = 600.dp)
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .statusBarsPadding()
+                    .then(if (isPreview) Modifier else Modifier.statusBarsPadding())
                     .navigationBarsPadding()
-                    .padding(bottom = 89.dp)
+                    .padding(bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + 16.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 Spacer(modifier = Modifier.height(topSpacing))
@@ -143,8 +154,8 @@ fun HomeScreen(
                             AnalyticsLogger.logInteraction("home", "profile_tapped")
                             if (onAvatarClick != null) onAvatarClick() else unavailable("Perfil")
                         },
-                        size = 42.dp,
-                        photo = avatarPhoto,
+                        size = 48.dp,
+                        photo = avatarPhoto ?: if (isPreview) painterResource(R.drawable.home_avatar_mock) else null,
                         initials = avatarInitials,
                         backgroundColor = tokens.surfaceBase,
                         foregroundColor = tokens.foregroundPrimary,
@@ -152,19 +163,20 @@ fun HomeScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
                 QuimiaSearchBar(
                     value = searchValue,
                     onValueChange = { searchValue = it },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(48.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(60.dp),
                     placeholder = "Pesquisar",
                     icon = Lucide.Mic,
                     iconDescription = "Pesquisar por voz",
                     horizontalPadding = 14.dp,
-                    verticalPadding = 8.dp,
+                    verticalPadding = 12.dp,
                     spacedBy = 12.dp,
-                    textStyle = Typography.bodyMedium,
+                    textStyle = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
+                    searchIconSize = 22.dp,
                     onSearch = {
                         AnalyticsLogger.logInteraction("home", "search_submitted")
                         if (onSearch != null) onSearch(searchValue) else unavailable("Busca")
@@ -175,7 +187,7 @@ fun HomeScreen(
                     },
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 HomeQuickActions(
                     onFindDropOffClick = {
@@ -196,12 +208,11 @@ fun HomeScreen(
 
                 QuimiaSectionTitle(
                     title = "Histórico de misturas",
-                    titleSize = 20.sp,
+                    titleSize = 22.sp,
+                    textStyle = QuimiaTextStyles.medium22,
                     horizontalPadding = 32.dp,
                     verticalPadding = 12.dp,
                 )
-
-                Spacer(modifier = Modifier.height(24.dp))
 
                 if (showMockHistory) {
                     HomeMockMixtureCard(
@@ -214,16 +225,18 @@ fun HomeScreen(
                 } else QuimiaEmptyState(
                     modifier = Modifier.fillMaxWidth(),
                     fillAvailableSpace = false,
+                    theme = QuimiaEmptyStateTheme.OnColor,
                     icon = Lucide.Atom,
-                    iconSize = 76.dp,
+                    iconSize = 80.dp,
                     contentSpacing = 24.dp,
                     buttonSpacing = 24.dp,
                     buttonTextStyle = Typography.bodyMedium,
                     buttonModifier = Modifier.width(158.dp),
                     title = "Você ainda não fez\nnenhuma mistura",
-                    titleTextStyle = Typography.bodyMedium.copy(
+                    titleTextStyle = Typography.bodyLarge.copy(
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Medium,
-                        lineHeight = 18.sp,
+                        lineHeight = 20.sp,
                         textAlign = TextAlign.Center,
                     ),
                     buttonLabel = "Misturar",
@@ -235,13 +248,15 @@ fun HomeScreen(
 
             }
 
+            QuimiaMenuBarBackdrop(modifier = Modifier.align(Alignment.BottomCenter))
+
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .widthIn(max = 600.dp)
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 16.dp),
+                    .padding(start = 16.dp, end = 16.dp, bottom = QuimiaMenuBarBottomSpacing),
                 contentAlignment = Alignment.Center,
             ) {
                 QuimiaMenuBar(
@@ -255,10 +270,6 @@ fun HomeScreen(
                             unavailable(listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja").getOrElse(item) { "Esta tela" })
                         }
                     },
-                    fab = { QuimiaFAB(onClick = {
-                        AnalyticsLogger.logInteraction("home", "fab_tapped")
-                        if (onAiClick != null) onAiClick() else unavailable("Assistente de IA")
-                    }, contentDescription = "Abrir assistente de IA") },
                 )
             }
 
@@ -267,7 +278,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(start = 24.dp, end = 24.dp, bottom = 88.dp),
+                    .padding(start = 24.dp, end = 24.dp, bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + 15.dp),
             )
         }
     }
@@ -309,7 +320,7 @@ private fun HomeQuickActions(
         val compactProgress = ((maxWidth.value - 320f) / 40f).coerceIn(0f, 1f)
         val rowPadding = 24.dp
         val itemSpacing = (12f + 4f * compactProgress).dp
-        val rowHeight = (224f + 24f * compactProgress).dp
+        val rowHeight = (234f + 26f * compactProgress).dp
         val leftWeight = 1.08f
         val rightWeight = 0.92f
         val shortcutPadding = (12f + 4f * compactProgress).dp
@@ -340,14 +351,11 @@ private fun HomeQuickActions(
                     bottom = 16.dp,
                 ),
                 sectionSpacing = 18.dp,
-                actionHeight = 43.dp,
-                iconSize = 22.dp,
-                titleTextStyle = Typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 18.sp,
-                ),
-                descriptionTextStyle = Typography.bodySmall,
-                actionTextStyle = Typography.bodyMedium,
+                actionHeight = 46.dp,
+                iconSize = 24.dp,
+                titleTextStyle = Typography.labelLarge,
+                descriptionTextStyle = Typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 16.sp),
+                actionTextStyle = Typography.labelLarge,
                 onSecondaryActionClick = onFindDropOffClick,
             )
 
@@ -366,7 +374,8 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    textStyle = Typography.bodyMedium.copy(lineHeight = 18.sp),
+                    iconSize = 22.dp,
+                    textStyle = Typography.labelLarge,
                     onClick = onMixturesClick,
                 )
                 QuimiaShortCut(
@@ -380,7 +389,8 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    textStyle = Typography.bodyMedium.copy(lineHeight = 18.sp),
+                    iconSize = 22.dp,
+                    textStyle = Typography.labelLarge,
                     onClick = onShelfClick,
                 )
             }
@@ -397,13 +407,14 @@ private fun HomeMockMixtureCard(
     QuimiaCard(
         modifier = modifier,
         title = "Limpador Cozinha Squeeze & Lava-Roupas Líquido Omo",
-        description = "Mistura criada recentemente",
-        primaryActionLabel = "Ver mistura",
+        description = null,
+        primaryActionLabel = null,
         secondaryActionLabel = null,
-        contentPadding = 16.dp,
+        endIcon = null,
+        contentPadding = 24.dp,
         sectionSpacing = 14.dp,
         actionHeight = 42.dp,
-        titleTextStyle = Typography.bodyMedium.copy(fontWeight = FontWeight.Medium, lineHeight = 18.sp),
+        titleTextStyle = Typography.bodyLarge,
         descriptionTextStyle = Typography.bodySmall,
         actionTextStyle = Typography.bodySmall,
         onPrimaryActionClick = onClick,
@@ -413,27 +424,33 @@ private fun HomeMockMixtureCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            image.QuimiaImage(
-                painter = androidx.compose.ui.res.painterResource(com.quimia.android.R.drawable.catalog_mr_musculo),
-                contentDescription = "Limpador multiuso",
-                modifier = Modifier.weight(1f).height(86.dp),
-                shape = RoundedCornerShape(20.dp),
-                backgroundColor = tokens.surfaceBackground,
-            )
-            androidx.compose.material3.Icon(
-                imageVector = Lucide.Atom,
-                contentDescription = "Mistura de produtos",
-                tint = tokens.primary,
-                modifier = Modifier.size(28.dp),
-            )
-            image.QuimiaImage(
-                painter = androidx.compose.ui.res.painterResource(com.quimia.android.R.drawable.catalog_omo),
-                contentDescription = "Lava-roupas líquido",
-                modifier = Modifier.weight(1f).height(86.dp),
-                shape = RoundedCornerShape(20.dp),
-                backgroundColor = tokens.surfaceBackground,
-            )
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                image.QuimiaImage(
+                    painter = painterResource(R.drawable.catalog_mr_musculo),
+                    contentDescription = "Limpador multiuso",
+                    modifier = Modifier.weight(1f).height(124.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    backgroundColor = tokens.surfaceBase,
+                )
+                image.QuimiaImage(
+                    painter = painterResource(R.drawable.catalog_omo),
+                    contentDescription = "Lava-roupas líquido",
+                    modifier = Modifier.weight(1f).height(124.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    backgroundColor = tokens.surfaceBase,
+                )
+            }
+            Box(Modifier.weight(1f).height(124.dp)
+                .background(tokens.surfaceBackground, RoundedCornerShape(32.dp)),
+                contentAlignment = Alignment.Center) {
+                QuimiaShapeIcon(size = 54.dp, icon = Lucide.Skull,
+                    containerColor = tokens.error, iconColor = tokens.white)
+            }
         }
+        Spacer(Modifier.height(16.dp))
+        QuimiaButton(text = "Ver mistura", modifier = Modifier.fillMaxWidth().height(44.dp),
+            containerColor = tokens.secondary, textColor = tokens.textPrimary,
+            textStyle = Typography.bodyLarge, iconSize = 0, espacamento = 0, onClick = onClick)
     }
 }
 
@@ -442,6 +459,7 @@ private fun HomeMockMixtureCard(
 @Preview(name = "Compact 320", showBackground = true, showSystemUi = true, widthDp = 320, heightDp = 640)
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
+@Preview(name = "Figma · Home vazia", group = "Figma", widthDp = 360, heightDp = 805, showSystemUi = true)
 @Preview(name = "Tab A7 Lite portrait - assumed 240 dpi", group = "Tablet QA", showBackground = true,
     device = "spec:width=800px,height=1340px,dpi=240", showSystemUi = true)
 @Preview(name = "Tab A7 Lite landscape - assumed 240 dpi", group = "Tablet QA", showBackground = true,
@@ -454,6 +472,7 @@ private fun HomeScreenPreview() {
 }
 
 @Preview(name = "GitHub · Home preenchida · 360 × 900", group = "GitHub Screens", showBackground = true, showSystemUi = true, widthDp = 360, heightDp = 900)
+@Preview(name = "Figma · Home com histórico", group = "Figma", widthDp = 360, heightDp = 805, showSystemUi = true)
 @Preview(name = "Home tablet · mistura recente", group = "Tablet QA", showBackground = true, showSystemUi = true, widthDp = 800, heightDp = 1340)
 @Composable
 private fun HomeHistoryPreview() {
