@@ -5,9 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -31,6 +34,36 @@ import com.composables.icons.lucide.SoapDispenserDroplet
 import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
+
+val QuimiaMenuBarHeight = 84.dp
+val QuimiaMenuBarBottomSpacing = 16.dp
+
+@Composable
+fun QuimiaMenuBarBackdrop(
+    modifier: Modifier = Modifier,
+    barHeight: Dp = QuimiaMenuBarHeight,
+) {
+    val background = quimiaColorTokens().surfaceBackground
+    Column(modifier.fillMaxWidth()) {
+        Box(
+            Modifier.fillMaxWidth().height(48.dp).background(
+                Brush.verticalGradient(
+                    listOf(
+                        background.copy(alpha = 0f),
+                        background.copy(alpha = 0.55f),
+                        background.copy(alpha = 0.9f),
+                        background.copy(alpha = 0.98f),
+                        background,
+                    ),
+                ),
+            ),
+        )
+        Box(
+            Modifier.fillMaxWidth().background(background).navigationBarsPadding()
+                .height(barHeight + QuimiaMenuBarBottomSpacing),
+        )
+    }
+}
 
 @Composable
 fun QuimiaMenuBar(
@@ -52,14 +85,14 @@ fun QuimiaMenuBar(
     val labels = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
     val interactionSource = remember { MutableInteractionSource() }
 
-    Box(modifier = modifier.fillMaxWidth().height(if (fab == null) 73.dp else 73.dp + 64.dp + fabSpacing)) {
+    Box(modifier = modifier.fillMaxWidth().height(if (fab == null) QuimiaMenuBarHeight else QuimiaMenuBarHeight + 64.dp + fabSpacing)) {
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(73.dp)
+                .height(QuimiaMenuBarHeight)
                 .background(tokens.secondary, RoundedCornerShape(RadiusFull.dp))
-                .padding(horizontal = 10.dp, vertical = 12.dp),
+                .padding(horizontal = 10.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -67,7 +100,7 @@ fun QuimiaMenuBar(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(49.dp)
+                        .height(56.dp)
                         .clip(CircleShape)
                         .background(if (index == selectedIndex) tokens.white else tokens.secondary)
                         .clickable(interactionSource = interactionSource, indication = null) {
@@ -80,13 +113,13 @@ fun QuimiaMenuBar(
                             imageVector = element,
                             contentDescription = labels.getOrNull(index),
                             tint = tokens.foregroundSubtle,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(24.dp),
                         )
                         is Int -> Icon(
                             painter = painterResource(element),
                             contentDescription = labels.getOrNull(index),
                             tint = tokens.foregroundSubtle,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 }

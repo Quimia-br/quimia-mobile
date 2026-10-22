@@ -29,6 +29,7 @@ import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
 import com.quimia.android.utils.AnalyticsLogger
+import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             QuimiaTheme(darkTheme = false) {
+                HideSystemNavigationBar()
                 QuimiaApp()
             }
         }
