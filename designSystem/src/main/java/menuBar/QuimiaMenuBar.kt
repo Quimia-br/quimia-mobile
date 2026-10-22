@@ -113,13 +113,13 @@ fun QuimiaMenuBar(
                             imageVector = element,
                             contentDescription = labels.getOrNull(index),
                             tint = tokens.foregroundSubtle,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(32.dp),
                         )
                         is Int -> Icon(
                             painter = painterResource(element),
                             contentDescription = labels.getOrNull(index),
                             tint = tokens.foregroundSubtle,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(32.dp),
                         )
                     }
                 }
