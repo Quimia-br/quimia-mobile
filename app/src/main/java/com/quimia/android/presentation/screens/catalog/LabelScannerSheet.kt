@@ -24,10 +24,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import buttons.QuimiaButton
 import buttons.QuimiaIconButton
@@ -38,6 +36,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Upload
 import com.composables.icons.lucide.X
 import com.quimia.android.R
+import com.quimia.android.presentation.system.HideSystemNavigationBar
 import java.io.File
 import theme.QuimiaTheme
 import theme.Typography
@@ -73,9 +72,12 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(32.dp),
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp),
+        sheetMaxWidth = 560.dp,
+        shape = RoundedCornerShape(36.dp),
         containerColor = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
+        scrimColor = CatalogModalScrimColor,
         dragHandle = {
             Box(
                 Modifier.padding(top = 8.dp).width(64.dp).height(2.dp)
@@ -123,6 +125,7 @@ internal fun LabelScannerContent(
     previewImage: Painter? = null,
     showDragHandle: Boolean = true,
 ) {
+    HideSystemNavigationBar()
     val tokens = quimiaColorTokens()
     val hasImage = imageUri != null || previewImage != null
     Column(
@@ -140,10 +143,10 @@ internal fun LabelScannerContent(
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text("Escanear rótulo", style = Typography.titleMedium.copy(fontSize = 20.sp, fontWeight = FontWeight.Normal), color = tokens.textPrimary)
+                Text("Escanear rótulo", style = Typography.titleLarge, color = tokens.textPrimary)
                 Spacer(Modifier.height(4.dp))
                 Text("Aponte a câmera para\no rótulo do seu produto\npara achá-lo",
-                    style = Typography.bodySmall.copy(lineHeight = 18.sp), color = tokens.textSecondary)
+                    style = Typography.bodyMedium, color = tokens.textSecondary)
             }
             QuimiaIconButton(
                 icon = Lucide.X, onClick = onClose, contentDescription = "Fechar scanner",
@@ -153,7 +156,7 @@ internal fun LabelScannerContent(
         }
         Spacer(Modifier.height(28.dp))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val photoHeight = (maxWidth / 0.86f).coerceAtMost(320.dp)
+            val photoHeight = (maxWidth / 0.86f).coerceAtMost(336.dp)
             Box(
                 Modifier.fillMaxWidth().height(photoHeight).clip(RoundedCornerShape(24.dp))
                     .background(tokens.secondary), contentAlignment = Alignment.Center,
@@ -168,18 +171,18 @@ internal fun LabelScannerContent(
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(64.dp).background(tokens.surfaceBase, CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Lucide.CameraOff, null, Modifier.size(22.dp), tint = tokens.textPrimary)
+                        Box(Modifier.size(68.dp).background(tokens.surfaceBase, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Lucide.CameraOff, null, Modifier.size(24.dp), tint = tokens.textPrimary)
                         }
                         Spacer(Modifier.height(20.dp))
-                        Text("Câmera desabilitada", style = Typography.bodyMedium, color = tokens.textPrimary)
+                        Text("Câmera desabilitada", style = Typography.labelLarge, color = tokens.textPrimary)
                         Spacer(Modifier.height(8.dp))
-                        Text("Abra a câmera para\nfotografar o rótulo", style = Typography.bodySmall,
+                        Text("Abra a câmera para\nfotografar o rótulo", style = Typography.bodyMedium,
                             color = tokens.textSecondary, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(16.dp))
                         QuimiaButton(
-                            modifier = Modifier.width(144.dp).heightIn(min = 40.dp),
-                            text = "Configurar", textStyle = Typography.bodySmall,
+                            modifier = Modifier.width(152.dp).heightIn(min = 44.dp),
+                            text = "Configurar", textStyle = Typography.bodyMedium,
                             iconSize = 0, espacamento = 0, containerColor = tokens.surfaceBase,
                             onClick = onConfigureCamera,
                         )
@@ -192,11 +195,11 @@ internal fun LabelScannerContent(
         }
         Spacer(Modifier.height(16.dp))
         QuimiaButton(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             text = if (hasImage) "Escolher outra imagem" else "Escolher da galeria",
             iconLeftVector = if (hasImage) null else Lucide.Upload,
             iconSize = 18, espacamento = if (hasImage) 0 else 16,
-            textStyle = Typography.bodyMedium, containerColor = tokens.secondary,
+            textStyle = Typography.labelLarge, containerColor = tokens.secondary,
             onClick = onChooseImage,
         )
     }
@@ -219,6 +222,26 @@ private fun LabelScannerReplacePreview() {
     QuimiaTheme(darkTheme = false) {
         Surface(color = Color.White, shape = RoundedCornerShape(32.dp)) {
             LabelScannerContent(null, {}, {}, {}, previewImage = painterResource(R.drawable.ic_launcher_background))
+        }
+    }
+}
+
+@com.quimia.android.presentation.preview.QuimiaScreenPreviews
+@Preview(name = "Figma · Câmera sobre o catálogo", group = "Figma", widthDp = 360, heightDp = 805, showSystemUi = true)
+@Composable
+private fun LabelScannerOverlayPreview() {
+    QuimiaTheme(darkTheme = false) {
+        Box(Modifier.fillMaxSize()) {
+            CatalogScreen(previewItemLimit = 3, initialBannerVisible = false)
+            Box(Modifier.fillMaxSize().background(CatalogModalScrimColor))
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp)
+                    .fillMaxWidth().padding(horizontal = 16.dp).navigationBarsPadding(),
+                color = quimiaColorTokens().surfaceBase,
+                shape = RoundedCornerShape(36.dp),
+            ) {
+                LabelScannerContent(null, {}, {}, {})
+            }
         }
     }
 }

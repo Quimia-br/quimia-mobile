@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -66,6 +67,7 @@ fun QuimiaCard(
     outline: Boolean = false,
     endIcon: ImageVector? = Lucide.Circle,
     onEndIconClick: () -> Unit = {},
+    containerColor: Color? = null,
     headerContent: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
@@ -76,7 +78,7 @@ fun QuimiaCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
-            .background(if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
+            .background(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
             .then(if (outline) Modifier.border(3.dp, tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
             .padding(paddingValues ?: PaddingValues(contentPadding)),
         verticalArrangement = if (layout == QuimiaCardLayout.Default) Arrangement.SpaceBetween else Arrangement.Top,
