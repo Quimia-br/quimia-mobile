@@ -553,7 +553,7 @@ private fun CatalogProductDetailsContent(
 }
 
 @Composable
-private fun CatalogDescriptionCard(description: String) {
+internal fun CatalogDescriptionCard(description: String) {
     val tokens = quimiaColorTokens()
     var expanded by rememberSaveable(description) { mutableStateOf(false) }
     var canExpand by remember(description) { mutableStateOf(false) }
