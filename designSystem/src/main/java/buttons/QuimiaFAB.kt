@@ -46,7 +46,7 @@ fun QuimiaFAB(
             imageVector = Lucide.Astroid,
             tint = actualIconColor,
             contentDescription = contentDescription,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(30.dp)
         )
     }
 }
