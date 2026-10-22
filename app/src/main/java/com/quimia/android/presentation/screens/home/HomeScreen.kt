@@ -318,9 +318,9 @@ private fun HomeQuickActions(
         modifier = modifier.fillMaxWidth(),
     ) {
         val compactProgress = ((maxWidth.value - 320f) / 40f).coerceIn(0f, 1f)
-        val rowPadding = 24.dp
-        val itemSpacing = (12f + 4f * compactProgress).dp
-        val rowHeight = (234f + 26f * compactProgress).dp
+        val rowPadding = 20.dp
+        val itemSpacing = (12f + 2f * compactProgress).dp
+        val rowHeight = (252f + 28f * compactProgress).dp
         val leftWeight = 1.08f
         val rightWeight = 0.92f
         val shortcutPadding = (12f + 4f * compactProgress).dp
@@ -351,11 +351,11 @@ private fun HomeQuickActions(
                     bottom = 16.dp,
                 ),
                 sectionSpacing = 18.dp,
-                actionHeight = 46.dp,
-                iconSize = 24.dp,
-                titleTextStyle = Typography.labelLarge,
-                descriptionTextStyle = Typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 16.sp),
-                actionTextStyle = Typography.labelLarge,
+                actionHeight = 50.dp,
+                iconSize = 28.dp,
+                titleTextStyle = QuimiaTextStyles.medium16,
+                descriptionTextStyle = QuimiaTextStyles.medium14,
+                actionTextStyle = QuimiaTextStyles.medium16,
                 onSecondaryActionClick = onFindDropOffClick,
             )
 
@@ -374,8 +374,8 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    iconSize = 22.dp,
-                    textStyle = Typography.labelLarge,
+                    iconSize = 28.dp,
+                    textStyle = QuimiaTextStyles.medium16,
                     onClick = onMixturesClick,
                 )
                 QuimiaShortCut(
@@ -389,8 +389,8 @@ private fun HomeQuickActions(
                     showTag = false,
                     useDefaultSize = false,
                     contentPadding = shortcutPadding,
-                    iconSize = 22.dp,
-                    textStyle = Typography.labelLarge,
+                    iconSize = 28.dp,
+                    textStyle = QuimiaTextStyles.medium16,
                     onClick = onShelfClick,
                 )
             }
