@@ -21,6 +21,8 @@ import theme.QuimiaTheme
 import theme.RadiusSmall
 import theme.quimiaColorTokens
 
+val QuimiaFABSize = 72.dp
+
 @Composable
 fun QuimiaFAB(
     modifier: Modifier = Modifier,
@@ -36,7 +38,7 @@ fun QuimiaFAB(
 
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(64.dp),
+        modifier = modifier.size(QuimiaFABSize),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,
             contentColor = actualIconColor
@@ -57,7 +59,7 @@ private fun PreviewQuimiaFAB() {
     QuimiaTheme(darkTheme = false) {
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .size(QuimiaFABSize + PaddingSmall.dp * 2)
                 .clip(RoundedCornerShape(RadiusSmall.dp))
                 .background(quimiaColorTokens().surfaceBackground)
                 .padding(PaddingSmall.dp),

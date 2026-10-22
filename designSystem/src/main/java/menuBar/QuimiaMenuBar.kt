@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import buttons.QuimiaFABSize
 import com.composables.icons.lucide.Bath
 import com.composables.icons.lucide.GalleryVerticalEnd
 import com.composables.icons.lucide.House
@@ -85,7 +86,7 @@ fun QuimiaMenuBar(
     val labels = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
     val interactionSource = remember { MutableInteractionSource() }
 
-    Box(modifier = modifier.fillMaxWidth().height(if (fab == null) QuimiaMenuBarHeight else QuimiaMenuBarHeight + 64.dp + fabSpacing)) {
+    Box(modifier = modifier.fillMaxWidth().height(if (fab == null) QuimiaMenuBarHeight else QuimiaMenuBarHeight + QuimiaFABSize + fabSpacing)) {
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
