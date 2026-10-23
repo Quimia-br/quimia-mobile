@@ -31,4 +31,33 @@ class ProximityModelsTest {
         assertEquals("Rua Exemplo, 100 · Vila Mariana · São Paulo/SP", address.formatted())
         assertTrue(address.copy(complement = "Bloco A").formatted().endsWith(" · Bloco A"))
     }
+
+    @Test fun acceptsApproximateLocationWithoutFinePermission() {
+        assertTrue(nearbyLocationPermission(fine = false, coarse = true))
+        assertTrue(nearbyLocationPermission(fine = true, coarse = true))
+        assertTrue(nearbyLocationPermission(fine = true, coarse = false))
+        assertFalse(nearbyLocationPermission(fine = false, coarse = false))
+    }
+
+    @Test fun choosesEnabledProviderCompatibleWithPermission() {
+        assertEquals("fused", nearbyLocationProvider(false, setOf("fused", "network", "gps")))
+        assertEquals("gps", nearbyLocationProvider(true, setOf("gps", "network")))
+        assertEquals("network", nearbyLocationProvider(false, setOf("gps", "network")))
+        assertNull(nearbyLocationProvider(false, setOf("gps")))
+        assertNull(nearbyLocationProvider(true, emptySet()))
+    }
+
+    @Test fun rejectsInvalidGeographicCoordinates() {
+        assertTrue(nearbyDefaultCoordinate.isValid())
+        assertTrue(NearbyCoordinate(-90.0, 180.0).isValid())
+        assertFalse(NearbyCoordinate(90.1, 0.0).isValid())
+        assertFalse(NearbyCoordinate(0.0, -180.1).isValid())
+        assertFalse(NearbyCoordinate(Double.NaN, 0.0).isValid())
+        assertFalse(NearbyCoordinate(0.0, Double.POSITIVE_INFINITY).isValid())
+    }
+
+    @Test fun samplePointsHaveValidCoordinatesAndRemainClearlyLabeled() {
+        assertTrue(nearbyPoints.all { it.coordinate.isValid() && "exemplo" in it.name })
+        assertEquals(nearbyPoints.size, nearbyPoints.map { it.id }.distinct().size)
+    }
 }

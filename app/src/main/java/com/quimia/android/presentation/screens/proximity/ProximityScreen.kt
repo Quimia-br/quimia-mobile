@@ -94,7 +94,7 @@ fun ProximityScreen(
                 Spacer(Modifier.height(16.dp))
             }
             Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp)).background(tokens.secondary)) {
-                ProximityMapPreview(points, selectedId, onPointClick = { selectedId = it })
+                ProximityMap(points, selectedId, onPointClick = { selectedId = it })
                 Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     NearbyCategory.entries.forEach { item ->
                         QuimiaChip(modifier = Modifier.weight(1f), label = item.label, selected = category == item, centerContent = true,

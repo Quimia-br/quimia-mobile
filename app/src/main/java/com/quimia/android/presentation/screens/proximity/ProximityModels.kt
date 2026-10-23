@@ -7,13 +7,32 @@ internal val nearbyStates = listOf("AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES
 internal data class NearbyPoint(
     val id: Int, val name: String, val address: String, val category: NearbyCategory,
     val distance: String, val x: Float, val y: Float,
+    val coordinate: NearbyCoordinate,
 )
 
+internal data class NearbyCoordinate(val latitude: Double, val longitude: Double) {
+    fun isValid(): Boolean = latitude.isFinite() && longitude.isFinite() &&
+        latitude in -90.0..90.0 && longitude in -180.0..180.0
+}
+
+internal val nearbyDefaultCoordinate = NearbyCoordinate(-23.5505, -46.6333)
+
+internal enum class NearbyLocationStatus { Idle, Loading, Ready, PermissionDenied, PermissionBlocked, Disabled, Unavailable }
+
+internal fun nearbyLocationPermission(fine: Boolean, coarse: Boolean): Boolean = fine || coarse
+
+internal fun nearbyLocationProvider(fine: Boolean, enabled: Set<String>): String? = when {
+    "fused" in enabled -> "fused"
+    fine && "gps" in enabled -> "gps"
+    "network" in enabled -> "network"
+    else -> null
+}
+
 internal val nearbyPoints = listOf(
-    NearbyPoint(1, "Ecoponto · exemplo", "Rua Exemplo, 100 · São Paulo", NearbyCategory.Collection, "650 m", .253f, .245f),
-    NearbyPoint(2, "Cooperativa · exemplo", "Avenida Exemplo, 200 · São Paulo", NearbyCategory.Collection, "1,2 km", .797f, .228f),
-    NearbyPoint(3, "Ponto de coleta · exemplo", "Rua Exemplo, 300 · São Paulo", NearbyCategory.Collection, "1,8 km", .183f, .425f),
-    NearbyPoint(4, "Loja · exemplo", "Avenida Exemplo, 400 · São Paulo", NearbyCategory.Shopping, "900 m", .62f, .22f),
+    NearbyPoint(1, "Ecoponto · exemplo", "Rua Exemplo, 100 · São Paulo", NearbyCategory.Collection, "650 m", .253f, .245f, NearbyCoordinate(-23.5485, -46.6383)),
+    NearbyPoint(2, "Cooperativa · exemplo", "Avenida Exemplo, 200 · São Paulo", NearbyCategory.Collection, "1,2 km", .797f, .228f, NearbyCoordinate(-23.5475, -46.6263)),
+    NearbyPoint(3, "Ponto de coleta · exemplo", "Rua Exemplo, 300 · São Paulo", NearbyCategory.Collection, "1,8 km", .183f, .425f, NearbyCoordinate(-23.5545, -46.6393)),
+    NearbyPoint(4, "Loja · exemplo", "Avenida Exemplo, 400 · São Paulo", NearbyCategory.Shopping, "900 m", .62f, .22f, NearbyCoordinate(-23.5495, -46.6293)),
 )
 
 internal fun filterNearbyPoints(points: List<NearbyPoint>, category: NearbyCategory?, query: String = ""): List<NearbyPoint> =

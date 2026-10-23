@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(project(":designSystem"))
     implementation(libs.coil.compose)
+    implementation(libs.maplibre.android)
     
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
