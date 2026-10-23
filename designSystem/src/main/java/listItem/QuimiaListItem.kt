@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Bolt
 import com.composables.icons.lucide.Droplet
@@ -106,6 +107,10 @@ fun QuimiaListItem(
     contentPadding: PaddingValues = PaddingValues(24.dp),
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
+    titleMaxLines: Int = 2,
+    subtitleMaxLines: Int = 2,
+    cornerRadius: Dp = 32.dp,
+    horizontalSpacing: Dp = 10.dp,
     onClick: (() -> Unit)? = null
 ) {
     val tokens = quimiaColorTokens(forceDark = forceDark)
@@ -123,12 +128,12 @@ fun QuimiaListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(32.dp))
+            .clip(RoundedCornerShape(cornerRadius))
             .background(resolvedContainerColor)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)
     ) {
         if (leadingContent != null) {
             leadingContent()
@@ -163,7 +168,7 @@ fun QuimiaListItem(
             Text(
                 text = title,
                 style = titleStyle,
-                maxLines = 2,
+                maxLines = titleMaxLines,
                 overflow = TextOverflow.Ellipsis
             )
 
@@ -176,7 +181,7 @@ fun QuimiaListItem(
                 Text(
                     text = subtitle,
                     style = subtitleStyle,
-                    maxLines = 2,
+                    maxLines = subtitleMaxLines,
                     overflow = TextOverflow.Ellipsis
                 )
             }

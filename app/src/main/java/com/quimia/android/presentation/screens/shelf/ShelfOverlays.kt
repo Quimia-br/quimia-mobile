@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalView
@@ -43,6 +44,7 @@ import com.composables.icons.lucide.Minus
 import com.composables.icons.lucide.TriangleAlert
 import com.composables.icons.lucide.X
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
+import com.quimia.android.R
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
 import com.quimia.android.presentation.screens.catalog.CatalogDescriptionCard
 import com.quimia.android.presentation.screens.catalog.CatalogModalScrimColor
@@ -51,6 +53,7 @@ import image.QuimiaImage
 import listItem.QuimiaListItem
 import shapeIcon.QuimiaShapeIcon
 import theme.QuimiaTheme
+import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 
 internal val ShelfRemovalColor = Color(0xFFFF2B6B)
@@ -66,7 +69,7 @@ private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, 
                     .widthIn(max = 560.dp).fillMaxWidth(),
                 color = tokens.surfaceBase, shape = RoundedCornerShape(40.dp),
             ) {
-                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp), content = content)
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp), content = content)
             }
         }
         return
@@ -79,7 +82,7 @@ private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, 
         scrimColor = CatalogModalScrimColor, dragHandle = null,
     ) {
         HideSystemNavigationBar()
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp), content = content)
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp), content = content)
     }
 }
 
@@ -97,21 +100,18 @@ internal fun ShelfActionsPanel(
         }
         Spacer(Modifier.height(24.dp))
         QuimiaListItem(
-            title = "Remover produto", leftIcon = Lucide.Minus, onClick = onRemove,
-            iconBackgroundColor = ShelfRemovalColor, iconTint = tokens.white,
-            modifier = Modifier.padding(vertical = 4.dp),
+            title = "Remover produto", onClick = onRemove, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
+            leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Minus, containerColor = ShelfRemovalColor, iconColor = tokens.white) },
         )
         Spacer(Modifier.height(20.dp))
         QuimiaListItem(
-            title = "Ver misturas", leftIcon = Lucide.Atom, onClick = onMixtures,
-            iconBackgroundColor = tokens.surfaceBase,
-            modifier = Modifier.padding(vertical = 4.dp),
+            title = "Ver misturas", onClick = onMixtures, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
+            leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Atom, containerColor = tokens.surfaceBase) },
         )
         Spacer(Modifier.height(20.dp))
         QuimiaListItem(
-            title = "Ver informações", leftIcon = Lucide.Info, onClick = onInformation,
-            iconBackgroundColor = tokens.surfaceBase,
-            modifier = Modifier.padding(vertical = 4.dp),
+            title = "Ver informações", onClick = onInformation, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
+            leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Info, containerColor = tokens.surfaceBase) },
         )
     }
 }
@@ -123,18 +123,23 @@ internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> U
     ShelfFloatingPanel(onDismiss) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f).padding(end = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(product.name, style = ShelfBodyStyle.copy(fontSize = 24.sp, lineHeight = 28.sp), color = tokens.foregroundPrimary)
+                Text(product.name, style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
                 Text(product.category, style = ShelfBodyStyle.copy(fontSize = 16.sp, lineHeight = 19.sp), color = tokens.textSecondary)
             }
             ShelfCloseButton(onDismiss)
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(34.dp))
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 147.dp, height = 172.dp).clip(RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center) {
             QuimiaImage(
-                painter = painterResource(product.detailImageRes), contentDescription = product.name,
-                modifier = Modifier.fillMaxSize(), backgroundColor = tokens.surfaceBase,
-                contentScale = ContentScale.Fit,
+                painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes),
+                contentDescription = product.name,
+                modifier = Modifier.fillMaxSize().then(if (product.id.startsWith("squeeze")) Modifier.graphicsLayer {
+                    scaleX = -1.564f
+                    translationX = -size.width * .0079f
+                    translationY = size.height * .0008f
+                } else Modifier), backgroundColor = tokens.surfaceBase,
+                contentScale = if (product.id.startsWith("squeeze")) ContentScale.FillBounds else ContentScale.Fit,
             )
         }
         Spacer(Modifier.height(20.dp))
@@ -142,9 +147,12 @@ internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> U
         if (product.barcode.isNotBlank()) {
             Spacer(Modifier.height(20.dp))
             QuimiaListItem(
-                title = "Código de barras", subtitle = product.barcode, rightIcon = Lucide.Copy,
+                title = "Código de barras", subtitle = product.barcode,
                 iconBackgroundColor = tokens.surfaceBase,
-                modifier = Modifier.padding(vertical = 4.dp),
+                trailingContent = {
+                    QuimiaIconButton(icon = Lucide.Copy, containerColor = tokens.surfaceBase,
+                        contentDescription = "Copiar código de barras", onClick = { clipboard.setText(AnnotatedString(product.barcode)) })
+                },
                 onClick = { clipboard.setText(AnnotatedString(product.barcode)) },
             )
         }
@@ -177,7 +185,7 @@ private fun ShelfConfirmation(
     val confirmation: @Composable () -> Unit = {
         Surface(Modifier.widthIn(max = 297.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase) {
             Column(
-                Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 24.dp),
+                Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 QuimiaShapeIcon(

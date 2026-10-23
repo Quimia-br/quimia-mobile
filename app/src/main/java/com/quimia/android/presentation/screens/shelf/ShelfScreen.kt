@@ -30,6 +30,7 @@ import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
 import card.QuimiaCard
 import com.composables.icons.lucide.Bath
+import com.composables.icons.lucide.Star
 import com.composables.icons.lucide.Atom
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronDown
@@ -43,6 +44,8 @@ import com.composables.icons.lucide.Settings2
 import com.composables.icons.lucide.SoapDispenserDroplet
 import com.composables.icons.lucide.X
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
+import com.quimia.android.R
+import chip.QuimiaChip
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
 import header.QuimiaSearchBar
 import image.QuimiaImage
@@ -78,13 +81,14 @@ fun ShelfScreen(
     onCreateRoom: (String) -> Unit = {},
     initialSubstancesTab: Boolean = false,
     initialFiltersVisible: Boolean = false,
+    initialFavoriteSubstanceIds: List<String> = emptyList(),
 ) {
     val tokens = quimiaColorTokens()
     var tab by rememberSaveable { mutableStateOf(if (initialSubstancesTab) ShelfTab.Substances else ShelfTab.Products) }
     var query by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf<ShelfSort?>(ShelfSort.Alphabetical) }
     var filtersVisible by rememberSaveable { mutableStateOf(initialFiltersVisible) }
-    var favoriteSubstanceIds by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var favoriteSubstanceIds by rememberSaveable { mutableStateOf(initialFavoriteSubstanceIds) }
     var expandedSubstanceIds by rememberSaveable { mutableStateOf(sampleShelfSubstances.map { it.id }) }
     var expandedIds by rememberSaveable { mutableStateOf(savedIds.take(1)) }
     var actionId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -121,26 +125,26 @@ fun ShelfScreen(
                 top = (62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp),
                 bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + QuimiaFABSize + 40.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             if (successVisible) item {
                 ShelfSuccessBanner(onDismiss = { successVisible = false })
             }
             item {
                 QuimiaSectionTitle(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    title = "Minha estante", titleSize = 22.sp,
-                    textStyle = QuimiaTextStyles.medium22,
-                    horizontalPadding = 24.dp, verticalPadding = 0.dp,
+                    title = "Minha estante", titleSize = 24.sp,
+                    textStyle = QuimiaTextStyles.medium24,
+                    horizontalPadding = 32.dp, verticalPadding = 32.dp,
                 )
             }
             item {
-                Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     ShelfTab.entries.forEach { item ->
                         QuimiaButton(
-                            modifier = Modifier.weight(1f).height(43.dp), text = item.label,
-                            textStyle = ShelfBodyStyle, iconSize = 18, espacamento = 8,
-                            iconLeftVector = if (item == ShelfTab.Products) SoapDispenserDroplet else Lucide.Atom,
+                            modifier = Modifier.weight(1f).height(44.dp), text = item.label,
+                            textStyle = ShelfBodyStyle, iconSize = 20, espacamento = if (tab == ShelfTab.Substances) 10 else 0,
+                            iconLeftVector = if (tab == ShelfTab.Substances && item == ShelfTab.Products) SoapDispenserDroplet else null,
+                            iconLeft = if (tab == ShelfTab.Substances && item == ShelfTab.Substances) R.drawable.figma_bubbles else null,
                             containerColor = if (tab == item) tokens.surfaceBase else Color.Transparent,
                             textColor = tokens.foregroundPrimary, onClick = { tab = item },
                         )
@@ -153,7 +157,7 @@ fun ShelfScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     QuimiaSearchBar(
-                        value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(56.dp),
+                        value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(58.dp),
                         placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz",
                         searchIconSize = 24.dp, horizontalPadding = 16.dp, verticalPadding = 12.dp,
                         spacedBy = 10.dp, textStyle = ShelfBodyStyle.copy(fontSize = 16.sp),
@@ -172,10 +176,10 @@ fun ShelfScreen(
                 }
             }
             if (filtersVisible) item {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         ShelfSort.entries.take(3).forEach { item ->
-                            ShelfFilterChip(item, sort == item, Modifier.weight(if (item == ShelfSort.Alphabetical) 1.25f else 1f)) {
+                            ShelfFilterChip(item, sort == item, Modifier.weight(if (item == ShelfSort.Alphabetical) 1.37f else 1f)) {
                                 sort = if (sort == item) null else item
                             }
                         }
@@ -196,6 +200,7 @@ fun ShelfScreen(
             } else if (tab == ShelfTab.Substances) items(substances, key = { it.id }) { substance ->
                 ShelfSubstanceCard(
                     substance = substance,
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = if (substance.id == substances.first().id) 24.dp else 16.dp),
                     expanded = substance.id in expandedSubstanceIds,
                     favorite = substance.id in favoriteSubstanceIds,
                     onExpand = { expandedSubstanceIds = expandedSubstanceIds.toggle(substance.id) },
@@ -207,7 +212,7 @@ fun ShelfScreen(
             } else items(products, key = { it.id }) { product ->
                 ShelfProductCard(
                     product, expanded = product.id in expandedIds, favorite = product.id in favoriteIds,
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = if (product.id == products.first().id) 8.dp else 0.dp),
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = if (product.id == products.first().id) 24.dp else 16.dp),
                     onExpand = { expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id },
                     onFavorite = { onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
                     onActions = { actionId = product.id }, onRoom = { roomId = product.id },
@@ -258,13 +263,7 @@ fun ShelfScreen(
 
 @Composable
 private fun ShelfFilterChip(item: ShelfSort, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val tokens = quimiaColorTokens()
-    QuimiaButton(
-        modifier = modifier.height(43.dp), text = item.label,
-        iconRightVector = if (selected) Lucide.X else null, iconSize = 16, espacamento = 0,
-        textStyle = ShelfBodyStyle, containerColor = if (selected) tokens.primary else tokens.surfaceBase,
-        textColor = tokens.foregroundPrimary, onClick = onClick,
-    )
+    QuimiaChip(modifier = modifier, label = item.label, selected = selected, centerContent = true, onClick = onClick)
 }
 
 @Composable
@@ -276,14 +275,14 @@ private fun ShelfProductCard(
     QuimiaCard(
         title = product.name, showTitle = false, showDescription = false,
         primaryActionLabel = null, secondaryActionLabel = null,
-        modifier = modifier, contentPadding = 16.dp, sectionSpacing = 0.dp,
+        modifier = modifier, contentPadding = 24.dp, sectionSpacing = 0.dp, endIcon = null,
     ) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             QuimiaImage(
-                painter = painterResource(product.detailImageRes), contentDescription = product.name,
+                painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes), contentDescription = product.name,
                 modifier = Modifier.size(45.dp),
                 backgroundColor = tokens.surfaceBase,
-                contentScale = ContentScale.Fit,
+                contentScale = if (product.id.startsWith("squeeze")) ContentScale.Crop else ContentScale.Fit,
             )
             Column(Modifier.weight(1f).padding(start = 10.dp, end = 10.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(
@@ -305,74 +304,79 @@ private fun ShelfProductCard(
         if (expanded) {
             Spacer(Modifier.height(32.dp))
             QuimiaListItem(
-                title = "Como se proteger?", subtitle = "Confira as instruções de uso e segurança no rótulo do produto.",
-                modifier = Modifier.padding(vertical = 4.dp),
+                title = "Como se proteger?", subtitle = "Description",
             )
         }
         Spacer(Modifier.height(32.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            QuimiaIconButton(
-                modifier = Modifier.clip(CircleShape).then(if (favorite) Modifier.border(2.dp, ShelfFavoriteColor, CircleShape) else Modifier),
-                icon = Lucide.Heart, size = QuimiaIconButtonSize.Small,
-                containerColor = if (favorite) tokens.surfaceBase else tokens.secondary,
-                iconColor = if (favorite) ShelfFavoriteColor else tokens.foregroundSubtle,
-                contentDescription = if (favorite) "Remover dos favoritos" else "Favoritar produto", onClick = onFavorite,
-            )
-            QuimiaIconButton(
-                icon = Lucide.Menu, size = QuimiaIconButtonSize.Small, containerColor = tokens.secondary,
-                iconColor = tokens.foregroundPrimary, contentDescription = "Abrir ações do produto", onClick = onActions,
-            )
-            QuimiaIconButton(
-                icon = Lucide.Bath, size = QuimiaIconButtonSize.Small, containerColor = tokens.secondary,
-                iconColor = tokens.foregroundPrimary, contentDescription = "Ver cômodo do produto", onClick = onRoom,
-            )
-            QuimiaButton(
-                modifier = Modifier.weight(1f).height(43.dp), text = "Misturar", textStyle = ShelfBodyStyle,
-                iconSize = 0, espacamento = 0, textColor = tokens.foregroundPrimary, onClick = onMix,
-            )
-        }
+        ShelfCardActions(favorite, false, onFavorite, onActions, onRoom, onMix)
     }
 }
 
 @Composable
 private fun ShelfSubstanceCard(
     substance: ShelfSubstance, expanded: Boolean, favorite: Boolean,
+    modifier: Modifier = Modifier,
     onExpand: () -> Unit, onFavorite: () -> Unit, onRoom: () -> Unit,
     onMix: () -> Unit, onMixtures: () -> Unit,
 ) {
     val tokens = quimiaColorTokens()
     QuimiaCard(
         title = substance.name, showTitle = false, showDescription = false,
-        primaryActionLabel = null, secondaryActionLabel = null, sectionSpacing = 0.dp,
-        modifier = Modifier.padding(horizontal = 24.dp), contentPadding = 16.dp,
+        primaryActionLabel = null, secondaryActionLabel = null, sectionSpacing = 0.dp, endIcon = null,
+        modifier = modifier, contentPadding = 24.dp,
     ) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             Text(substance.name, Modifier.weight(1f), style = ShelfBodyStyle, color = tokens.textPrimary)
             QuimiaIconButton(
                 icon = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
-                containerColor = tokens.surfaceBase, size = QuimiaIconButtonSize.Small,
+                containerColor = tokens.surfaceBase, size = QuimiaIconButtonSize.Medium,
                 contentDescription = if (expanded) "Recolher substância" else "Expandir substância",
                 onClick = onExpand,
             )
         }
         if (expanded) {
-            Spacer(Modifier.height(16.dp))
-            QuimiaListItem(title = "Descrição da substância", subtitle = substance.description)
+            Spacer(Modifier.height(32.dp))
+            QuimiaListItem(title = "Descrição da substância")
         }
-        Spacer(Modifier.height(20.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.height(32.dp))
+        ShelfCardActions(favorite, true, onFavorite, onMixtures, onRoom, onMix)
+    }
+}
+
+@Composable
+private fun ShelfCardActions(
+    favorite: Boolean, substance: Boolean, onFavorite: () -> Unit,
+    onActions: () -> Unit, onRoom: () -> Unit, onMix: () -> Unit,
+) {
+    val tokens = quimiaColorTokens()
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 264.dp
+        val icons: @Composable () -> Unit = {
             QuimiaIconButton(
-                modifier = Modifier.clip(CircleShape).then(if (favorite) Modifier.border(2.dp, ShelfFavoriteColor, CircleShape) else Modifier),
-                icon = Lucide.Heart, size = QuimiaIconButtonSize.Small,
-                containerColor = tokens.secondary, iconColor = if (favorite) ShelfFavoriteColor else tokens.foregroundSubtle,
-                contentDescription = if (favorite) "Remover substância dos favoritos" else "Favoritar substância", onClick = onFavorite,
+                modifier = if (favorite) Modifier.border(2.dp, if (substance) ShelfFavoriteColor else Color(0xFFFFC693), CircleShape) else Modifier,
+                icon = if (substance) Lucide.Heart else Lucide.Star,
+                iconPainter = if (favorite) painterResource(if (substance) R.drawable.figma_heart_filled else R.drawable.figma_star_filled) else null,
+                size = QuimiaIconButtonSize.Medium,
+                containerColor = if (favorite) { if (substance) tokens.surfaceBase else Color(0xFFFFF1E4) } else tokens.secondary,
+                iconColor = if (favorite) Color.Unspecified else tokens.foregroundPrimary,
+                contentDescription = if (favorite) "Remover dos favoritos" else "Favoritar",
+                onClick = onFavorite,
             )
-            QuimiaIconButton(icon = Lucide.Atom, size = QuimiaIconButtonSize.Small, containerColor = tokens.secondary,
-                contentDescription = "Ver misturas da substância", onClick = onMixtures)
-            QuimiaIconButton(icon = Lucide.Bath, size = QuimiaIconButtonSize.Small, containerColor = tokens.secondary,
-                contentDescription = "Ver cômodo da substância", onClick = onRoom)
-            QuimiaButton(modifier = Modifier.weight(1f).height(43.dp), text = "Misturar", textStyle = ShelfBodyStyle,
+            QuimiaIconButton(icon = if (substance) Lucide.Atom else Lucide.Menu, size = QuimiaIconButtonSize.Medium,
+                containerColor = tokens.secondary, contentDescription = if (substance) "Ver misturas" else "Abrir ações do produto", onClick = onActions)
+            QuimiaIconButton(icon = Lucide.Bath, size = QuimiaIconButtonSize.Medium,
+                containerColor = tokens.secondary, contentDescription = "Ver cômodo", onClick = onRoom)
+        }
+        val mix: @Composable (Modifier) -> Unit = { modifier ->
+            QuimiaButton(modifier = modifier.height(43.dp), text = "Misturar", textStyle = ShelfBodyStyle,
                 iconSize = 0, espacamento = 0, onClick = onMix)
+        }
+        if (compact) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { icons() }
+            mix(Modifier.fillMaxWidth())
+        } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            icons()
+            mix(Modifier.weight(1f))
         }
     }
 }
@@ -397,7 +401,7 @@ private fun ShelfSuccessBanner(onDismiss: () -> Unit) {
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Preview(name = "GitHub · Estante preenchida · 360 × 900", group = "GitHub Screens", showBackground = true, widthDp = 360, heightDp = 900, showSystemUi = true)
-@Preview(name = "Estante referência", showBackground = true, widthDp = 360, heightDp = 1152, showSystemUi = true)
+@Preview(name = "Figma · Estante referência", group = "Figma", showBackground = true, widthDp = 360, heightDp = 1044, showSystemUi = true)
 @Preview(name = "Estante compacta", showBackground = true, widthDp = 360, heightDp = 800, showSystemUi = true)
 @Preview(name = "Estante telefone compacto", group = "Phone QA", widthDp = 320, heightDp = 640, showSystemUi = true)
 @Preview(name = "Estante tablet retrato", group = "Tablet QA", widthDp = 800, heightDp = 1340, showSystemUi = true)
@@ -405,7 +409,7 @@ private fun ShelfSuccessBanner(onDismiss: () -> Unit) {
 @Composable
 private fun ShelfScreenPreview() {
     QuimiaTheme(darkTheme = false) {
-        var ids by remember { mutableStateOf(listOf("squeeze", "veja", "omo")) }
+        var ids by remember { mutableStateOf(listOf("squeeze", "squeeze-2")) }
         var favorites by remember { mutableStateOf(listOf("squeeze")) }
         ShelfScreen(ids, { ids = it }, favoriteIds = favorites, onFavoriteIdsChange = { favorites = it })
     }
@@ -422,10 +426,10 @@ private fun ShelfFiltersPreview() {
 }
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
-@Preview(name = "Figma · Substâncias", group = "Figma", widthDp = 360, heightDp = 805, showSystemUi = true)
+@Preview(name = "Figma · Substâncias", group = "Figma", widthDp = 360, heightDp = 1074, showSystemUi = true)
 @Composable
 private fun ShelfSubstancesPreview() {
-    QuimiaTheme(false) { ShelfScreen(emptyList(), {}, initialSubstancesTab = true) }
+    QuimiaTheme(false) { ShelfScreen(emptyList(), {}, initialSubstancesTab = true, initialFavoriteSubstanceIds = sampleShelfSubstances.map { it.id }) }
 }
 
 @Preview(name = "Estante vazia · fonte ampliada", group = "Acessibilidade", widthDp = 320, heightDp = 720, fontScale = 1.5f, showSystemUi = true)
