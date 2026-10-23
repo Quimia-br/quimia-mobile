@@ -171,7 +171,8 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                             Box {
                                 QuimiaInput(value = state, onValueChange = { state = it.filter(Char::isLetter).uppercase().take(2); error = null }, label = "UF",
                                     trailingIcon = Lucide.ChevronDown, onTrailingIconClick = { statesVisible = true },
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp))
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                                    showTrailingIconWhenEmpty = true)
                                 DropdownMenu(expanded = statesVisible, onDismissRequest = { statesVisible = false }) {
                                     nearbyStates.forEach { uf -> DropdownMenuItem(text = { Text(uf, style = QuimiaTextStyles.medium16) },
                                         onClick = { state = uf; error = null; statesVisible = false }) }

@@ -69,6 +69,7 @@ fun QuimiaInput(
     error: String? = null,
     errorColor: Color? = null,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+    showTrailingIconWhenEmpty: Boolean = false,
     ) {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -155,7 +156,7 @@ fun QuimiaInput(
                     }
                     innerTextField()
                 }
-                    if (value.isNotEmpty() || trailingIcon != null) {
+                    if (value.isNotEmpty() || (showTrailingIconWhenEmpty && trailingIcon != null)) {
                         QuimiaIconButton(
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                             icon = trailingIcon ?: Lucide.X,

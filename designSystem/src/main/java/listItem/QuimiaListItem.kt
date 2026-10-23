@@ -110,6 +110,7 @@ fun QuimiaListItem(
     titleMaxLines: Int = 2,
     subtitleMaxLines: Int = 2,
     cornerRadius: Dp = 32.dp,
+    horizontalSpacing: Dp = 10.dp,
     onClick: (() -> Unit)? = null
 ) {
     val tokens = quimiaColorTokens(forceDark = forceDark)
@@ -132,7 +133,7 @@ fun QuimiaListItem(
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)
     ) {
         if (leadingContent != null) {
             leadingContent()
