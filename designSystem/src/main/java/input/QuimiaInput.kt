@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -66,7 +67,8 @@ fun QuimiaInput(
     radius: Int = RadiusFull,
     focusColor: Color? = null,
     error: String? = null,
-    errorColor: Color? = null
+    errorColor: Color? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
     ) {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -135,7 +137,7 @@ fun QuimiaInput(
                     color = borderColor,
                     shape = shape
                 )
-                .padding(20.dp, 12.dp),
+                .padding(contentPadding),
             decorationBox = { innerTextField ->
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -153,7 +155,7 @@ fun QuimiaInput(
                     }
                     innerTextField()
                 }
-                    if (value.isNotEmpty()) {
+                    if (value.isNotEmpty() || trailingIcon != null) {
                         QuimiaIconButton(
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                             icon = trailingIcon ?: Lucide.X,

@@ -35,6 +35,7 @@ fun QuimiaChip(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     showSelectedIcon: Boolean = true,
+    centerContent: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     val containerColor = when {
@@ -52,7 +53,7 @@ fun QuimiaChip(
             .background(containerColor)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp, if (centerContent) Alignment.CenterHorizontally else Alignment.Start),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = label, style = QuimiaTextStyles.medium15, color = contentColor, maxLines = 1)
