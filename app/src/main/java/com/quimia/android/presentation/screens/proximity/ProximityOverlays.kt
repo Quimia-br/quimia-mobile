@@ -117,13 +117,6 @@ internal fun NearbySavedPointsSheet(ids: List<Int>, onDismiss: () -> Unit, onSel
             if (routeNotice) QuimiaToast(message = "Este ponto é de demonstração. Rotas reais ainda não estão conectadas.",
                 type = QuimiaToastType.Info, onDismiss = { routeNotice = false })
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            QuimiaButton(modifier = Modifier.weight(1f).height(52.dp), text = "Fechar", iconSize = 0, espacamento = 0,
-                textStyle = QuimiaTextStyles.medium16, containerColor = tokens.surfaceBase, onClick = onDismiss)
-            QuimiaButton(modifier = Modifier.weight(1f).height(52.dp), text = "Ver mapa", iconSize = 0, espacamento = 0,
-                textStyle = QuimiaTextStyles.medium16, enabled = points.isNotEmpty(),
-                onClick = { points.firstOrNull()?.let { onSelect(it.id) } })
-        }
     }
 }
 

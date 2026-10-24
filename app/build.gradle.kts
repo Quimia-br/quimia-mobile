@@ -22,6 +22,14 @@ if (keystorePropertiesFile.exists()) {
     }
 }
 
+val localConfiguration = Properties().apply {
+    val configurationFile = rootProject.file("local.properties")
+    if (configurationFile.exists()) configurationFile.inputStream().use(::load)
+}
+val mapsApiKey = providers.environmentVariable("MAPS_API_KEY").orNull?.trim().takeUnless { it.isNullOrEmpty() }
+    ?: localConfiguration.getProperty("MAPS_API_KEY", "").trim()
+val mapsConfigured = mapsApiKey.isNotEmpty() && mapsApiKey != "COLE_SUA_CHAVE_AQUI"
+
 if (file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
@@ -36,12 +44,15 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     defaultConfig {
         applicationId = "com.quimia.android"
         versionCode = releaseVersionCode
         versionName = releaseVersionName
+        manifestPlaceholders["MAPS_API_KEY"] = if (mapsConfigured) mapsApiKey else ""
+        buildConfigField("boolean", "GOOGLE_MAPS_CONFIGURED", mapsConfigured.toString())
     }
 
     signingConfigs {
@@ -83,7 +94,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(project(":designSystem"))
     implementation(libs.coil.compose)
-    implementation(libs.maplibre.android)
+    implementation(libs.play.services.maps)
     
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)

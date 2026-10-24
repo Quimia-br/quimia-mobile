@@ -1,6 +1,7 @@
 package com.quimia.android.presentation.screens.proximity
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -36,8 +38,8 @@ internal fun ProximityMapPreview(points: List<NearbyPoint>, selectedPointId: Int
                     .clickable(role = Role.Button) { onPointClick(point.id) },
                 contentAlignment = Alignment.Center,
             ) {
-                if (point.id == selectedPointId) Box(Modifier.size(67.dp).background(tokens.primary.copy(alpha = .55f), CircleShape))
-                Box(Modifier.size(20.dp).background(tokens.primary, CircleShape))
+                if (point.id == selectedPointId) Box(Modifier.size(67.dp).background(tokens.primary.copy(alpha = .35f), CircleShape))
+                Box(Modifier.size(20.dp).background(tokens.primary, CircleShape).border(2.dp, Color.White, CircleShape))
             }
         }
     }

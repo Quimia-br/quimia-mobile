@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +68,8 @@ fun ProximityScreen(
     LaunchedEffect(message) { if (message != null) { delay(4_000); message = null } }
     val points = remember(category) { if (category == null) emptyList() else filterNearbyPoints(nearbyPoints, category) }
     val selected = points.find { it.id == selectedId }
+    val density = LocalDensity.current
+    var pointCardHeight by remember { mutableStateOf(146.dp) }
 
     Box(modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding()) {
@@ -94,7 +98,8 @@ fun ProximityScreen(
                 Spacer(Modifier.height(16.dp))
             }
             Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp)).background(tokens.secondary)) {
-                ProximityMap(points, selectedId, onPointClick = { selectedId = it })
+                ProximityMap(points, selectedId, onPointClick = { selectedId = it },
+                    bottomContentInset = if (selected == null) 91.dp else 107.dp + pointCardHeight)
                 Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     NearbyCategory.entries.forEach { item ->
                         QuimiaChip(modifier = Modifier.weight(1f), label = item.label, selected = category == item, centerContent = true,
@@ -104,7 +109,8 @@ fun ProximityScreen(
                 if (selected != null) {
                     NearbyPointCard(
                         point = selected, saved = selected.id in savedIds,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(start = 17.dp, end = 17.dp, bottom = 91.dp),
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(start = 17.dp, end = 17.dp, bottom = 91.dp)
+                            .onSizeChanged { pointCardHeight = with(density) { it.height.toDp() } },
                         onSave = {
                             val wasSaved = selected.id in savedIds
                             savedIds = toggleSavedPoint(savedIds, selected.id)

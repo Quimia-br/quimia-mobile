@@ -2,16 +2,18 @@ package com.quimia.android.presentation.screens.proximity
 
 import android.content.ComponentCallbacks
 import android.content.res.Configuration
-import android.graphics.RectF
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Outline
+import android.graphics.Paint
+import android.location.Location
 import android.os.Bundle
-import android.view.Gravity
+import android.view.View
+import android.view.ViewOutlineProvider
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,9 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -31,166 +32,149 @@ import buttons.QuimiaButton
 import buttons.QuimiaIconButton
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Target
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMapOptions
+import com.google.android.gms.maps.LocationSource
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.quimia.android.BuildConfig
 import kotlinx.coroutines.delay
-import org.maplibre.android.MapLibre
-import org.maplibre.android.camera.CameraUpdateFactory
-import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.location.LocationComponentActivationOptions
-import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapLibreMapOptions
-import org.maplibre.android.maps.MapView
-import org.maplibre.android.maps.Style
-import org.maplibre.android.style.expressions.Expression.*
-import org.maplibre.android.style.layers.CircleLayer
-import org.maplibre.android.style.layers.PropertyFactory.*
-import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.geojson.Feature
-import org.maplibre.geojson.FeatureCollection
-import org.maplibre.geojson.Point
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 import toast.QuimiaToast
 import toast.QuimiaToastType
-
-private const val NearbyMapStyle = "https://tiles.openfreemap.org/styles/liberty"
-private const val NearbyPointSource = "quimia-nearby-points"
-private const val NearbyPointLayer = "quimia-nearby-circles"
-private const val NearbySelectedLayer = "quimia-nearby-selected"
+import kotlin.math.roundToInt
 
 @Composable
-internal fun ProximityMap(points: List<NearbyPoint>, selectedPointId: Int?, onPointClick: (Int) -> Unit) {
+internal fun ProximityMap(
+    points: List<NearbyPoint>, selectedPointId: Int?, onPointClick: (Int) -> Unit,
+    bottomContentInset: Dp = if (selectedPointId == null) 91.dp else 253.dp,
+) {
     if (LocalInspectionMode.current) {
         ProximityMapPreview(points, selectedPointId, onPointClick)
         return
     }
     val context = LocalContext.current
-    val tokens = quimiaColorTokens()
-    val (location, locate) = rememberNearbyLocation()
-    var map by remember { mutableStateOf<MapLibreMap?>(null) }
-    var style by remember { mutableStateOf<Style?>(null) }
-    var locationStyle by remember { mutableStateOf<Style?>(null) }
-    var failed by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(true) }
+    val servicesAvailable = remember(context) {
+        GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
+    }
+    if (!BuildConfig.GOOGLE_MAPS_CONFIGURED || !servicesAvailable) {
+        NearbyMapNotice(
+            message = when {
+                !servicesAvailable -> "O Google Maps precisa do Google Play Services atualizado neste aparelho."
+                BuildConfig.DEBUG -> "Configure MAPS_API_KEY no local.properties e compile novamente para visualizar o Google Maps."
+                else -> "Mapa indisponível no momento."
+            },
+        )
+        return
+    }
     var attempt by remember { mutableIntStateOf(0) }
     var savedMap by rememberSaveable { mutableStateOf<Bundle?>(null) }
+    key(attempt) {
+        NearbyGoogleMap(points, selectedPointId, onPointClick, bottomContentInset, savedMap,
+            onSaveState = { savedMap = it }, onRetry = { attempt++ })
+    }
+}
+
+@Composable
+private fun NearbyGoogleMap(
+    points: List<NearbyPoint>, selectedPointId: Int?, onPointClick: (Int) -> Unit,
+    bottomContentInset: Dp, savedMap: Bundle?, onSaveState: (Bundle) -> Unit, onRetry: () -> Unit,
+) {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    val tokens = quimiaColorTokens()
+    val density = context.resources.displayMetrics.density
+    val (location, locate) = rememberNearbyLocation()
+    val source = remember { NearbyGoogleLocationSource() }
+    var map by remember { mutableStateOf<GoogleMap?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var failed by remember { mutableStateOf(false) }
     val latestClick by rememberUpdatedState(onPointClick)
-    val view = remember(context) {
-        MapLibre.getInstance(context)
-        MapView(context, MapLibreMapOptions.createFromAttributes(context).textureMode(true)).apply {
+    val view = remember(context, owner) {
+        MapView(context, GoogleMapOptions().mapType(GoogleMap.MAP_TYPE_HYBRID)).apply {
             onCreate(savedMap)
-            contentDescription = "Mapa interativo. Arraste para navegar e use dois dedos para alterar o zoom."
+            clipToOutline = true
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    val radius = 39f * density
+                    outline.setRoundRect(0, 0, view.width, view.height + radius.roundToInt(), radius)
+                }
+            }
+            addOnLayoutChangeListener { child, _, _, _, _, _, _, _, _ -> child.invalidateOutline() }
+            contentDescription = "Google Maps por satélite. Arraste para navegar e use dois dedos para alterar o zoom."
         }
     }
-    NearbyMapLifecycle(view) { savedMap = Bundle().also(view::onSaveInstanceState) }
+    NearbyMapLifecycle(view) { onSaveState(Bundle().also(view::onSaveInstanceState)) }
     DisposableEffect(view) {
         var disposed = false
-        val listener = MapView.OnDidFailLoadingMapListener { failed = true; loading = false }
-        view.addOnDidFailLoadingMapListener(listener)
         view.getMapAsync { native ->
             if (disposed) return@getMapAsync
-            map = native
+            native.mapType = GoogleMap.MAP_TYPE_HYBRID
             native.uiSettings.apply {
-                isLogoEnabled = false
-                isAttributionEnabled = true
-                attributionGravity = Gravity.TOP or Gravity.LEFT
-                val density = context.resources.displayMetrics.density
-                setAttributionMargins((16 * density).toInt(), (80 * density).toInt(), 0, 0)
-                setCompassMargins((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), 0)
+                isMyLocationButtonEnabled = false
+                isZoomControlsEnabled = false
+                isMapToolbarEnabled = false
+                isCompassEnabled = false
+            }
+            native.setLocationSource(source)
+            native.setOnMapLoadedCallback { if (!disposed) { loading = false; failed = false } }
+            native.setOnMarkerClickListener { marker ->
+                (marker.tag as? Int)?.let { latestClick(it) }
+                true
             }
             if (savedMap == null) native.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                LatLng(nearbyDefaultCoordinate.latitude, nearbyDefaultCoordinate.longitude), 13.5,
+                LatLng(nearbyDefaultCoordinate.latitude, nearbyDefaultCoordinate.longitude), 13.5f,
             ))
+            map = native
         }
-        onDispose { disposed = true; view.removeOnDidFailLoadingMapListener(listener); map = null }
+        onDispose {
+            disposed = true
+            map?.setOnMarkerClickListener(null)
+            map?.setOnMapLoadedCallback(null)
+            map = null
+        }
     }
-    DisposableEffect(map) {
+    LaunchedEffect(view) {
+        delay(20_000)
+        if (loading) { failed = true; loading = false }
+    }
+    val primary = tokens.primary.toArgb()
+    DisposableEffect(map, points, selectedPointId, primary, density) {
         val native = map
-        val listener = MapLibreMap.OnMapClickListener { coordinate ->
-            if (native == null || style == null) false
-            else {
-                val pixel = native.projection.toScreenLocation(coordinate)
-                val radius = 24 * context.resources.displayMetrics.density
-                val hit = native.queryRenderedFeatures(RectF(pixel.x - radius, pixel.y - radius, pixel.x + radius, pixel.y + radius), NearbyPointLayer)
-                    .firstOrNull()?.getNumberProperty("pointId")?.toInt()
-                if (hit != null) latestClick(hit)
-                hit != null
-            }
+        val markers = if (native == null) emptyList() else points.filter { it.coordinate.isValid() }.mapNotNull { point ->
+            native.addMarker(MarkerOptions()
+                .position(LatLng(point.coordinate.latitude, point.coordinate.longitude))
+                .title(point.name).snippet(point.address).anchor(.5f, .5f)
+                .zIndex(if (point.id == selectedPointId) 2f else 1f)
+                .icon(BitmapDescriptorFactory.fromBitmap(nearbyMarkerBitmap(primary, density, point.id == selectedPointId))))
+                ?.apply { tag = point.id }
         }
-        native?.addOnMapClickListener(listener)
-        onDispose { native?.removeOnMapClickListener(listener) }
+        onDispose { markers.forEach { it.remove() } }
     }
-    DisposableEffect(map, attempt) {
-        val native = map
-        var disposed = false
-        if (native != null) {
-            loading = true
-            failed = false
-            style = null
-            locationStyle = null
-            native.setStyle(Style.Builder().fromUri(NearbyMapStyle)) { loaded ->
-                if (!disposed) {
-                    loaded.addSource(GeoJsonSource(NearbyPointSource, FeatureCollection.fromFeatures(emptyList())))
-                    loaded.addLayer(CircleLayer(NearbySelectedLayer, NearbyPointSource).withProperties(
-                        circleRadius(33.5f), circleColor(tokens.primary.toArgb()), circleOpacity(.35f),
-                    ).withFilter(eq(get("pointId"), literal(selectedPointId ?: -1))))
-                    loaded.addLayer(CircleLayer(NearbyPointLayer, NearbyPointSource).withProperties(
-                        circleRadius(10f), circleColor(tokens.primary.toArgb()), circleStrokeColor(android.graphics.Color.WHITE), circleStrokeWidth(2f),
-                    ))
-                    style = loaded
-                    failed = false
-                    loading = false
-                }
-            }
-        }
-        onDispose { disposed = true }
+    LaunchedEffect(map, bottomContentInset) {
+        map?.setPadding(0, (72 * density).roundToInt(), 0, (bottomContentInset.value * density).roundToInt())
     }
-    LaunchedEffect(map, attempt, loading) {
-        if (map != null && loading) {
-            delay(20_000)
-            if (loading) { failed = true; loading = false }
-        }
-    }
-    LaunchedEffect(style, points, selectedPointId) {
-        val loaded = style ?: return@LaunchedEffect
-        val features = points.filter { it.coordinate.isValid() }.map { point ->
-            Feature.fromGeometry(Point.fromLngLat(point.coordinate.longitude, point.coordinate.latitude)).apply { addNumberProperty("pointId", point.id) }
-        }
-        loaded.getSourceAs<GeoJsonSource>(NearbyPointSource)?.setGeoJson(FeatureCollection.fromFeatures(features))
-        loaded.getLayerAs<CircleLayer>(NearbySelectedLayer)?.setFilter(eq(get("pointId"), literal(selectedPointId ?: -1)))
-    }
-    LaunchedEffect(style, selectedPointId) {
-        val native = map ?: return@LaunchedEffect
-        if (style == null) return@LaunchedEffect
-        val density = context.resources.displayMetrics.density.toDouble()
-        native.moveCamera(CameraUpdateFactory.paddingTo(0.0, 72 * density, 0.0,
-            (if (selectedPointId == null) 91 else 245) * density))
+    LaunchedEffect(map, selectedPointId) {
         val point = points.firstOrNull { it.id == selectedPointId } ?: return@LaunchedEffect
-        native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(point.coordinate.latitude, point.coordinate.longitude), 14.5))
+        map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(point.coordinate.latitude, point.coordinate.longitude), 14.5f))
     }
-    LaunchedEffect(style, location.location, location.revision) {
+    LaunchedEffect(map, location.location, location.revision) {
         val native = map ?: return@LaunchedEffect
-        val loaded = style ?: return@LaunchedEffect
         try {
-            val fix = location.location
-            if (fix != null && location.hasPermission()) {
-                if (locationStyle !== loaded) {
-                    native.locationComponent.activateLocationComponent(LocationComponentActivationOptions.builder(context, loaded)
-                        .useDefaultLocationEngine(false).build())
-                    locationStyle = loaded
-                }
-                native.locationComponent.isLocationComponentEnabled = true
-                native.locationComponent.forceLocationUpdate(fix)
-                native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(fix.latitude, fix.longitude), 15.5))
-            } else if (locationStyle === loaded) {
-                native.locationComponent.isLocationComponentEnabled = false
-            }
-        } catch (_: SecurityException) { location.denied(false) }
+            val fix = location.location?.takeIf { location.hasPermission() }
+            source.update(fix)
+            native.isMyLocationEnabled = fix != null
+            if (fix != null) native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(fix.latitude, fix.longitude), 15.5f))
+        } catch (_: SecurityException) { source.update(null); location.denied(false) }
     }
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
-        Surface(Modifier.align(Alignment.TopCenter).padding(top = 80.dp), shape = CircleShape, color = tokens.surfaceBase) {
-            Text("Pontos de exemplo", Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = QuimiaTextStyles.medium11, color = tokens.textSecondary)
-        }
         QuimiaIconButton(modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 24.dp),
             icon = Lucide.Target, containerColor = if (location.location != null) tokens.primary else tokens.surfaceBase,
             contentDescription = "Centralizar na minha localização", onClick = locate)
@@ -199,11 +183,10 @@ internal fun ProximityMap(points: List<NearbyPoint>, selectedPointId: Int?, onPo
             CircularProgressIndicator(Modifier.size(22.dp), color = tokens.primary, strokeWidth = 2.dp)
             Text("Carregando mapa…", style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
         }
-        if (failed) Column(Modifier.align(Alignment.Center).padding(24.dp).background(tokens.surfaceBase, RoundedCornerShape(24.dp)).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Não foi possível carregar o mapa. Verifique sua conexão.", style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
-            QuimiaButton(modifier = Modifier.fillMaxWidth().height(43.dp), text = "Tentar novamente", iconSize = 0, espacamento = 0, onClick = { attempt++ })
-        }
+        if (failed) NearbyMapNotice(
+            message = "Não foi possível carregar o mapa. Verifique a conexão e a configuração da chave do Google Maps.",
+            onRetry = onRetry,
+        )
         val message = when (location.status) {
             NearbyLocationStatus.Loading -> "Buscando sua localização…"
             NearbyLocationStatus.PermissionDenied -> "Sem permissão de localização. Você ainda pode navegar pelo mapa."
@@ -220,19 +203,52 @@ internal fun ProximityMap(points: List<NearbyPoint>, selectedPointId: Int?, onPo
                     espacamento = 0, containerColor = tokens.surfaceBase, onClick = location::openSettings)
             }
         }
-        NearbyMapAttribution(Modifier.align(Alignment.BottomCenter).padding(bottom = 77.dp))
     }
 }
 
 @Composable
-private fun NearbyMapAttribution(modifier: Modifier) {
+private fun NearbyMapNotice(message: String, onRetry: (() -> Unit)? = null) {
     val tokens = quimiaColorTokens()
-    val uri = LocalUriHandler.current
-    Row(modifier.background(tokens.surfaceBase.copy(alpha = .94f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        listOf("© OpenFreeMap" to "https://openfreemap.org/", "© OpenMapTiles" to "https://openmaptiles.org/", "© OpenStreetMap" to "https://www.openstreetmap.org/copyright").forEach { (label, url) ->
-            Text(label, Modifier.clickable { uri.openUri(url) }, style = QuimiaTextStyles.medium11.copy(fontSize = 9.sp, lineHeight = 11.sp), color = tokens.textPrimary)
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(24.dp).background(tokens.surfaceBase, RoundedCornerShape(24.dp)).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(message, style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
+            if (onRetry != null) QuimiaButton(modifier = Modifier.fillMaxWidth().height(43.dp), text = "Tentar novamente",
+                iconSize = 0, espacamento = 0, onClick = onRetry)
         }
+    }
+}
+
+private fun nearbyMarkerBitmap(color: Int, density: Float, selected: Boolean): Bitmap {
+    val size = (67 * density).roundToInt().coerceAtLeast(1)
+    return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also { bitmap ->
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val center = size / 2f
+        if (selected) {
+            paint.color = color
+            paint.alpha = 89
+            canvas.drawCircle(center, center, 33.5f * density, paint)
+        }
+        paint.color = android.graphics.Color.WHITE
+        paint.alpha = 255
+        canvas.drawCircle(center, center, 10f * density, paint)
+        paint.color = color
+        canvas.drawCircle(center, center, 8f * density, paint)
+    }
+}
+
+private class NearbyGoogleLocationSource : LocationSource {
+    private var listener: LocationSource.OnLocationChangedListener? = null
+    private var latest: Location? = null
+    override fun activate(listener: LocationSource.OnLocationChangedListener) {
+        this.listener = listener
+        latest?.let(listener::onLocationChanged)
+    }
+    override fun deactivate() { listener = null }
+    fun update(location: Location?) {
+        latest = location
+        location?.let { listener?.onLocationChanged(it) }
     }
 }
 
