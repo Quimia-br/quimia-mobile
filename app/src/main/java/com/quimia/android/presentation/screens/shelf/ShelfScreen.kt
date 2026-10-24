@@ -30,7 +30,6 @@ import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
 import card.QuimiaCard
 import com.composables.icons.lucide.Bath
-import com.composables.icons.lucide.Star
 import com.composables.icons.lucide.Atom
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronDown
@@ -354,11 +353,11 @@ private fun ShelfCardActions(
         val compact = maxWidth < 264.dp
         val icons: @Composable () -> Unit = {
             QuimiaIconButton(
-                modifier = if (favorite) Modifier.border(2.dp, if (substance) ShelfFavoriteColor else Color(0xFFFFC693), CircleShape) else Modifier,
-                icon = if (substance) Lucide.Heart else Lucide.Star,
-                iconPainter = if (favorite) painterResource(if (substance) R.drawable.figma_heart_filled else R.drawable.figma_star_filled) else null,
+                modifier = if (favorite) Modifier.border(2.dp, ShelfFavoriteColor, CircleShape) else Modifier,
+                icon = Lucide.Heart,
+                iconPainter = if (favorite) painterResource(R.drawable.figma_heart_filled) else null,
                 size = QuimiaIconButtonSize.Medium,
-                containerColor = if (favorite) { if (substance) tokens.surfaceBase else Color(0xFFFFF1E4) } else tokens.secondary,
+                containerColor = if (favorite) tokens.surfaceBase else tokens.secondary,
                 iconColor = if (favorite) Color.Unspecified else tokens.foregroundPrimary,
                 contentDescription = if (favorite) "Remover dos favoritos" else "Favoritar",
                 onClick = onFavorite,
