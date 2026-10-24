@@ -65,6 +65,7 @@ fun QuimiaCard(
     onSecondaryActionClick: () -> Unit = {},
     theme: QuimiaCardTheme = QuimiaCardTheme.Primary,
     outline: Boolean = false,
+    outlineWidth: Dp = 3.dp,
     endIcon: ImageVector? = Lucide.Circle,
     onEndIconClick: () -> Unit = {},
     containerColor: Color? = null,
@@ -79,7 +80,7 @@ fun QuimiaCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
             .background(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
-            .then(if (outline) Modifier.border(3.dp, tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
+            .then(if (outline) Modifier.border(outlineWidth, tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
             .padding(paddingValues ?: PaddingValues(contentPadding)),
         verticalArrangement = if (layout == QuimiaCardLayout.Default) Arrangement.SpaceBetween else Arrangement.Top,
     ) {

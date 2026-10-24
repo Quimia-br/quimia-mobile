@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
@@ -70,6 +71,8 @@ fun QuimiaInput(
     errorColor: Color? = null,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
     showTrailingIconWhenEmpty: Boolean = false,
+    highlighted: Boolean = false,
+    borderWidth: Dp = 3.dp,
     ) {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -100,7 +103,7 @@ fun QuimiaInput(
     val borderColor by animateColorAsState(
         when {
             isError -> actualErrorColor
-            isFocused -> actualFocusColor
+            isFocused || highlighted -> actualFocusColor
             else -> Color.Transparent
         }
     )
@@ -134,7 +137,7 @@ fun QuimiaInput(
                     shape = shape
                 )
                 .border(
-                    width = 3.dp,
+                    width = borderWidth,
                     color = borderColor,
                     shape = shape
                 )
