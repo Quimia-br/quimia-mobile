@@ -94,6 +94,7 @@ fun QuimiaNav(
     iconColor: Color? = null,
     iconButtonSize: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
     showBackButton: Boolean = false,
+    showCloseButton: Boolean = true,
     onBackClick: () -> Unit = {},
     onCloseClick: () -> Unit = {}
 ) {
@@ -119,7 +120,7 @@ fun QuimiaNav(
                 size = iconButtonSize
             )
         }
-        QuimiaIconButton(
+        if (showCloseButton) QuimiaIconButton(
             modifier = Modifier.align(Alignment.CenterEnd),
             icon = Lucide.X,
             onClick = onCloseClick,
