@@ -2,6 +2,7 @@ package com.quimia.android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -28,6 +29,7 @@ import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
+import com.quimia.android.presentation.screens.shelf.ShelfScreen
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
@@ -66,16 +68,19 @@ private fun QuimiaApp() {
     var showCadastro1 by rememberSaveable { mutableStateOf(false) }
     var showCadastro2 by rememberSaveable { mutableStateOf(false) }
     var selectedMainTab by rememberSaveable { mutableStateOf(0) }
+    val sessionUid = (authState as? AuthResult.Success)?.uid
+    var savedProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
+    var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var showAiNotice by rememberSaveable { mutableStateOf(false) }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
-        if (index == 0 || index == 1) selectedMainTab = index
+        if (index in 0..2) selectedMainTab = index
         else unavailableTab = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
             .getOrElse(index) { "Esta tela" }
     }
 
     val currentScreen = when {
-        authState is AuthResult.Success -> if (selectedMainTab == 1) "catalog" else "home"
+        authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; else -> "home" }
         showLoginHome -> "login_welcome"
         showCadastro2 -> "registration_details"
         showCadastro1 -> "registration"
@@ -89,17 +94,34 @@ private fun QuimiaApp() {
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
+    BackHandler(enabled = authState is AuthResult.Success && selectedMainTab == 2) {
+        selectedMainTab = 0
+    }
 
     when (authState) {
         is AuthResult.Success -> {
-            if (selectedMainTab == 1) {
-                CatalogScreen(
+            when (selectedMainTab) {
+                1 -> CatalogScreen(
                     onMenuItemSelected = onMainTabSelected,
                     onAiClick = { showAiNotice = true },
+                    initialSavedProductIds = savedProductIds,
+                    onSavedProductIdsChange = { savedProductIds = it },
                 )
-            } else {
-                HomeScreen(
+                2 -> ShelfScreen(
+                    savedIds = savedProductIds,
+                    onSavedIdsChange = { savedProductIds = it },
+                    favoriteIds = favoriteProductIds,
+                    onFavoriteIdsChange = { favoriteProductIds = it },
                     onMenuItemSelected = onMainTabSelected,
+                    onAddProduct = { selectedMainTab = 1 },
+                    onAiClick = { showAiNotice = true },
+                    onMixProduct = { unavailableTab = "Misturas" },
+                    onViewMixtures = { unavailableTab = "Misturas" },
+                    onCreateRoom = { unavailableTab = "Cômodos" },
+                )
+                else -> HomeScreen(
+                    onMenuItemSelected = onMainTabSelected,
+                    onShelfClick = { selectedMainTab = 2 },
                     onAiClick = { showAiNotice = true },
                 )
             }

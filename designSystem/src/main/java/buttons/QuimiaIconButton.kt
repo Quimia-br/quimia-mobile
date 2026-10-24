@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
@@ -46,7 +47,8 @@ fun QuimiaIconButton(
     iconColor: Color? = null,
     size: QuimiaIconButtonSize = QuimiaIconButtonSize.Medium,
     iconSize: Dp? = null,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    iconPainter: Painter? = null,
 ) {
     val tokens = quimiaColorTokens()
 
@@ -61,11 +63,12 @@ fun QuimiaIconButton(
             contentColor = actualIconColor
         )
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = actualIconColor,
-            modifier = Modifier.size(iconSize ?: size.iconSize)
+        if (iconPainter != null) Icon(
+            painter = iconPainter, contentDescription = contentDescription,
+            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize),
+        ) else Icon(
+            imageVector = icon, contentDescription = contentDescription,
+            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize),
         )
     }
 }
