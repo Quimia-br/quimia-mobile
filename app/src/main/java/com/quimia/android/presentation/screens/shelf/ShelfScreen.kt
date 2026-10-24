@@ -142,9 +142,10 @@ fun ShelfScreen(
                     ShelfTab.entries.forEach { item ->
                         QuimiaButton(
                             modifier = Modifier.weight(1f).height(44.dp), text = item.label,
-                            textStyle = ShelfBodyStyle, iconSize = 20, espacamento = if (tab == ShelfTab.Substances) 10 else 0,
-                            iconLeftVector = if (tab == ShelfTab.Substances && item == ShelfTab.Products) SoapDispenserDroplet else null,
-                            iconLeft = if (tab == ShelfTab.Substances && item == ShelfTab.Substances) R.drawable.figma_bubbles else null,
+                            textStyle = ShelfBodyStyle, iconSize = 20, espacamento = 10, centerContent = true,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
+                            iconLeftVector = if (item == ShelfTab.Products) SoapDispenserDroplet else null,
+                            iconLeft = if (item == ShelfTab.Substances) R.drawable.figma_bubbles else null,
                             containerColor = if (tab == item) tokens.surfaceBase else Color.Transparent,
                             textColor = tokens.foregroundPrimary, onClick = { tab = item },
                         )

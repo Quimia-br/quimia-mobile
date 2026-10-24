@@ -56,6 +56,8 @@ fun QuimiaButton(
     espacamento: Int = PaddingSmall,
     curvaCirculo: Int = RadiusFull,
     enabled: Boolean = true,
+    centerContent: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(horizontal = PaddingMedium.dp, vertical = PaddingSmall.dp),
 ) {
 
     val tokens = quimiaColorTokens()
@@ -74,14 +76,11 @@ fun QuimiaButton(
             disabledContentColor = tokens.foregroundDisabled,
         ),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo.dp),
-        contentPadding = PaddingValues(
-            horizontal = PaddingMedium.dp,
-            vertical = PaddingSmall.dp
-        )
+        contentPadding = contentPadding,
     ) {
         val isCentered = (espacamento == 0)
         Row(
-            horizontalArrangement = if (isCentered) Arrangement.Center else Arrangement.Start,
+            horizontalArrangement = if (isCentered || centerContent) Arrangement.Center else Arrangement.Start,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
