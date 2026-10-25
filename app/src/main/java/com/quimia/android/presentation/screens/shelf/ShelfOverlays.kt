@@ -60,10 +60,10 @@ internal val ShelfRemovalColor = Color(0xFFFF2B6B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, content: @Composable ColumnScope.() -> Unit) {
+private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, previewBackground: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     val tokens = quimiaColorTokens()
     if (LocalInspectionMode.current) {
-        ShelfOverlayPreview(Alignment.BottomCenter) {
+        ShelfOverlayPreview(Alignment.BottomCenter, background = previewBackground) {
             Surface(
                 modifier = Modifier.statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = bottomMargin)
                     .widthIn(max = 560.dp).fillMaxWidth(),
@@ -90,9 +90,11 @@ private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, 
 internal fun ShelfActionsPanel(
     product: CatalogProduct, onDismiss: () -> Unit,
     onRemove: () -> Unit, onMixtures: () -> Unit, onInformation: () -> Unit,
+    showMixtures: Boolean = true,
+    previewBackground: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
-    ShelfFloatingPanel(onDismiss, bottomMargin = 17.dp) {
+    ShelfFloatingPanel(onDismiss, bottomMargin = 17.dp, previewBackground = previewBackground) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(product.name, Modifier.weight(1f).padding(end = 20.dp), style = ShelfBodyStyle.copy(fontSize = 20.sp, lineHeight = 24.sp),
                 color = tokens.foregroundPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -103,11 +105,13 @@ internal fun ShelfActionsPanel(
             title = "Remover produto", onClick = onRemove, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
             leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Minus, containerColor = ShelfRemovalColor, iconColor = tokens.white) },
         )
-        Spacer(Modifier.height(20.dp))
-        QuimiaListItem(
-            title = "Ver misturas", onClick = onMixtures, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
-            leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Atom, containerColor = tokens.surfaceBase) },
-        )
+        if (showMixtures) {
+            Spacer(Modifier.height(20.dp))
+            QuimiaListItem(
+                title = "Ver misturas", onClick = onMixtures, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
+                leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Atom, containerColor = tokens.surfaceBase) },
+            )
+        }
         Spacer(Modifier.height(20.dp))
         QuimiaListItem(
             title = "Ver informações", onClick = onInformation, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
@@ -218,7 +222,7 @@ private fun ShelfConfirmation(
         }
     }
     if (LocalInspectionMode.current) {
-        ShelfOverlayPreview(Alignment.Center, confirmation)
+        ShelfOverlayPreview(Alignment.Center, content = confirmation)
     } else {
         Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
             HideSystemNavigationBar()
@@ -230,9 +234,9 @@ private fun ShelfConfirmation(
 }
 
 @Composable
-private fun ShelfOverlayPreview(alignment: Alignment, content: @Composable () -> Unit) {
+private fun ShelfOverlayPreview(alignment: Alignment, background: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize()) {
-        ShelfScreen(sampleCatalogProducts.take(3).map { it.id }, {})
+        if (background != null) background() else ShelfScreen(sampleCatalogProducts.take(3).map { it.id }, {})
         Box(Modifier.fillMaxSize().background(CatalogModalScrimColor), contentAlignment = alignment) {
             content()
         }
