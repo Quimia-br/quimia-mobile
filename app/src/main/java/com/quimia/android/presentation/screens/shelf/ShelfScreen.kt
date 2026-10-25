@@ -64,7 +64,8 @@ import kotlinx.coroutines.delay
 
 private enum class ShelfTab(val label: String) { Products("Produtos"), Substances("Substâncias") }
 internal val ShelfFavoriteColor = Color(0xFFFF93D7)
-internal val ShelfBodyStyle = QuimiaTextStyles.medium15
+internal val ShelfBodyStyle: androidx.compose.ui.text.TextStyle
+    @Composable get() = QuimiaTextStyles.medium15
 
 @Composable
 fun ShelfScreen(

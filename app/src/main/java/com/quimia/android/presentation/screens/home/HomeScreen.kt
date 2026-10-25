@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -288,9 +289,10 @@ fun HomeScreen(
 @Composable
 private fun HomeSystemBarsEffect() {
     val view = LocalView.current
+    val lightStatusBars = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() > 0.5f
     if (view.isInEditMode) return
 
-    DisposableEffect(view) {
+    DisposableEffect(view, lightStatusBars) {
         val window = (view.context as? Activity)?.window
             ?: return@DisposableEffect onDispose {}
         val controller = WindowInsetsControllerCompat(window, view)
@@ -298,7 +300,7 @@ private fun HomeSystemBarsEffect() {
         val previousLightStatusBars = controller.isAppearanceLightStatusBars
 
         window.statusBarColor = AndroidColor.TRANSPARENT
-        controller.isAppearanceLightStatusBars = true
+        controller.isAppearanceLightStatusBars = lightStatusBars
 
         onDispose {
             window.statusBarColor = previousStatusBarColor

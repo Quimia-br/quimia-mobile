@@ -12,6 +12,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImagePainter
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +43,7 @@ import com.quimia.android.presentation.screens.shelf.ShelfScreen
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
 import com.quimia.android.presentation.screens.rooms.RoomListSaver
 import com.quimia.android.presentation.screens.rooms.RoomsScreen
+import com.quimia.android.presentation.screens.profile.*
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
@@ -52,16 +62,29 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            QuimiaTheme(darkTheme = false) {
-                HideSystemNavigationBar()
-                QuimiaApp()
+            val store = remember { ProfilePreferencesStore(this) }
+            var preferences by remember { mutableStateOf(store.load()) }
+            val dark = preferences.theme.usesDarkColors(isSystemInDarkTheme())
+            val density = LocalDensity.current
+            SideEffect {
+                WindowInsetsControllerCompat(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
+            CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * preferences.textScale)) {
+                QuimiaTheme(darkTheme = dark, highContrast = preferences.theme == ProfileTheme.HighContrast,
+                    useDyslexicFont = preferences.dyslexicFont) {
+                    HideSystemNavigationBar()
+                    QuimiaApp(preferences) { preferences = it; store.save(it) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun QuimiaApp() {
+private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (ProfilePreferences) -> Unit) {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     var showLoginHome by rememberSaveable { mutableStateOf(true) }
@@ -73,6 +96,16 @@ private fun QuimiaApp() {
     var showCadastro2 by rememberSaveable { mutableStateOf(false) }
     var selectedMainTab by rememberSaveable { mutableStateOf(0) }
     val sessionUid = (authState as? AuthResult.Success)?.uid
+    val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
+    val context = LocalContext.current
+    val profileStore = remember(sessionUid, sessionEmail) { LocalProfileStore(context, sessionUid.orEmpty(), sessionEmail) }
+    var displayName by rememberSaveable(sessionUid, sessionEmail) {
+        mutableStateOf(profileStore.displayName() ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
+    }
+    var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri()) }
+    val photoPainter = rememberAsyncImagePainter(photoUri)
+    val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
+    var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
     var savedProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var rooms by rememberSaveable(sessionUid, stateSaver = RoomListSaver) { mutableStateOf(emptyList<QuimiaRoom>()) }
@@ -89,6 +122,7 @@ private fun QuimiaApp() {
     }
 
     val currentScreen = when {
+        authState is AuthResult.Success && showProfile -> "profile"
         authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; 4 -> "rooms"; else -> "home" }
         showLoginHome -> "login_welcome"
         showCadastro2 -> "registration_details"
@@ -103,13 +137,18 @@ private fun QuimiaApp() {
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && selectedMainTab in 2..4) {
-        selectedMainTab = 0
+    BackHandler(enabled = authState is AuthResult.Success && (showProfile || selectedMainTab in 2..4)) {
+        if (showProfile) showProfile = false else selectedMainTab = 0
     }
 
     when (authState) {
         is AuthResult.Success -> {
-            when (selectedMainTab) {
+            if (showProfile) ProfileScreen(
+                displayName = displayName, email = sessionEmail, preferences = preferences,
+                onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
+                onDisplayNameChange = { displayName = it; profileStore.saveDisplayName(it) },
+                onPhotoUriChange = { photoUri = it; profileStore.savePhotoUri(it) },
+            ) else when (selectedMainTab) {
                 1 -> CatalogScreen(
                     onMenuItemSelected = onMainTabSelected,
                     onAiClick = { showAiNotice = true },
@@ -144,6 +183,8 @@ private fun QuimiaApp() {
                     onAddressFieldsChange = { referenceAddressFields = it },
                 )
                 else -> HomeScreen(
+                    avatarInitials = profileInitials(displayName), avatarPhoto = photo,
+                    onAvatarClick = { showProfile = true },
                     onMenuItemSelected = onMainTabSelected,
                     onFindDropOffClick = { selectedMainTab = 3 },
                     onShelfClick = { selectedMainTab = 2 },
