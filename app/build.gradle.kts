@@ -1,14 +1,41 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
-    id("com.google.gms.google-services")
+}
+
+val releaseVersionCode = providers.gradleProperty("versionCode")
+    .orElse(providers.environmentVariable("ANDROID_VERSION_CODE"))
+    .getOrElse("1")
+    .toInt()
+val releaseVersionName = providers.gradleProperty("versionName")
+    .orElse(providers.environmentVariable("ANDROID_VERSION_NAME"))
+    .getOrElse("1.0")
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { input ->
+        keystoreProperties.load(input)
+    }
+}
+
+val localConfiguration = Properties().apply {
+    val configurationFile = rootProject.file("local.properties")
+    if (configurationFile.exists()) configurationFile.inputStream().use(::load)
+}
+val mapsApiKey = providers.environmentVariable("MAPS_API_KEY").orNull?.trim().takeUnless { it.isNullOrEmpty() }
+    ?: localConfiguration.getProperty("MAPS_API_KEY", "").trim()
+val mapsConfigured = mapsApiKey.isNotEmpty() && mapsApiKey != "COLE_SUA_CHAVE_AQUI"
+
+if (file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 apply {
     from("$rootDir/plugins/android-commons.gradle")
-    // Nota: feature-dependencies.gradle só tem efeito quando o módulo :presentation existir
-    // e for declarado no settings.gradle.kts
     from("$rootDir/plugins/feature-dependencies.gradle")
 }
 
@@ -17,17 +44,34 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     defaultConfig {
         applicationId = "com.quimia.android"
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
+        manifestPlaceholders["MAPS_API_KEY"] = if (mapsConfigured) mapsApiKey else ""
+        buildConfigField("boolean", "GOOGLE_MAPS_CONFIGURED", mapsConfigured.toString())
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,7 +85,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
     
-    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
@@ -49,22 +92,21 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(project(":designSystem"))
+    implementation(libs.coil.compose)
+    implementation(libs.play.services.maps)
     
-    // Retrofit e Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
     
-    // Serialization
     implementation(libs.kotlinx.serialization.json)
     
-    // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
     implementation(libs.play.services.auth)
     
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

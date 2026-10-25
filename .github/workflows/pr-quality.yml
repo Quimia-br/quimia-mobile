@@ -1,0 +1,36 @@
+name: PR Quality
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate PR title and branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate Conventional Commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|refactor|perf|docs|test|build|ci|chore)(\([a-zA-Z0-9._/-]+\))?(!)?:[[:space:]]+.+$'
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            echo "Título inválido: $PR_TITLE"
+            echo "Use: tipo(scope): descrição"
+            exit 1
+          fi
+
+      - name: Validate branch naming
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          pattern='^(feature|fix|refactor|perf|docs|test|build|ci|chore)/[^/]+$'
+          if [[ ! "$BRANCH_NAME" =~ $pattern ]]; then
+            echo "Branch inválida: $BRANCH_NAME"
+            echo "Use: prefixo/ticket"
+            exit 1
+          fi

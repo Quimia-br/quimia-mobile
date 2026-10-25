@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.QuimiaAndroid" parent="Base.Theme.QuimiaAndroid">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

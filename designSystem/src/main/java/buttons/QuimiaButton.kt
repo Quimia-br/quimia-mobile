@@ -1,6 +1,9 @@
 package buttons
 
+import theme.QuimiaTextStyles
+
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,21 +18,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Circle
+import com.composables.icons.lucide.Lucide
 import theme.LightTokens
 import theme.PaddingMedium
 import theme.PaddingSmall
+import theme.QuimiaFontFamily
 import theme.RadiusFull
 import theme.RadiusMedium
-import theme.TextMedium
 import theme.quimiaColorTokens
-import theme.toDp
-import theme.toSp
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.composables.icons.lucide.*
+import theme.QuimiaTheme
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuimiaButton(
@@ -39,37 +44,43 @@ fun QuimiaButton(
     iconLeftVector: ImageVector? = null,
     iconRightVector: ImageVector? = null,
     text: String,
+    textStyle: TextStyle = QuimiaTextStyles.medium15,
+    fontFamily: FontFamily? = null,
+    fontWeight: FontWeight? = null,
     onClick: () -> Unit = { },
     containerColor: Color? = null,
     indicatorColor: Color? = null,
     textColor: Color? = null,
     iconColor: Color? = null,
     iconSize: Int,
-    espacamento: Int? = PaddingSmall,
-    curvaCirculo: Int? = RadiusFull
+    espacamento: Int = PaddingSmall,
+    curvaCirculo: Int = RadiusFull,
+    enabled: Boolean = true,
+    centerContent: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(horizontal = PaddingMedium.dp, vertical = PaddingSmall.dp),
 ) {
 
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
     val actualIndicator = indicatorColor ?: tokens.textSecondary
     val actualTextColor = textColor ?: tokens.textPrimary
-    val actualIconColor = iconColor ?: tokens.textPrimary
+    val actualIconColor = if (enabled) iconColor ?: tokens.textPrimary else tokens.foregroundDisabled
 
     Button(
         modifier = modifier,
         onClick = onClick,
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = actualContainer
+            containerColor = actualContainer,
+            disabledContainerColor = if (actualContainer == tokens.primary) tokens.primaryDisabled else tokens.surfaceDisabled,
+            disabledContentColor = tokens.foregroundDisabled,
         ),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo?.toDp() ?: RadiusMedium.toDp()),
-        contentPadding = PaddingValues(
-            horizontal = PaddingMedium.toDp(),
-            vertical = PaddingSmall.toDp()
-        )
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo.dp),
+        contentPadding = contentPadding,
     ) {
         val isCentered = (espacamento == 0)
         Row(
-            horizontalArrangement = if (isCentered) Arrangement.Center else Arrangement.Start,
+            horizontalArrangement = if (isCentered || centerContent) Arrangement.Center else Arrangement.Start,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -89,9 +100,18 @@ fun QuimiaButton(
                )
             }
             if (!isCentered) {
-                Spacer(modifier = Modifier.width(espacamento?.toDp() ?: PaddingSmall.toDp()))
+                Spacer(modifier = Modifier.width(espacamento.dp))
             }
-            Text(text, fontSize = TextMedium.toSp(), color = actualTextColor)
+            val resolvedTextStyle = textStyle.copy(
+                color = if (enabled) actualTextColor else tokens.foregroundDisabled,
+                fontFamily = fontFamily ?: textStyle.fontFamily,
+                fontWeight = fontWeight ?: textStyle.fontWeight
+            )
+
+            Text(
+                text = text,
+                style = resolvedTextStyle
+            )
             iconRightVector?.let {
                Icon(
                    imageVector = it,
@@ -112,18 +132,22 @@ fun QuimiaButton(
     }
 }
 
-@Preview
+@preview.QuimiaDevicePreviews
 @Composable
 fun PreviewQuimiaButton() {
-    QuimiaButton(
-        iconLeftVector = Lucide.Circle,
-        iconColor = LightTokens.foregroundPrimary,
-        containerColor = LightTokens.primary,
-        text = "Adicionar",
-        textColor = LightTokens.textPrimary,
-        modifier = Modifier.width(200.dp),
-        iconSize = 20,
-        espacamento = PaddingSmall,
-        curvaCirculo = RadiusMedium,
-    )
+    QuimiaTheme {
+        QuimiaButton(
+            iconLeftVector = Lucide.Circle,
+            iconColor = LightTokens.foregroundPrimary,
+            containerColor = LightTokens.primary,
+            text = "Adicionar",
+            textColor = LightTokens.textPrimary,
+            modifier = Modifier.fillMaxWidth(),
+            iconSize = 20,
+            espacamento = PaddingSmall,
+            curvaCirculo = RadiusMedium,
+            fontFamily = QuimiaFontFamily,
+            fontWeight = FontWeight.Medium
+        )
+    }
 }

@@ -1,0 +1,180 @@
+package shortCut
+
+import theme.QuimiaTextStyles
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Circle
+import com.composables.icons.lucide.Lucide
+import theme.quimiaColorTokens
+import theme.QuimiaTheme
+enum class QuimiaShortCutType {
+    Large,
+    Small,
+}
+
+enum class QuimiaShortCutColor {
+    White,
+    Gray,
+    Green,
+}
+
+@Composable
+fun QuimiaShortCut(
+    type: QuimiaShortCutType,
+    color: QuimiaShortCutColor,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    text: String = "ShortCut",
+    tagText: String = "Tag",
+    showTag: Boolean = true,
+    useDefaultSize: Boolean = true,
+    contentPadding: Dp = 16.dp,
+    iconSize: Dp = 20.dp,
+    textStyle: TextStyle = QuimiaTextStyles.medium16,
+    onClick: () -> Unit = {},
+) {
+    val tokens = quimiaColorTokens()
+    val isGreen = color == QuimiaShortCutColor.Green
+
+    val containerColor = when (color) {
+        QuimiaShortCutColor.White -> tokens.surfaceBase
+        QuimiaShortCutColor.Gray -> tokens.secondary
+        QuimiaShortCutColor.Green -> tokens.brandAccent
+    }
+    val textColor = tokens.foregroundPrimary
+    val iconColor = if (isGreen) tokens.white else tokens.foregroundDisabled
+    val indicatorColor = if (isGreen) tokens.white else tokens.brandAccent
+    val indicatorContentColor = if (isGreen) tokens.foregroundPrimary else tokens.white
+
+    val componentModifier = when {
+        !useDefaultSize -> modifier
+        type == QuimiaShortCutType.Large -> modifier.size(width = 104.dp, height = 104.dp)
+        else -> modifier.size(width = 160.dp, height = 56.dp)
+    }
+    val shape = when (type) {
+        QuimiaShortCutType.Large -> RoundedCornerShape(24.dp)
+        QuimiaShortCutType.Small -> CircleShape
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = componentModifier,
+        shape = shape,
+        color = containerColor,
+    ) {
+        when (type) {
+            QuimiaShortCutType.Large -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize),
+                        )
+
+                        if (showTag) {
+                            Box(
+                                modifier = Modifier
+                                    .background(indicatorColor, CircleShape)
+                                    .padding(horizontal = 7.dp, vertical = 2.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = tagText,
+                                    color = indicatorContentColor,
+                                    style = QuimiaTextStyles.medium11,
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = text,
+                        color = textColor,
+                        style = textStyle,
+                    )
+                }
+            }
+
+            QuimiaShortCutType.Small -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(iconSize),
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = text,
+                        color = textColor,
+                        style = textStyle,
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(indicatorColor, CircleShape),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@preview.QuimiaDevicePreviews
+@Composable
+private fun QuimiaShortCutPreview() {
+    QuimiaTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            QuimiaShortCut(
+                type = QuimiaShortCutType.Large,
+                color = QuimiaShortCutColor.Gray,
+                icon = Lucide.Circle,
+                )
+        }
+    }
+}

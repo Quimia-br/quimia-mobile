@@ -17,8 +17,13 @@ activityCompose = "1.9.3"
 firebase = "33.3.0"
 firebaseAuth = "23.1.0"
 playServicesAuth = "21.2.0"
+navigationCompose = "2.9.5"
+coil = "2.7.0"
+playServicesMaps = "20.1.0"
 
 [libraries]
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version = "" }
@@ -45,6 +50,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 play-services-auth-api-phone = { group = "com.google.android.gms", name = "play-services-auth-api-phone" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
