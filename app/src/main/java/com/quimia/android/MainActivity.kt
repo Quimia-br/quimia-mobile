@@ -29,6 +29,7 @@ import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
+import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
 import com.quimia.android.presentation.screens.rooms.RoomListSaver
@@ -76,16 +77,19 @@ private fun QuimiaApp() {
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var rooms by rememberSaveable(sessionUid, stateSaver = RoomListSaver) { mutableStateOf(emptyList<QuimiaRoom>()) }
     var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
+    var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
+    var referenceAddress by rememberSaveable(sessionUid) { mutableStateOf("Defina seu endereço de referência") }
+    var referenceAddressFields by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var showAiNotice by rememberSaveable { mutableStateOf(false) }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
-        if (index in 0..2 || index == 4) selectedMainTab = index
+        if (index in 0..4) selectedMainTab = index
         else unavailableTab = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
             .getOrElse(index) { "Esta tela" }
     }
 
     val currentScreen = when {
-        authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 4 -> "rooms"; else -> "home" }
+        authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; 4 -> "rooms"; else -> "home" }
         showLoginHome -> "login_welcome"
         showCadastro2 -> "registration_details"
         showCadastro1 -> "registration"
@@ -99,7 +103,7 @@ private fun QuimiaApp() {
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && (selectedMainTab == 2 || selectedMainTab == 4)) {
+    BackHandler(enabled = authState is AuthResult.Success && selectedMainTab in 2..4) {
         selectedMainTab = 0
     }
 
@@ -130,8 +134,18 @@ private fun QuimiaApp() {
                     onOpenCatalog = { selectedMainTab = 1 }, initialProductId = roomDraftProductId,
                     onInitialProductConsumed = { roomDraftProductId = null },
                 )
+                3 -> ProximityScreen(
+                    onMenuItemSelected = onMainTabSelected,
+                    initialSavedPointIds = savedPointIds,
+                    onSavedPointIdsChange = { savedPointIds = it },
+                    initialAddress = referenceAddress,
+                    onAddressChange = { referenceAddress = it },
+                    initialAddressFields = referenceAddressFields,
+                    onAddressFieldsChange = { referenceAddressFields = it },
+                )
                 else -> HomeScreen(
                     onMenuItemSelected = onMainTabSelected,
+                    onFindDropOffClick = { selectedMainTab = 3 },
                     onShelfClick = { selectedMainTab = 2 },
                     onAiClick = { showAiNotice = true },
                 )
