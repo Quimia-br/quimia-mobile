@@ -19,8 +19,10 @@ firebaseAuth = "23.1.0"
 playServicesAuth = "21.2.0"
 navigationCompose = "2.9.5"
 coil = "2.7.0"
+playServicesMaps = "20.1.0"
 
 [libraries]
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
