@@ -50,6 +50,7 @@ fun QuimiaToast(
     containerColor: Color? = null,
     leadingIcon: ImageVector? = null,
     description: String? = null,
+    statusIconContainerColor: Color? = null,
 ) {
     val tokens = quimiaColorTokens()
     val accent = when (type) {
@@ -88,6 +89,7 @@ fun QuimiaToast(
                 size = QuimiaShapeIconSize.Small.value,
                 icon = statusIcon,
                 theme = iconTheme,
+                containerColor = statusIconContainerColor,
             )
             Column(
                 modifier = Modifier.weight(1f).sizeIn(minHeight = 50.dp),

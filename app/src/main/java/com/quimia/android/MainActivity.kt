@@ -15,6 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quimia.android.domain.auth.AuthResult
@@ -31,6 +35,9 @@ import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
+import com.quimia.android.presentation.screens.kemi.KemiController
+import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
+import com.quimia.android.presentation.screens.kemi.KemiScreen
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
@@ -75,7 +82,8 @@ private fun QuimiaApp() {
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
     var referenceAddress by rememberSaveable(sessionUid) { mutableStateOf("Defina seu endereço de referência") }
     var referenceAddressFields by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
-    var showAiNotice by rememberSaveable { mutableStateOf(false) }
+    var showKemi by rememberSaveable(sessionUid) { mutableStateOf(false) }
+    val kemiController = rememberSaveable(sessionUid, saver = KemiControllerSaver) { KemiController() }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
         if (index in 0..3) selectedMainTab = index
@@ -84,7 +92,7 @@ private fun QuimiaApp() {
     }
 
     val currentScreen = when {
-        authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; else -> "home" }
+        authState is AuthResult.Success -> if (showKemi) "kemi" else when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; else -> "home" }
         showLoginHome -> "login_welcome"
         showCadastro2 -> "registration_details"
         showCadastro1 -> "registration"
@@ -98,62 +106,79 @@ private fun QuimiaApp() {
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && selectedMainTab in 2..3) {
+    BackHandler(enabled = authState is AuthResult.Success && !showKemi && selectedMainTab in 2..3) {
         selectedMainTab = 0
     }
 
     when (authState) {
         is AuthResult.Success -> {
-            when (selectedMainTab) {
-                1 -> CatalogScreen(
-                    onMenuItemSelected = onMainTabSelected,
-                    onAiClick = { showAiNotice = true },
-                    initialSavedProductIds = savedProductIds,
-                    onSavedProductIdsChange = { savedProductIds = it },
-                )
-                2 -> ShelfScreen(
-                    savedIds = savedProductIds,
-                    onSavedIdsChange = { savedProductIds = it },
-                    favoriteIds = favoriteProductIds,
-                    onFavoriteIdsChange = { favoriteProductIds = it },
-                    onMenuItemSelected = onMainTabSelected,
-                    onAddProduct = { selectedMainTab = 1 },
-                    onAiClick = { showAiNotice = true },
-                    onMixProduct = { unavailableTab = "Misturas" },
-                    onViewMixtures = { unavailableTab = "Misturas" },
-                    onCreateRoom = { unavailableTab = "Cômodos" },
-                )
-                3 -> ProximityScreen(
-                    onMenuItemSelected = onMainTabSelected,
-                    initialSavedPointIds = savedPointIds,
-                    onSavedPointIdsChange = { savedPointIds = it },
-                    initialAddress = referenceAddress,
-                    onAddressChange = { referenceAddress = it },
-                    initialAddressFields = referenceAddressFields,
-                    onAddressFieldsChange = { referenceAddressFields = it },
-                )
-                else -> HomeScreen(
-                    onMenuItemSelected = onMainTabSelected,
-                    onFindDropOffClick = { selectedMainTab = 3 },
-                    onShelfClick = { selectedMainTab = 2 },
-                    onAiClick = { showAiNotice = true },
-                )
-            }
-            if (showAiNotice) {
-                AlertDialog(
-                    onDismissRequest = { showAiNotice = false },
-                    title = { Text("Assistente de IA") },
-                    text = { Text("O acesso ao assistente está preparado, mas ainda não há um serviço de IA conectado neste app.") },
-                    confirmButton = { TextButton(onClick = { showAiNotice = false }) { Text("Entendi") } },
-                )
-            }
-            unavailableTab?.let { name ->
-                AlertDialog(
-                    onDismissRequest = { unavailableTab = null },
-                    title = { Text(name) },
-                    text = { Text("Esta tela ainda não está disponível.") },
-                    confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
-                )
+            Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().then(if (showKemi) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    when (selectedMainTab) {
+                        1 -> CatalogScreen(
+                            onMenuItemSelected = onMainTabSelected,
+                            onAiClick = { showKemi = true },
+                            initialSavedProductIds = savedProductIds,
+                            onSavedProductIdsChange = { savedProductIds = it },
+                        )
+                        2 -> ShelfScreen(
+                            savedIds = savedProductIds,
+                            onSavedIdsChange = { savedProductIds = it },
+                            favoriteIds = favoriteProductIds,
+                            onFavoriteIdsChange = { favoriteProductIds = it },
+                            onMenuItemSelected = onMainTabSelected,
+                            onAddProduct = { selectedMainTab = 1 },
+                            onAiClick = { showKemi = true },
+                            onMixProduct = { unavailableTab = "Misturas" },
+                            onViewMixtures = { unavailableTab = "Misturas" },
+                            onCreateRoom = { unavailableTab = "Cômodos" },
+                        )
+                        3 -> ProximityScreen(
+                            onMenuItemSelected = onMainTabSelected,
+                            initialSavedPointIds = savedPointIds,
+                            onSavedPointIdsChange = { savedPointIds = it },
+                            initialAddress = referenceAddress,
+                            onAddressChange = { referenceAddress = it },
+                            initialAddressFields = referenceAddressFields,
+                            onAddressFieldsChange = { referenceAddressFields = it },
+                        )
+                        else -> HomeScreen(
+                            onMenuItemSelected = onMainTabSelected,
+                            onFindDropOffClick = { selectedMainTab = 3 },
+                            onShelfClick = { selectedMainTab = 2 },
+                            onAiClick = { showKemi = true },
+                        )
+                    }
+                }
+                if (showKemi) {
+                    KemiScreen(
+                        controller = kemiController,
+                        displayName = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                            ?.takeIf { it.uid == sessionUid }?.displayName?.substringBefore(' '),
+                        onClose = { showKemi = false },
+                        onHome = { showKemi = false; selectedMainTab = 0 },
+                        onSignInAgain = {
+                            showKemi = false
+                            showLoginHome = false
+                            showCadastro1 = false
+                            showCadastro2 = false
+                            showLoginPass1 = false
+                            showLoginPassCode = false
+                            showLoginPass2 = false
+                            showLoginPassSucces = false
+                            selectedMainTab = 0
+                            authViewModel.logout()
+                        },
+                    )
+                }
+                unavailableTab?.let { name ->
+                    AlertDialog(
+                        onDismissRequest = { unavailableTab = null },
+                        title = { Text(name) },
+                        text = { Text("Esta tela ainda não está disponível.") },
+                        confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
+                    )
+                }
             }
         }
         else -> {
