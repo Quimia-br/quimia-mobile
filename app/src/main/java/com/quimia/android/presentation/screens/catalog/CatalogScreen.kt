@@ -84,6 +84,7 @@ import theme.QuimiaTheme
 import theme.RadiusLarge
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.quimiaHighContrastEnabled
 import theme.quimiaContrastBorder
 import theme.quimiaContrastOutline
 import title.QuimiaSectionTitle
@@ -380,10 +381,10 @@ private fun ProductCard(
 ) {
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
+    val outline = resolveCatalogProductOutline(tokens, quimiaHighContrastEnabled(), selectionMode, selected)
     QuimiaCard(
         modifier = modifier
             .clip(cardShape)
-            .then(if (selected) Modifier.border(2.dp, tokens.success, cardShape) else Modifier)
             .combinedClickable(
                 onClick = { if (selectionMode) onLongSelect() else onInfo() },
                 onLongClick = onLongSelect,
@@ -397,6 +398,10 @@ private fun ProductCard(
         endIcon = null,
         contentPadding = 0.dp,
         sectionSpacing = 0.dp,
+        contrastOutline = false,
+        outline = outline != null,
+        outlineColor = outline?.color,
+        outlineWidth = outline?.width ?: 3.dp,
     ) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
