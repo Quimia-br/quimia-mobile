@@ -44,6 +44,8 @@ import com.quimia.android.presentation.screens.profile.*
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.quimia.android.presentation.screens.auth.AuthDestination
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,13 +86,15 @@ class MainActivity : ComponentActivity() {
 private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (ProfilePreferences) -> Unit) {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
-    var showLoginHome by rememberSaveable { mutableStateOf(true) }
-    var showLoginPass1 by rememberSaveable { mutableStateOf(false) }
-    var showLoginPassCode by rememberSaveable { mutableStateOf(false) }
-    var showLoginPass2 by rememberSaveable { mutableStateOf(false) }
-    var showLoginPassSucces by rememberSaveable { mutableStateOf(false) }
-    var showCadastro1 by rememberSaveable { mutableStateOf(false) }
-    var showCadastro2 by rememberSaveable { mutableStateOf(false) }
+    var authRouteName by rememberSaveable { mutableStateOf(AuthDestination.Welcome.name) }
+    val authDestination = AuthDestination.valueOf(authRouteName)
+    val authScreens = rememberSaveableStateHolder()
+    var recoveryEmail by rememberSaveable { mutableStateOf("") }
+    var authNotice by rememberSaveable { mutableStateOf<String?>(null) }
+    fun navigateAuth(destination: AuthDestination) { authRouteName = destination.name }
+    val registrationUnavailable = {
+        authNotice = "O cadastro ainda é visual nesta branch. Nenhuma conta ou endereço foi enviado. A integração de autenticação permanece separada."
+    }
     var selectedMainTab by rememberSaveable { mutableStateOf(0) }
     val sessionUid = (authState as? AuthResult.Success)?.uid
     val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
@@ -121,14 +125,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val currentScreen = when {
         authState is AuthResult.Success && showProfile -> "profile"
         authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; else -> "home" }
-        showLoginHome -> "login_welcome"
-        showCadastro2 -> "registration_details"
-        showCadastro1 -> "registration"
-        showLoginPass1 -> "password_recovery_email"
-        showLoginPassCode -> "password_recovery_code"
-        showLoginPass2 -> "password_recovery_new_password"
-        showLoginPassSucces -> "password_recovery_success"
-        else -> "login"
+        else -> authDestination.screenName
     }
 
     LaunchedEffect(currentScreen) {
@@ -136,6 +133,10 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
     BackHandler(enabled = authState is AuthResult.Success && (showProfile || selectedMainTab in 2..3)) {
         if (showProfile) showProfile = false else selectedMainTab = 0
+    }
+
+    BackHandler(enabled = authState !is AuthResult.Success && authDestination != AuthDestination.Welcome) {
+        navigateAuth(authDestination.back())
     }
 
     when (authState) {
@@ -150,9 +151,10 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                     displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
                 },
                 onLogout = {
-                    showProfile = false; selectedMainTab = 0; showLoginHome = true
-                    showCadastro1 = false; showCadastro2 = false
-                    showLoginPass1 = false; showLoginPassCode = false; showLoginPass2 = false; showLoginPassSucces = false
+                    showProfile = false; selectedMainTab = 0
+                    navigateAuth(AuthDestination.Welcome)
+                    AuthDestination.entries.forEach { authScreens.removeState(it.name) }
+                    recoveryEmail = ""; authNotice = null
                     authViewModel.logout()
                 },
             ) else when (selectedMainTab) {
@@ -210,76 +212,47 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
             }
         }
         else -> {
-            if (showLoginHome) {
-                LoginHomeScreen(
-                    onStart = {
-                        showLoginHome = false
-                    }
-                )
-            } else if (showCadastro2) {
-                Cadastro2Screen(
-                    onBack = {
-                        showCadastro2 = false
-                    }
-                )
-            } else if (showCadastro1) {
-                Cadastro1Screen(
-                    onContinue = {
-                        showCadastro2 = true
-                    }
-                )
-            } else if (showLoginPass1) {
-                LoginPass1Screen(
-                    onBack = {
-                        showLoginPass1 = false
-                    },
-                    onContinue = {
-                        showLoginPass1 = false
-                        showLoginPassCode = true
-                    }
-                )
-            } else if (showLoginPassCode) {
-                LoginPassCodeScreen(
-                    onBack = {
-                        showLoginPassCode = false
-                        showLoginPass1 = true
-                    },
-                    onConfirm = {
-                        showLoginPassCode = false
-                        showLoginPass2 = true
-                    }
-                )
-            } else if (showLoginPass2) {
-                LoginPass2Screen(
-                    onBack = {
-                        showLoginPass2 = false
-                        showLoginPassCode = true
-                    },
-                    onConfirm = {
-                        showLoginPass2 = false
-                        showLoginPassSucces = true
-                    }
-                )
-            } else if (showLoginPassSucces) {
-                LoginPassSuccesScreen(
-                    onStart = {
-                        showLoginPassSucces = false
-                        showLoginHome = true
-                    }
-                )
-            } else {
-                Login1Screen(
-                    onContinue = { email, password ->
-                        authViewModel.loginWithEmail(email, password)
-                    },
-                    onCreateAccount = {
-                        showCadastro1 = true
-                    },
-                    onForgotPassword = {
-                        showLoginPass1 = true
-                    }
-                )
+            authScreens.SaveableStateProvider(authDestination.name) {
+                when (authDestination) {
+                    AuthDestination.Welcome -> LoginHomeScreen(onStart = { navigateAuth(AuthDestination.Login) })
+                    AuthDestination.Login -> Login1Screen(
+                        onContinue = { email, password -> authViewModel.loginWithEmail(email, password) },
+                        onCreateAccount = { navigateAuth(AuthDestination.Registration) },
+                        onForgotPassword = { navigateAuth(AuthDestination.RecoveryEmail) },
+                    )
+                    AuthDestination.Registration -> Cadastro1Screen(
+                        onContinue = { navigateAuth(AuthDestination.Address) },
+                        onLogin = { navigateAuth(AuthDestination.Login) },
+                    )
+                    AuthDestination.Address -> Cadastro2Screen(
+                        onBack = { navigateAuth(AuthDestination.Registration) },
+                        onSkip = registrationUnavailable, onEnter = registrationUnavailable,
+                    )
+                    AuthDestination.RecoveryEmail -> LoginPass1Screen(
+                        onBack = { navigateAuth(AuthDestination.Login) },
+                        onEmailContinue = { email ->
+                            recoveryEmail = email
+                            navigateAuth(AuthDestination.RecoveryCode)
+                            authNotice = "Recuperação em demonstração nesta branch: nenhum e-mail foi enviado. O envio e a validação do código dependem da integração de autenticação."
+                        },
+                    )
+                    AuthDestination.RecoveryCode -> LoginPassCodeScreen(
+                        email = recoveryEmail,
+                        onBack = { navigateAuth(AuthDestination.RecoveryEmail) },
+                        onResend = { authNotice = "O reenvio de códigos ainda não está conectado nesta branch." },
+                        onConfirm = { navigateAuth(AuthDestination.NewPassword) },
+                    )
+                    AuthDestination.NewPassword -> LoginPass2Screen(
+                        onBack = { navigateAuth(AuthDestination.RecoveryCode) },
+                        onConfirm = { authNotice = "Nenhuma senha foi alterada. A redefinição ainda depende da integração de autenticação, mantida fora desta branch." },
+                    )
+                    AuthDestination.RecoverySuccess -> LoginPassSuccesScreen(onStart = { navigateAuth(AuthDestination.Login) })
+                }
             }
         }
+    }
+    authNotice?.let { notice ->
+        AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
+            text = { Text(notice) }, confirmButton = { TextButton(onClick = { authNotice = null }) { Text("Entendi") } })
     }
 }
