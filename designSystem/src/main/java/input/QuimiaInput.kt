@@ -41,6 +41,7 @@ import com.composables.icons.lucide.X
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
 
 @Composable
@@ -103,7 +104,7 @@ fun QuimiaInput(
     val borderColor by animateColorAsState(
         when {
             isError -> actualErrorColor
-            isFocused -> actualFocusColor
+            isFocused || quimiaHighContrastEnabled() -> actualFocusColor
             else -> Color.Transparent
         }
     )

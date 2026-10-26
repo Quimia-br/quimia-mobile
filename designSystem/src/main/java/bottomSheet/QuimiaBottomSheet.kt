@@ -38,6 +38,7 @@ import listItem.QuimiaListItem
 import theme.QuimiaTheme
 import theme.QuimiaFontFamily
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 
 enum class QuimiaBottomSheetTheme { Primary, Secondary }
 
@@ -68,23 +69,21 @@ fun QuimiaBottomSheet(
 
     val tokens = quimiaColorTokens()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetShape = shape ?: RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         sheetState = sheetState,
         sheetMaxWidth = sheetMaxWidth,
-        shape = shape ?: RoundedCornerShape(
-            topStart = 40.dp,
-            topEnd = 40.dp,
-        ),
+        shape = sheetShape,
         containerColor = if (theme == QuimiaBottomSheetTheme.Primary) tokens.surfaceBase else tokens.secondary,
         contentColor = tokens.textPrimary,
         scrimColor = scrimColor ?: tokens.black.copy(alpha = 0.32f),
         dragHandle = null,
     ) {
         QuimiaBottomSheetContent(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().quimiaContrastOutline(sheetShape),
             title = title, description = description, theme = theme,
             showDragHandle = showDragHandle, showCloseButton = showCloseButton,
             onClose = onDismissRequest, primaryActionLabel = primaryActionLabel,

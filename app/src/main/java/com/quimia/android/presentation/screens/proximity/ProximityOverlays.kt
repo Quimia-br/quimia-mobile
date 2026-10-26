@@ -39,6 +39,7 @@ import listItem.QuimiaListItem
 import states.QuimiaEmptyState
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
 import toast.QuimiaToast
 import toast.QuimiaToastType
 
@@ -60,7 +61,7 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
             ProximityScreen(initialHeaderExpanded = false)
             Box(Modifier.fillMaxSize().background(CatalogModalScrimColor), contentAlignment = Alignment.BottomCenter) {
                 Surface(Modifier.statusBarsPadding().padding(horizontal = 17.dp).widthIn(max = 560.dp).fillMaxWidth(),
-                    shape = RoundedCornerShape(40.dp), color = tokens.secondary, content = sheetContent)
+                    shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder(), content = sheetContent)
             }
         }
     } else {
@@ -69,7 +70,10 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
             modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp),
             sheetMaxWidth = 560.dp, shape = RoundedCornerShape(40.dp), containerColor = tokens.secondary,
             scrimColor = CatalogModalScrimColor, dragHandle = null,
-        ) { HideSystemNavigationBar(); sheetContent() }
+        ) {
+            HideSystemNavigationBar()
+            Surface(shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder(), content = sheetContent)
+        }
     }
 }
 
@@ -92,7 +96,7 @@ internal fun NearbySavedPointsSheet(ids: List<Int>, onDismiss: () -> Unit, onSel
                 fillAvailableSpace = false, title = "Nenhum ponto salvo",
                 description = "Selecione um ponto no mapa de demonstração e toque em Salvar.", icon = Lucide.MapPin,
             ) else points.forEach { point ->
-                Surface(shape = RoundedCornerShape(32.dp), color = tokens.surfaceBase) {
+                Surface(shape = RoundedCornerShape(32.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         QuimiaListItem(
                             title = point.name, subtitle = point.address, titleMaxLines = 1, subtitleMaxLines = 1,

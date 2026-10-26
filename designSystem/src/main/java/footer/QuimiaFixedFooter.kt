@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import theme.PaddingHuge
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 
 @Composable
 fun QuimiaFixedFooter(
@@ -36,6 +37,7 @@ fun QuimiaFixedFooter(
             .fillMaxWidth()
             .clip(shape)
             .background(containerColor)
+            .quimiaContrastOutline(shape)
             .padding(contentPadding),
         content = content
     )

@@ -6,11 +6,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +44,7 @@ import theme.LightTokens
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 import theme.quimiaHighContrastEnabled
+import theme.quimiaContrastBorder
 import title.QuimiaMainTitle
 import toast.QuimiaToast
 import toast.QuimiaToastType
@@ -103,14 +102,10 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun profileOutline(enabled: Boolean = quimiaHighContrastEnabled()): Modifier =
-    if (enabled) Modifier.border(3.dp, quimiaColorTokens().borderFocus, CircleShape) else Modifier
-
-@Composable
 private fun ProfilePortrait(name: String, photo: Painter?, onPhoto: () -> Unit) {
     Box(Modifier.width(112.dp).height(127.dp)) {
         QuimiaAvatar(size = 112.dp, photo = photo, initials = profileInitials(name), contentDescription = "Foto do perfil")
-        QuimiaIconButton(modifier = Modifier.align(Alignment.BottomStart).then(profileOutline()),
+        QuimiaIconButton(modifier = Modifier.align(Alignment.BottomStart),
             icon = Lucide.Pencil, containerColor = quimiaColorTokens().secondary,
             contentDescription = "Alterar foto do perfil", onClick = onPhoto)
     }
@@ -127,7 +122,7 @@ private fun ProfilePreferencesScreen(
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             QuimiaNav(showBackButton = true, showCloseButton = false, buttonColor = tokens.surfaceBase,
-                buttonModifier = profileOutline(), onBackClick = onBack)
+                onBackClick = onBack)
             BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(24.dp)) {
                 val identity: @Composable (Modifier) -> Unit = { identityModifier ->
                     Column(identityModifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -138,7 +133,7 @@ private fun ProfilePreferencesScreen(
                                 color = if (tokens.surfaceBackground == theme.DarkTokens.surfaceBackground) tokens.foregroundPrimary.copy(alpha = .6f) else tokens.textSecondary,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        QuimiaButton(modifier = Modifier.fillMaxWidth().then(profileOutline())
+                        QuimiaButton(modifier = Modifier.fillMaxWidth()
                             .then(if (!accessibleLayout) Modifier.height(41.dp) else Modifier.heightIn(min = 48.dp)),
                             text = "Editar perfil", textStyle = QuimiaTextStyles.medium14, iconSize = 0, espacamento = 0,
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp), containerColor = tokens.secondary, onClick = onEdit)
@@ -154,13 +149,13 @@ private fun ProfilePreferencesScreen(
             }
             QuimiaCard(title = "Tema", description = "Acessibilidade", primaryActionLabel = null, secondaryActionLabel = null,
                 modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp),
-                contentPadding = 24.dp, sectionSpacing = 17.dp, endIcon = null, outline = quimiaHighContrastEnabled()) {
+                contentPadding = 24.dp, sectionSpacing = 17.dp, endIcon = null) {
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val buttonSize = ((maxWidth - 30.dp) / 4).coerceIn(45.dp, 56.dp)
                     Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ProfileTheme.entries.forEach { item ->
                             val chosen = preferences.theme == item
-                            QuimiaIconButton(modifier = Modifier.size(buttonSize).then(profileOutline(quimiaHighContrastEnabled() && !chosen)).semantics {
+                            QuimiaIconButton(modifier = Modifier.size(buttonSize).semantics {
                                 selected = chosen; role = Role.RadioButton
                                 stateDescription = if (chosen) "Selecionado" else "Não selecionado"
                             }, icon = when (item) {
@@ -168,7 +163,7 @@ private fun ProfilePreferencesScreen(
                                 ProfileTheme.Dark -> Lucide.Moon
                                 ProfileTheme.HighContrast -> Lucide.Blend
                                 ProfileTheme.System -> Lucide.Monitor
-                            }, size = QuimiaIconButtonSize.Large, iconSize = 20.dp,
+                            }, size = QuimiaIconButtonSize.Large, iconSize = 20.dp, contrastOutline = !chosen,
                                 iconColor = if (chosen) LightTokens.foregroundPrimary else tokens.foregroundPrimary,
                                 containerColor = if (chosen) tokens.primary else tokens.secondary,
                                 contentDescription = "Tema " + item.label, onClick = { onPreferencesChange(preferences.copy(theme = item)) })
@@ -200,7 +195,7 @@ private fun ProfileTextCard(preferences: ProfilePreferences, onChange: (ProfileP
     val tokens = quimiaColorTokens()
     QuimiaCard(title = "Texto", description = "Acessibilidade", primaryActionLabel = null, secondaryActionLabel = null,
         modifier = modifier.heightIn(min = if (quimiaHighContrastEnabled()) 168.dp else 158.dp), contentPadding = 24.dp,
-        sectionSpacing = 10.dp, endIcon = null, outline = quimiaHighContrastEnabled()) {
+        sectionSpacing = 10.dp, endIcon = null) {
         Text("Aa", style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary)
         Spacer(Modifier.height(10.dp))
         QuimiaTextSizeSlider(step = preferences.textSizeStep, onStepChange = { onChange(preferences.copy(textSizeStep = it)) },
@@ -212,10 +207,10 @@ private fun ProfileTextCard(preferences: ProfilePreferences, onChange: (ProfileP
 private fun ProfileFontCard(preferences: ProfilePreferences, onChange: (ProfilePreferences) -> Unit, modifier: Modifier) {
     QuimiaCard(title = "Dislexic Font", description = "Acessibilidade", primaryActionLabel = null, secondaryActionLabel = null,
         modifier = modifier.heightIn(min = if (quimiaHighContrastEnabled()) 168.dp else 158.dp), contentPadding = 24.dp,
-        sectionSpacing = 32.dp, endIcon = null, outline = quimiaHighContrastEnabled()) {
+        sectionSpacing = 32.dp, endIcon = null) {
         Box(Modifier.fillMaxWidth().height(if (quimiaHighContrastEnabled()) 45.dp else 35.dp)) {
             QuimiaSwitch(checked = preferences.dyslexicFont, onCheckedChange = { onChange(preferences.copy(dyslexicFont = it)) },
-                modifier = Modifier.align(Alignment.CenterStart).offset(y = 12.dp), outline = quimiaHighContrastEnabled(),
+                modifier = Modifier.align(Alignment.CenterStart).offset(y = 12.dp),
                 contentDescription = "Fonte OpenDyslexic")
         }
     }
@@ -232,7 +227,7 @@ private fun ProfileEditScreen(
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().imePadding()) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-                QuimiaNav(showBackButton = true, showCloseButton = false, buttonModifier = profileOutline(), onBackClick = onBack)
+                QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp), verticalArrangement = Arrangement.spacedBy(31.dp)) {
                     QuimiaMainTitle(title = "Alterar informações do perfil")
                     ProfilePortrait(name, photo, onPhoto)
@@ -263,7 +258,7 @@ private fun ProfilePhotoSheet(name: String, photo: Painter?, message: String?, o
     val content: @Composable ColumnScope.() -> Unit = { ProfilePhotoContent(name, photo, message, onDismiss, onChoose) }
     if (LocalInspectionMode.current) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Surface(Modifier.widthIn(max = 594.dp).fillMaxWidth().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
-            shape = RoundedCornerShape(40.dp), color = quimiaColorTokens().surfaceBase, shadowElevation = 12.dp) {
+            shape = RoundedCornerShape(40.dp), color = quimiaColorTokens().surfaceBase, shadowElevation = 12.dp, border = quimiaContrastBorder()) {
             QuimiaBottomSheetContent(title = null, showDragHandle = false, showCloseButton = false, contentHeight = null,
                 contentPadding = PaddingValues(start = 32.dp, top = 32.dp, end = 32.dp, bottom = 27.dp), content = content)
         }

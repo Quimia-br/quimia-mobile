@@ -33,6 +33,8 @@ import theme.QuimiaFontFamily
 import theme.RadiusFull
 import theme.RadiusMedium
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
+import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,13 +66,15 @@ fun QuimiaButton(
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
     val actualIndicator = indicatorColor ?: tokens.textSecondary
-    val actualTextColor = textColor ?: tokens.textPrimary
-    val actualIconColor = if (enabled) iconColor ?: tokens.textPrimary else tokens.foregroundDisabled
+    val defaultContentColor = if (quimiaHighContrastEnabled() && actualContainer == tokens.primary) tokens.onPrimary else tokens.textPrimary
+    val actualTextColor = textColor ?: defaultContentColor
+    val actualIconColor = if (enabled) iconColor ?: defaultContentColor else tokens.foregroundDisabled
 
     Button(
         modifier = modifier,
         onClick = onClick,
         enabled = enabled,
+        border = quimiaContrastBorder(),
         colors = ButtonDefaults.buttonColors(
             containerColor = actualContainer,
             disabledContainerColor = if (actualContainer == tokens.primary) tokens.primaryDisabled else tokens.surfaceDisabled,

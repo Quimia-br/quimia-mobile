@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.dp
 import theme.quimiaColorTokens
+import theme.quimiaHighContrastEnabled
 import kotlin.math.roundToInt
 
 @Composable
@@ -32,7 +33,7 @@ fun QuimiaSwitch(
         .toggleable(value = checked, role = Role.Switch, interactionSource = remember { MutableInteractionSource() },
             indication = null, onValueChange = onCheckedChange), contentAlignment = Alignment.Center) {
         Box(Modifier.fillMaxWidth().height(24.dp).background(tokens.secondary, CircleShape)
-            .then(if (outline) Modifier.border(3.dp, tokens.borderFocus, CircleShape) else Modifier)) {
+            .then(if (outline || quimiaHighContrastEnabled()) Modifier.border(3.dp, tokens.borderFocus, CircleShape) else Modifier)) {
             Box(Modifier.offset(x = thumbOffset).size(24.dp).background(if (checked) tokens.primary else tokens.foregroundSubtle, CircleShape))
         }
     }

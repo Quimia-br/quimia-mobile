@@ -84,6 +84,8 @@ import theme.QuimiaTheme
 import theme.RadiusLarge
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
+import theme.quimiaContrastOutline
 import title.QuimiaSectionTitle
 
 internal val CatalogModalScrimColor = Color(0xFF808080).copy(alpha = 0.16f)
@@ -269,7 +271,8 @@ fun CatalogScreen(
             } else {
                 Row(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(56.dp)).background(tokens.surfaceBase).padding(32.dp),
+                        .clip(RoundedCornerShape(56.dp)).background(tokens.surfaceBase)
+                        .quimiaContrastOutline(RoundedCornerShape(56.dp)).padding(32.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -334,6 +337,7 @@ private fun CatalogBanner(message: String, success: Boolean, onDismiss: () -> Un
     Row(
         modifier = Modifier.fillMaxWidth().padding(16.dp)
             .clip(RoundedCornerShape(40.dp)).background(tokens.surfaceBase)
+            .quimiaContrastOutline(RoundedCornerShape(40.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -493,6 +497,7 @@ private fun CatalogProductDetailsContent(
         shape = RoundedCornerShape(36.dp),
         color = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
+        border = quimiaContrastBorder(),
     ) {
         Column(Modifier.fillMaxWidth().padding(32.dp)) {
             Row(verticalAlignment = Alignment.Top) {
