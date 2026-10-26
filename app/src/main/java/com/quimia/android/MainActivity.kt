@@ -100,6 +100,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         mutableStateOf(profileStore.displayName() ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
     }
     var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri()) }
+    var profileEmail by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.email() ?: sessionEmail) }
+    var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.birthDate()) }
     val photoPainter = rememberAsyncImagePainter(photoUri)
     val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
     var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
@@ -139,10 +141,20 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     when (authState) {
         is AuthResult.Success -> {
             if (showProfile) ProfileScreen(
-                displayName = displayName, email = sessionEmail, preferences = preferences,
+                displayName = displayName, email = profileEmail, preferences = preferences, birthDate = birthDate,
                 onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
                 onDisplayNameChange = { displayName = it; profileStore.saveDisplayName(it) },
                 onPhotoUriChange = { photoUri = it; profileStore.savePhotoUri(it) },
+                onDetailsChange = { details ->
+                    profileStore.saveDetails(details)
+                    displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
+                },
+                onLogout = {
+                    showProfile = false; selectedMainTab = 0; showLoginHome = true
+                    showCadastro1 = false; showCadastro2 = false
+                    showLoginPass1 = false; showLoginPassCode = false; showLoginPass2 = false; showLoginPassSucces = false
+                    authViewModel.logout()
+                },
             ) else when (selectedMainTab) {
                 1 -> CatalogScreen(
                     onMenuItemSelected = onMainTabSelected,

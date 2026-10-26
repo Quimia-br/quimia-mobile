@@ -58,6 +58,7 @@ fun QuimiaButton(
     enabled: Boolean = true,
     centerContent: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(horizontal = PaddingMedium.dp, vertical = PaddingSmall.dp),
+    fillTextWidth: Boolean = false,
 ) {
 
     val tokens = quimiaColorTokens()
@@ -110,6 +111,7 @@ fun QuimiaButton(
 
             Text(
                 text = text,
+                modifier = if (fillTextWidth) Modifier.weight(1f) else Modifier,
                 style = resolvedTextStyle
             )
             iconRightVector?.let {

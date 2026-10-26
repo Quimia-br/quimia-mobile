@@ -3,6 +3,7 @@ package bottomSheet
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -60,6 +61,7 @@ fun QuimiaBottomSheet(
     contentHeight: Dp? = 547.dp,
     scrimColor: Color? = null,
     shape: androidx.compose.ui.graphics.Shape? = null,
+    contentPadding: PaddingValues = PaddingValues(32.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (!isVisible) return
@@ -89,6 +91,7 @@ fun QuimiaBottomSheet(
             secondaryActionLabel = secondaryActionLabel, primaryActionEnabled = primaryActionEnabled,
             onPrimaryActionClick = onPrimaryActionClick, onSecondaryActionClick = onSecondaryActionClick,
             contentHeight = contentHeight,
+            contentPadding = contentPadding,
             content = content,
         )
     }
@@ -109,12 +112,13 @@ fun QuimiaBottomSheetContent(
     onPrimaryActionClick: () -> Unit = {},
     onSecondaryActionClick: () -> Unit = {},
     contentHeight: Dp? = 547.dp,
+    contentPadding: PaddingValues = PaddingValues(32.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = quimiaColorTokens()
     val secondary = if (theme == QuimiaBottomSheetTheme.Primary) tokens.secondary else tokens.surfaceBase
     Column(
-        modifier = modifier.fillMaxWidth().then(if (contentHeight != null) Modifier.height(contentHeight) else Modifier).padding(32.dp),
+        modifier = modifier.fillMaxWidth().then(if (contentHeight != null) Modifier.height(contentHeight) else Modifier).padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (showDragHandle) QuimiaDragger(color = secondary, height = 3.dp)

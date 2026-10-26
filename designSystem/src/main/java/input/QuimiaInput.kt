@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import buttons.QuimiaIconButton
 import buttons.QuimiaIconButtonSize
 import com.composables.icons.lucide.Lucide
@@ -70,6 +71,8 @@ fun QuimiaInput(
     errorColor: Color? = null,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
     showTrailingIconWhenEmpty: Boolean = false,
+    showClearButton: Boolean = true,
+    trailingIconSize: Dp? = null,
     ) {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -156,7 +159,7 @@ fun QuimiaInput(
                     }
                     innerTextField()
                 }
-                    if (value.isNotEmpty() || (showTrailingIconWhenEmpty && trailingIcon != null)) {
+                    if ((value.isNotEmpty() && showClearButton) || (showTrailingIconWhenEmpty && trailingIcon != null)) {
                         QuimiaIconButton(
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                             icon = trailingIcon ?: Lucide.X,
@@ -164,6 +167,7 @@ fun QuimiaInput(
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
                             size = QuimiaIconButtonSize.Icon,
+                            iconSize = trailingIconSize,
                             contentDescription = trailingIconContentDescription ?: "Clear all"
                         )
                     }
