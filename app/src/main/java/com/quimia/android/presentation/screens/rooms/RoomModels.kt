@@ -16,6 +16,8 @@ enum class RoomIcon(val label: String) {
 @Serializable
 enum class RoomSafety { NotEvaluated, Critical, Safe }
 
+enum class RoomPage { List, Create, Detail, Saving, Success, Error }
+
 @Serializable
 data class QuimiaRoom(
     val id: String,
@@ -26,6 +28,24 @@ data class QuimiaRoom(
 )
 
 internal enum class RoomSort(val label: String) { Alphabetical("Alfabética"), Recent("Recentes"), Oldest("Antigos") }
+
+internal fun roomGridColumns(availableWidthDp: Float): Int = when {
+    availableWidthDp >= 700f -> 4
+    availableWidthDp >= 500f -> 3
+    else -> 2
+}
+
+internal fun roomIconColumns(availableWidthDp: Float): Int =
+    ((availableWidthDp + 8f) / 64f).toInt().coerceIn(1, 5)
+
+internal fun roomStartPage(productId: String?, roomId: String?, fallback: RoomPage = RoomPage.List): RoomPage = when {
+    productId != null -> RoomPage.Create
+    roomId != null && fallback == RoomPage.List -> RoomPage.Detail
+    else -> fallback
+}
+
+internal fun roomsForProduct(rooms: List<QuimiaRoom>, productId: String): List<QuimiaRoom> =
+    rooms.filter { productId in it.productIds }.distinctBy { it.id }
 
 val RoomListSaver = Saver<List<QuimiaRoom>, String>(
     save = { Json.encodeToString(it) },

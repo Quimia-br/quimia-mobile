@@ -38,6 +38,7 @@ import buttons.QuimiaIconButtonSize
 import card.QuimiaCard
 import com.composables.icons.lucide.Atom
 import com.composables.icons.lucide.Copy
+import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Info
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Minus
@@ -48,6 +49,8 @@ import com.quimia.android.R
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
 import com.quimia.android.presentation.screens.catalog.CatalogDescriptionCard
 import com.quimia.android.presentation.screens.catalog.CatalogModalScrimColor
+import com.quimia.android.presentation.screens.rooms.QuimiaRoom
+import com.quimia.android.presentation.screens.rooms.RoomShapeIcon
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import image.QuimiaImage
 import listItem.QuimiaListItem
@@ -92,6 +95,7 @@ internal fun ShelfActionsPanel(
     onRemove: () -> Unit, onMixtures: () -> Unit, onInformation: () -> Unit,
     showMixtures: Boolean = true,
     previewBackground: (@Composable () -> Unit)? = null,
+    actionSpacing: Dp = 20.dp,
 ) {
     val tokens = quimiaColorTokens()
     ShelfFloatingPanel(onDismiss, bottomMargin = 17.dp, previewBackground = previewBackground) {
@@ -112,7 +116,7 @@ internal fun ShelfActionsPanel(
                 leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Atom, containerColor = tokens.surfaceBase) },
             )
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(actionSpacing))
         QuimiaListItem(
             title = "Ver informações", onClick = onInformation, contentPadding = PaddingValues(12.dp), horizontalSpacing = 20.dp,
             leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Info, containerColor = tokens.surfaceBase) },
@@ -170,6 +174,27 @@ internal fun ShelfRemoveConfirmation(product: CatalogProduct, onDismiss: () -> U
         description = "Todas as misturas com esse produto serão apagadas",
         destructive = true, action = "Remover", onDismiss = onDismiss, onConfirm = onConfirm,
     )
+}
+
+@Composable
+internal fun ShelfRoomsPanel(rooms: List<QuimiaRoom>, onDismiss: () -> Unit, onOpenRoom: (String) -> Unit) {
+    val tokens = quimiaColorTokens()
+    ShelfFloatingPanel(onDismiss) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Escolha um cômodo", Modifier.weight(1f).padding(end = 20.dp),
+                style = QuimiaTextStyles.medium20, color = tokens.foregroundPrimary)
+            ShelfCloseButton(onDismiss)
+        }
+        Spacer(Modifier.height(24.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            rooms.forEach { room ->
+                QuimiaListItem(title = room.name, rightIcon = Lucide.ChevronRight,
+                    contentPadding = PaddingValues(12.dp), horizontalSpacing = 16.dp,
+                    leadingContent = { RoomShapeIcon(room.icon, 50.dp, onBase = true) },
+                    onClick = { onOpenRoom(room.id) })
+            }
+        }
+    }
 }
 
 @Composable

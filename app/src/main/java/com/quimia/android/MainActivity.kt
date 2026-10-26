@@ -77,6 +77,7 @@ private fun QuimiaApp() {
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var rooms by rememberSaveable(sessionUid, stateSaver = RoomListSaver) { mutableStateOf(emptyList<QuimiaRoom>()) }
     var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
+    var roomToOpenId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
     var referenceAddress by rememberSaveable(sessionUid) { mutableStateOf("Defina seu endereço de referência") }
     var referenceAddressFields by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
@@ -126,13 +127,17 @@ private fun QuimiaApp() {
                     onAiClick = { showAiNotice = true },
                     onMixProduct = { unavailableTab = "Misturas" },
                     onViewMixtures = { unavailableTab = "Misturas" },
-                    onCreateRoom = { roomDraftProductId = it; selectedMainTab = 4 },
+                    onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
+                    rooms = rooms,
+                    onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
                 )
                 4 -> RoomsScreen(
                     rooms = rooms, onRoomsChange = { rooms = it }, savedProductIds = savedProductIds,
                     onMenuItemSelected = onMainTabSelected, onAiClick = { showAiNotice = true },
                     onOpenCatalog = { selectedMainTab = 1 }, initialProductId = roomDraftProductId,
                     onInitialProductConsumed = { roomDraftProductId = null },
+                    initialRoomId = roomToOpenId,
+                    onInitialRoomConsumed = { roomToOpenId = null },
                 )
                 3 -> ProximityScreen(
                     onMenuItemSelected = onMainTabSelected,

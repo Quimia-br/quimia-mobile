@@ -2,14 +2,18 @@ package com.quimia.android.presentation.screens.rooms
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,8 +36,6 @@ import theme.quimiaColorTokens
 import title.QuimiaSectionTitle
 import java.util.UUID
 
-enum class RoomPage { List, Create, Detail, Saving, Success, Error }
-
 @Composable
 fun RoomsScreen(
     rooms: List<QuimiaRoom>, onRoomsChange: (List<QuimiaRoom>) -> Unit,
@@ -45,10 +47,11 @@ fun RoomsScreen(
     previewActionProductId: String? = null,
     initialDraftName: String = "", initialDraftIcon: RoomIcon? = null,
     initialDraftProductIds: List<String> = emptyList(),
+    onInitialRoomConsumed: () -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     val preview = LocalInspectionMode.current
-    var page by rememberSaveable { mutableStateOf(if (initialProductId != null) RoomPage.Create else initialPage) }
+    var page by rememberSaveable { mutableStateOf(roomStartPage(initialProductId, initialRoomId, initialPage)) }
     var selectedRoomId by rememberSaveable { mutableStateOf(initialRoomId) }
     var draftName by rememberSaveable { mutableStateOf(initialDraftName) }
     var draftIcon by rememberSaveable { mutableStateOf(initialDraftIcon) }
@@ -62,7 +65,10 @@ fun RoomsScreen(
         savedProductIds.distinct().mapNotNull(indexed::get)
     }
     val selectedRoom = rooms.firstOrNull { it.id == selectedRoomId }
-    LaunchedEffect(Unit) { if (initialProductId != null) onInitialProductConsumed() }
+    LaunchedEffect(Unit) {
+        if (initialProductId != null) onInitialProductConsumed()
+        if (initialRoomId != null) onInitialRoomConsumed()
+    }
     LaunchedEffect(page) {
         if (page == RoomPage.Saving && !preview) {
             yield()
@@ -111,7 +117,7 @@ fun RoomsScreen(
         }
     }
     catalog.firstOrNull { it.id == actionProductId }?.let { product ->
-        ShelfActionsPanel(product = product, onDismiss = { actionProductId = null }, showMixtures = false,
+        ShelfActionsPanel(product = product, onDismiss = { actionProductId = null }, showMixtures = false, actionSpacing = 16.dp,
             onMixtures = {}, onInformation = { informationProductId = product.id; actionProductId = null },
             onRemove = {
                 selectedRoom?.let { onRoomsChange(rooms.upsertRoom(it.withoutProduct(product.id))) }
@@ -135,9 +141,21 @@ private fun RoomList(
     var filtersVisible by rememberSaveable { mutableStateOf(false) }
     var sort by rememberSaveable { mutableStateOf(RoomSort.Oldest) }
     val visibleRooms = remember(rooms, query, sort) { filterRooms(rooms, query, sort) }
+    val headerBackground = remember(tokens) {
+        fun tint(cyan: Float, green: Float = 0f) = tokens.brandPrimary.copy(alpha = green).compositeOver(
+            tokens.brandSecondary.copy(alpha = cyan).compositeOver(tokens.surfaceBackground),
+        )
+        Brush.verticalGradient(
+            0f to tint(.86f),
+            50f / 240f to tint(.655f),
+            100f / 240f to tint(.36f, .04f),
+            150f / 240f to tint(.146f, .032f),
+            200f / 240f to tint(.03f, .015f),
+            1f to tokens.surfaceBackground,
+        )
+    }
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxWidth().height(276.dp).background(Brush.verticalGradient(
-            listOf(tokens.brandSecondary.copy(alpha = .86f), tokens.surfaceBackground.copy(alpha = .72f), tokens.surfaceBackground))))
+        Box(Modifier.fillMaxWidth().height(240.dp).background(headerBackground))
         Column(Modifier.align(Alignment.TopCenter).widthIn(max = 840.dp).fillMaxSize().statusBarsPadding()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             QuimiaSectionTitle(title = "Cômodos", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
@@ -155,7 +173,7 @@ private fun RoomList(
                     selected = item == sort, onClick = { sort = item }) }
             }
             BoxWithConstraints(Modifier.weight(1f)) {
-                val columns = when { maxWidth >= 700.dp -> 4; maxWidth >= 500.dp -> 3; else -> 2 }
+                val columns = roomGridColumns(maxWidth.value)
                 if (visibleRooms.isEmpty()) Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     QuimiaEmptyState(fillAvailableSpace = false, icon = Lucide.Bath,
                         title = if (query.isBlank()) "Seus cômodos ficam aqui" else "Nenhum cômodo encontrado",
@@ -167,7 +185,8 @@ private fun RoomList(
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     items(visibleRooms, key = { it.id }) { room ->
                         QuimiaCard(title = room.name, showDescription = false, endIcon = null, primaryActionLabel = "Ver", secondaryActionLabel = null,
-                            modifier = Modifier.heightIn(min = 248.dp), sectionSpacing = 28.dp, contentPadding = 16.dp,
+                            modifier = Modifier.heightIn(min = 248.dp).clip(RoundedCornerShape(24.dp)).clickable { onOpen(room.id) },
+                            sectionSpacing = 28.dp, contentPadding = 16.dp,
                             headerContent = { Text(room.name, style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             onPrimaryActionClick = { onOpen(room.id) }) {
                             RoomShapeIcon(room.icon, size = 100.dp, modifier = Modifier.fillMaxWidth(), critical = room.safety == RoomSafety.Critical)

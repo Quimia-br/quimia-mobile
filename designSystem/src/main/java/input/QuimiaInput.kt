@@ -73,6 +73,7 @@ fun QuimiaInput(
     showTrailingIconWhenEmpty: Boolean = false,
     highlighted: Boolean = false,
     borderWidth: Dp = 3.dp,
+    trailingIconSize: Dp? = null,
     ) {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -167,6 +168,7 @@ fun QuimiaInput(
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
                             size = QuimiaIconButtonSize.Icon,
+                            iconSize = trailingIconSize,
                             contentDescription = trailingIconContentDescription ?: "Clear all"
                         )
                     }
