@@ -1,16 +1,16 @@
 package com.quimia.android.presentation.screens.proximity
 
-internal enum class NearbyCategory(val label: String) { Collection("Descarte"), Shopping("Compra") }
+enum class NearbyCategory(val label: String) { Collection("Descarte"), Shopping("Compra") }
 
 internal val nearbyStates = listOf("AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO")
 
-internal data class NearbyPoint(
+data class NearbyPoint(
     val id: Int, val name: String, val address: String, val category: NearbyCategory,
     val distance: String, val x: Float, val y: Float,
     val coordinate: NearbyCoordinate,
 )
 
-internal data class NearbyCoordinate(val latitude: Double, val longitude: Double) {
+data class NearbyCoordinate(val latitude: Double, val longitude: Double) {
     fun isValid(): Boolean = latitude.isFinite() && longitude.isFinite() &&
         latitude in -90.0..90.0 && longitude in -180.0..180.0
 }
@@ -42,14 +42,14 @@ internal fun filterNearbyPoints(points: List<NearbyPoint>, category: NearbyCateg
 internal fun toggleSavedPoint(ids: List<Int>, id: Int): List<Int> =
     if (id in ids) ids.filterNot { it == id } else (ids + id).distinct()
 
-internal data class NearbyAddress(
+data class NearbyAddress(
     val postalCode: String, val state: String, val city: String, val district: String,
     val street: String, val number: String, val complement: String,
 ) {
     fun validationError(): String? = when {
         postalCode.filter(Char::isDigit).length != 8 -> "Informe um CEP com 8 dígitos."
         state.uppercase() !in nearbyStates -> "Selecione uma UF válida."
-        city.isBlank() || district.isBlank() || number.isBlank() -> "Preencha cidade, bairro e número."
+        district.isBlank() || number.toIntOrNull()?.let { it <= 0 } != false -> "Preencha bairro e um número maior que zero."
         else -> null
     }
     fun formatted(): String = (if (street.isBlank()) "$district, $number · $city/${state.uppercase()}" else "$street, $number · $district · $city/${state.uppercase()}") +

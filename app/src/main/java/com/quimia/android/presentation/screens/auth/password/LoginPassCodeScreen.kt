@@ -101,7 +101,7 @@ fun LoginPassCodeScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             QuimiaButton(
-                text = "15s Reenviar",
+                text = "Reenviar código",
                 modifier = Modifier
                     .weight(1f)
                     .height(58.dp),

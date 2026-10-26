@@ -12,7 +12,21 @@ data class CatalogProduct(
     @param:DrawableRes val detailImageRes: Int = imageRes,
     val description: String = "Descrição não disponível para este produto.",
     val barcode: String = "",
+    val imageUrl: String? = null,
+    val logoUrl: String? = null,
+    val brandName: String = "",
+    val safetyInformation: String? = null,
 )
+
+@androidx.compose.runtime.Composable
+fun CatalogProduct.imagePainter(detail: Boolean = false): androidx.compose.ui.graphics.painter.Painter {
+    val resource = if (detail) detailImageRes else imageRes
+    return if (resource != 0) androidx.compose.ui.res.painterResource(resource) else coil.compose.rememberAsyncImagePainter(imageUrl)
+}
+
+@androidx.compose.runtime.Composable
+fun CatalogProduct.logoPainter(): androidx.compose.ui.graphics.painter.Painter =
+    if (logoRes != 0) androidx.compose.ui.res.painterResource(logoRes) else coil.compose.rememberAsyncImagePainter(logoUrl)
 
 private val mrMusculo = CatalogProduct(
     id = "squeeze",

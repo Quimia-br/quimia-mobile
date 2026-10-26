@@ -12,6 +12,10 @@ import kotlin.coroutines.resume
 class GoogleSignInHelper(private val context: Context) {
     private val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestEmail()
+        .apply {
+            val resource = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+            if (resource != 0) requestIdToken(context.getString(resource))
+        }
         .build()
 
     private val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(context, googleSignInOptions)

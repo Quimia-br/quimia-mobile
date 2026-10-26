@@ -43,6 +43,8 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Minus
 import com.composables.icons.lucide.TriangleAlert
 import com.composables.icons.lucide.X
+import com.quimia.android.presentation.screens.catalog.imagePainter
+import com.quimia.android.presentation.screens.catalog.logoPainter
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
 import com.quimia.android.R
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
@@ -136,7 +138,7 @@ internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> U
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 147.dp, height = 172.dp).clip(RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center) {
             QuimiaImage(
-                painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes),
+                painter = if (androidx.compose.ui.platform.LocalInspectionMode.current && product.id.startsWith("squeeze")) painterResource(R.drawable.shelf_mr_musculo_figma) else product.imagePainter(detail = true),
                 contentDescription = product.name,
                 modifier = Modifier.fillMaxSize().then(if (product.id.startsWith("squeeze")) Modifier.graphicsLayer {
                     scaleX = -1.564f

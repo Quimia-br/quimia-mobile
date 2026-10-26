@@ -37,7 +37,7 @@ import theme.QuimiaTheme
 fun LoginPass2Screen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onConfirm: () -> Unit = {}
+    onConfirm: (String) -> Unit = {}
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
     var newPassword by remember { mutableStateOf("") }
@@ -102,7 +102,8 @@ fun LoginPass2Screen(
                     .height(58.dp),
                 containerColor = tokens.primary,
                 textColor = tokens.textPrimary,
-                onClick = onConfirm,
+                enabled = newPassword.length in 8..72 && newPassword == confirmPassword,
+                onClick = { onConfirm(newPassword) },
                 iconSize = 20,
                 espacamento = 0,
                 textStyle = Typography.titleMedium.copy(fontSize = 20.sp)

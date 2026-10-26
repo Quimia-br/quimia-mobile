@@ -137,6 +137,7 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
     var postalCode by rememberSaveable { mutableStateOf(seed.postalCode) }
     var state by rememberSaveable { mutableStateOf(seed.state) }
     var city by rememberSaveable { mutableStateOf(seed.city) }
+    var street by rememberSaveable { mutableStateOf(seed.street) }
     var district by rememberSaveable { mutableStateOf(seed.district) }
     var number by rememberSaveable { mutableStateOf(seed.number) }
     var complement by rememberSaveable { mutableStateOf(seed.complement) }
@@ -156,6 +157,8 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 Spacer(Modifier.height(31.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     if (error != null) QuimiaToast(message = error.orEmpty(), type = QuimiaToastType.Error, onDismiss = { error = null })
+                    QuimiaInput(value = street, onValueChange = { street = it; error = null }, label = "Rua",
+                        trailingIcon = if (street.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { street = "" })
                     QuimiaInput(value = postalCode, onValueChange = { postalCode = it.filter(Char::isDigit).take(8); error = null },
                         label = "CEP", placeholder = "00000000", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         trailingIcon = if (postalCode.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { postalCode = "" })
@@ -197,7 +200,7 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                     iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = onDismiss)
                 QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Salvar", textStyle = QuimiaTextStyles.medium16,
                     iconSize = 0, espacamento = 0, onClick = {
-                        val value = NearbyAddress(postalCode, state, city.trim(), district.trim(), seed.street, number.trim(), complement.trim())
+                        val value = NearbyAddress(postalCode, state, city.trim(), district.trim(), street.trim(), number.trim(), complement.trim())
                         error = value.validationError()
                         if (error == null) onSave(value)
                     })

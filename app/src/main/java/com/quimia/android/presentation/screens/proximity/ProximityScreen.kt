@@ -2,6 +2,7 @@ package com.quimia.android.presentation.screens.proximity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +39,10 @@ import theme.quimiaColorTokens
 import toast.QuimiaToast
 import toast.QuimiaToastType
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.quimia.android.data.project.ApiPoint
+import com.quimia.android.data.project.ApiContractGaps
+import com.quimia.android.data.project.fullAddress
 
 @Composable
 fun ProximityScreen(
@@ -54,6 +59,8 @@ fun ProximityScreen(
     previewAddressForm: Boolean = false,
     initialHeaderExpanded: Boolean = true,
     initialCollectionFilter: Boolean = false,
+    apiPoints: List<ApiPoint>? = null,
+    onSaveRemote: (suspend (NearbyAddress) -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
     var category by rememberSaveable { mutableStateOf<NearbyCategory?>(if (initialCollectionFilter || previewSelectedPointId != null) NearbyCategory.Collection else null) }
@@ -65,8 +72,11 @@ fun ProximityScreen(
     var address by rememberSaveable(initialAddress) { mutableStateOf(initialAddress) }
     var addressFields by rememberSaveable(initialAddressFields) { mutableStateOf(initialAddressFields) }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
+    var messageType by remember { mutableStateOf(QuimiaToastType.Error) }
     LaunchedEffect(message) { if (message != null) { delay(4_000); message = null } }
-    val points = remember(category) { if (category == null) emptyList() else filterNearbyPoints(nearbyPoints, category) }
+    val sourcePoints = if (androidx.compose.ui.platform.LocalInspectionMode.current) nearbyPoints else emptyList()
+    val points = remember(category, sourcePoints) { if (category == null) emptyList() else filterNearbyPoints(sourcePoints, category) }
+    val requests = rememberCoroutineScope()
     val selected = points.find { it.id == selectedId }
     val density = LocalDensity.current
     var pointCardHeight by remember { mutableStateOf(146.dp) }
@@ -87,7 +97,7 @@ fun ProximityScreen(
             }
             if (headerExpanded) {
                 QuimiaListItem(
-                    modifier = Modifier.padding(horizontal = 24.dp), title = "Casa", subtitle = address,
+                    modifier = Modifier.padding(horizontal = 24.dp), title = if (apiPoints != null) "Endereço cadastrado" else "Casa", subtitle = address,
                     containerColor = tokens.surfaceBase, contentPadding = PaddingValues(24.dp), titleMaxLines = 1, subtitleMaxLines = 1,
                     trailingContent = {
                         QuimiaIconButton(icon = Lucide.Pencil, size = QuimiaIconButtonSize.Medium,
@@ -96,6 +106,13 @@ fun ProximityScreen(
                     onClick = { addressVisible = true },
                 )
                 Spacer(Modifier.height(16.dp))
+            }
+            if (apiPoints != null) Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).heightIn(max = 200.dp)
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                androidx.compose.material3.Text(ApiContractGaps.PointCoordinates, style = QuimiaTextStyles.medium12, color = tokens.textSecondary)
+                apiPoints.filter { category == null || it.tipo == if (category == NearbyCategory.Shopping) "compra" else "descarte" }.forEach { point ->
+                    QuimiaListItem(title = point.nome, subtitle = point.fullAddress(), contentPadding = PaddingValues(vertical = 10.dp))
+                }
             }
             Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp)).background(tokens.secondary)) {
                 ProximityMap(points, selectedId, onPointClick = { selectedId = it },
@@ -115,21 +132,26 @@ fun ProximityScreen(
                             val wasSaved = selected.id in savedIds
                             savedIds = toggleSavedPoint(savedIds, selected.id)
                             onSavedPointIdsChange(savedIds)
+                            messageType = QuimiaToastType.Success
                             message = if (wasSaved) "Ponto removido dos salvos" else "Ponto salvo com sucesso"
                         },
                     )
                 }
                 if (message != null) QuimiaToast(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 75.dp),
-                    message = message.orEmpty(), type = QuimiaToastType.Success, onDismiss = { message = null },
+                    message = message.orEmpty(), type = messageType, onDismiss = { message = null },
                 )
             }
         }
         Surface(
             modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp).fillMaxWidth()
                 .padding(horizontal = 17.dp).height(75.dp)
-                .pointerInput(Unit) { detectVerticalDragGestures { change, amount -> change.consume(); if (amount < -8f) savedVisible = true } }
-                .clickable(onClickLabel = "Abrir pontos salvos") { savedVisible = true },
+                .pointerInput(apiPoints != null) { detectVerticalDragGestures { change, amount -> change.consume(); if (amount < -8f) {
+                    if (apiPoints != null) { messageType = QuimiaToastType.Error; message = ApiContractGaps.SavedPoints } else savedVisible = true
+                } } }
+                .clickable(onClickLabel = "Abrir pontos salvos") {
+                    if (apiPoints != null) { messageType = QuimiaToastType.Error; message = ApiContractGaps.SavedPoints } else savedVisible = true
+                },
             shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp), color = tokens.secondary,
         ) {
             Box(contentAlignment = Alignment.TopCenter) {
@@ -138,7 +160,7 @@ fun ProximityScreen(
         }
     }
     if (savedVisible) NearbySavedPointsSheet(savedIds, onDismiss = { savedVisible = false }, onSelect = {
-        selectedId = it; category = nearbyPoints.find { point -> point.id == it }?.category
+        selectedId = it; category = sourcePoints.find { point -> point.id == it }?.category
         savedVisible = false
     }, onRemove = { id ->
         savedIds = savedIds.filterNot { it == id }; onSavedPointIdsChange(savedIds)
@@ -146,10 +168,17 @@ fun ProximityScreen(
     if (addressVisible) NearbyAddressSheet(
         initialAddress = addressFields.takeIf { it.size == 7 }?.let { NearbyAddress(it[0], it[1], it[2], it[3], it[4], it[5], it[6]) },
         onDismiss = { addressVisible = false }, onSave = {
-            addressFields = listOf(it.postalCode, it.state, it.city, it.district, it.street, it.number, it.complement)
-            onAddressFieldsChange(addressFields)
-            address = it.formatted(); onAddressChange(address); addressVisible = false
-            message = "Endereço de referência atualizado"
+            val draft = it
+            requests.launch {
+                try {
+                    if (onSaveRemote != null) onSaveRemote(draft) else {
+                        addressFields = listOf(draft.postalCode, draft.state, draft.city, draft.district, draft.street, draft.number, draft.complement)
+                        onAddressFieldsChange(addressFields); address = draft.formatted(); onAddressChange(address)
+                    }
+                    addressVisible = false; messageType = QuimiaToastType.Success; message = "Endereço de referência atualizado"
+                } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+                catch (error: Exception) { messageType = QuimiaToastType.Error; message = com.quimia.android.data.project.apiErrorMessage(error) }
+            }
         },
     )
 }

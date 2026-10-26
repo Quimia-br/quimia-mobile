@@ -23,7 +23,8 @@ class ProximityModelsTest {
         assertNotNull(address.copy(state = "São Paulo").validationError())
         assertNotNull(address.copy(state = "ZZ").validationError())
         assertNull(address.copy(street = "").validationError())
-        assertNotNull(address.copy(city = " ").validationError())
+        assertNull(address.copy(city = " ").validationError())
+        assertNotNull(address.copy(number = "abc").validationError())
         assertNotNull(address.copy(number = "").validationError())
     }
 

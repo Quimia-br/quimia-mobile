@@ -97,6 +97,8 @@ fun HomeScreen(
     onMenuItemSelected: ((Int) -> Unit)? = null,
     onAiClick: (() -> Unit)? = null,
     showMockHistory: Boolean = false,
+    historyContent: (@Composable () -> Unit)? = null,
+    dropOffStatus: String? = null,
 ) {
     HomeSystemBarsEffect()
 
@@ -191,6 +193,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 HomeQuickActions(
+                    dropOffStatus = dropOffStatus,
                     onFindDropOffClick = {
                         AnalyticsLogger.logInteraction("home", "find_drop_off_tapped")
                         if (onFindDropOffClick != null) onFindDropOffClick() else unavailable("Pontos de descarte")
@@ -215,7 +218,7 @@ fun HomeScreen(
                     verticalPadding = 12.dp,
                 )
 
-                if (showMockHistory) {
+                if (historyContent != null) historyContent() else if (showMockHistory && isPreview) {
                     HomeMockMixtureCard(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                         onClick = {
@@ -315,6 +318,7 @@ private fun HomeQuickActions(
     onFindDropOffClick: () -> Unit,
     onMixturesClick: () -> Unit,
     onShelfClick: () -> Unit,
+    dropOffStatus: String? = null,
 ) {
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),
@@ -340,7 +344,7 @@ private fun HomeQuickActions(
                     .weight(leftWeight)
                     .fillMaxHeight(),
                 title = "Meu ponto de\ndescarte",
-                description = "Não cadastrado",
+                description = dropOffStatus ?: "Não cadastrado",
                 icon = Lucide.MapPin,
                 primaryActionLabel = null,
                 secondaryActionLabel = "Encontrar",

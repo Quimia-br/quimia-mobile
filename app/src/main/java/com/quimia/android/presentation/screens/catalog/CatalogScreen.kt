@@ -57,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import buttons.QuimiaButton
 import buttons.QuimiaFAB
 import buttons.QuimiaIconButton
@@ -99,10 +100,15 @@ fun CatalogScreen(
     onSavedProductIdsChange: (List<String>) -> Unit = {},
     initialSelectedProductIds: List<String> = emptyList(),
     initialBannerVisible: Boolean = true,
+    products: List<CatalogProduct> = if (androidx.compose.ui.platform.LocalInspectionMode.current) sampleCatalogProducts else emptyList(),
+    onSaveProducts: (suspend (List<String>) -> Unit)? = null,
+    onScannerUnavailable: (() -> Unit)? = null,
+    onBarcodeSearch: (suspend (String) -> CatalogProduct)? = null,
+    initialQuery: String = "",
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
     var bannerVisible by rememberSaveable { mutableStateOf(initialBannerVisible) }
     var showLabelScanner by rememberSaveable { mutableStateOf(false) }
     var savedIds by remember(initialSavedProductIds) { mutableStateOf(initialSavedProductIds.toSet()) }
@@ -110,15 +116,27 @@ fun CatalogScreen(
     var detailProduct by remember { mutableStateOf<CatalogProduct?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var dialogMessage by remember { mutableStateOf<String?>(null) }
+    val requests = androidx.compose.runtime.rememberCoroutineScope()
+    fun save(next: Set<String>, after: () -> Unit = {}) {
+        requests.launch {
+            try {
+                if (onSaveProducts != null) onSaveProducts(next.toList()) else onSavedProductIdsChange(next.toList())
+                savedIds = next
+                successMessage = "Estante atualizada com sucesso"
+                after()
+            } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+            catch (error: Exception) { dialogMessage = com.quimia.android.data.project.apiErrorMessage(error) }
+        }
+    }
     LaunchedEffect(successMessage) {
         if (successMessage != null) {
             delay(3_000)
             successMessage = null
         }
     }
-    val filtered = remember(query, previewItemLimit) {
-        sampleCatalogProducts.take(previewItemLimit).filter {
-            it.name.contains(query.trim(), ignoreCase = true) || it.category.contains(query.trim(), ignoreCase = true)
+    val filtered = remember(query, previewItemLimit, products) {
+        products.take(previewItemLimit).filter {
+            it.name.contains(query.trim(), ignoreCase = true) || it.category.contains(query.trim(), ignoreCase = true) || it.barcode.contains(query.trim())
         }
     }
     val showBanner = successMessage != null || (bannerVisible && selectedIds.isEmpty())
@@ -174,6 +192,14 @@ fun CatalogScreen(
                     horizontalPadding = 16.dp, verticalPadding = 12.dp,
                     spacedBy = 12.dp, textStyle = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
                     searchIconSize = 22.dp,
+                    onClick = { dialogMessage = "A pesquisa por voz ainda não está conectada no aplicativo. Isso não é uma rota ausente da API." },
+                    onSearch = {
+                        if (onBarcodeSearch != null && query.trim().all(Char::isDigit) && query.isNotBlank()) requests.launch {
+                            try { detailProduct = onBarcodeSearch(query.trim()) }
+                            catch (error: kotlinx.coroutines.CancellationException) { throw error }
+                            catch (error: Exception) { dialogMessage = com.quimia.android.data.project.apiErrorMessage(error) }
+                        }
+                    },
                 )
                 QuimiaIconButton(
                     modifier = Modifier.size(58.dp),
@@ -185,7 +211,7 @@ fun CatalogScreen(
                     contentDescription = "Buscar produto pela câmera",
                     onClick = {
                         focusManager.clearFocus()
-                        showLabelScanner = true
+                        if (onScannerUnavailable != null) onScannerUnavailable() else showLabelScanner = true
                     },
                 )
             }
@@ -211,9 +237,7 @@ fun CatalogScreen(
                                                 onSave = {
                                                     val wasSaved = paired.id in savedIds
                                                     val nextSavedIds = if (wasSaved) savedIds - paired.id else savedIds + paired.id
-                                                    savedIds = nextSavedIds
-                                                    onSavedProductIdsChange(nextSavedIds.toList())
-                                                    if (!wasSaved) successMessage = "Produto adicionado com sucesso"
+                                                    save(nextSavedIds)
                                                 },
                                                 onInfo = { detailProduct = paired },
                                                 selected = paired.id in selectedIds,
@@ -229,9 +253,7 @@ fun CatalogScreen(
                                         onSave = {
                                             val wasSaved = product.id in savedIds
                                             val nextSavedIds = if (wasSaved) savedIds - product.id else savedIds + product.id
-                                            savedIds = nextSavedIds
-                                            onSavedProductIdsChange(nextSavedIds.toList())
-                                            if (!wasSaved) successMessage = "Produto adicionado com sucesso"
+                                            save(nextSavedIds)
                                         },
                                         onInfo = { detailProduct = product },
                                         selected = product.id in selectedIds,
@@ -286,10 +308,7 @@ fun CatalogScreen(
                         textColor = tokens.foregroundPrimary,
                         iconSize = 0, espacamento = 0,
                         onClick = {
-                            savedIds = savedIds + selectedIds
-                            onSavedProductIdsChange(savedIds.toList())
-                            successMessage = "Produtos adicionados com sucesso"
-                            selectedIds = emptySet()
+                            save(savedIds + selectedIds) { selectedIds = emptySet() }
                         },
                     )
                 }
@@ -310,10 +329,7 @@ fun CatalogScreen(
             onSave = {
                 val wasSaved = product.id in savedIds
                 val nextSavedIds = if (wasSaved) savedIds - product.id else savedIds + product.id
-                savedIds = nextSavedIds
-                onSavedProductIdsChange(nextSavedIds.toList())
-                if (!wasSaved) successMessage = "Produto adicionado com sucesso"
-                detailProduct = null
+                save(nextSavedIds) { detailProduct = null }
             },
         )
     }
@@ -397,7 +413,7 @@ private fun ProductCard(
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 QuimiaImage(
-                    painter = painterResource(product.logoRes),
+                    painter = product.logoPainter(),
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,
@@ -418,7 +434,7 @@ private fun ProductCard(
                 contentAlignment = Alignment.Center,
             ) {
                 QuimiaImage(
-                    painter = painterResource(product.imageRes),
+                    painter = product.imagePainter(),
                     contentDescription = product.name,
                     modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp),
                     contentScale = ContentScale.Fit,
@@ -512,7 +528,7 @@ private fun CatalogProductDetailsContent(
             }
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                 QuimiaImage(
-                    painter = painterResource(product.detailImageRes),
+                    painter = product.imagePainter(detail = true),
                     contentDescription = product.name,
                     modifier = Modifier.fillMaxWidth().height(212.dp).padding(vertical = 16.dp),
                     contentScale = ContentScale.Fit,

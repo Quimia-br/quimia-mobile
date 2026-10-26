@@ -30,7 +30,7 @@ import theme.QuimiaTheme
 fun LoginPass1Screen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onContinue: () -> Unit = {}
+    onContinue: (String) -> Unit = {}
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
     var email by remember { mutableStateOf("") }
@@ -99,7 +99,7 @@ fun LoginPass1Screen(
                     .height(58.dp),
                 containerColor = tokens.primaryDisabled,
                 textColor = tokens.foregroundDisabled,
-                onClick = onContinue,
+                onClick = { onContinue(email) },
                 iconSize = 20,
                 espacamento = 0,
                 textStyle = Typography.titleMedium.copy(fontSize = 20.sp)

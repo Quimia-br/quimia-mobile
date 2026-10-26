@@ -42,6 +42,8 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Settings2
 import com.composables.icons.lucide.SoapDispenserDroplet
 import com.composables.icons.lucide.X
+import com.quimia.android.presentation.screens.catalog.imagePainter
+import com.quimia.android.presentation.screens.catalog.logoPainter
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
 import com.quimia.android.R
 import chip.QuimiaChip
@@ -61,6 +63,8 @@ import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 import title.QuimiaSectionTitle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableStateMapOf
 
 private enum class ShelfTab(val label: String) { Products("Produtos"), Substances("Substâncias") }
 internal val ShelfFavoriteColor = Color(0xFFFF93D7)
@@ -82,6 +86,12 @@ fun ShelfScreen(
     initialSubstancesTab: Boolean = false,
     initialFiltersVisible: Boolean = false,
     initialFavoriteSubstanceIds: List<String> = emptyList(),
+    catalog: List<CatalogProduct> = if (androidx.compose.ui.platform.LocalInspectionMode.current) sampleCatalogProducts else emptyList(),
+    substanceItems: List<ShelfSubstance> = if (androidx.compose.ui.platform.LocalInspectionMode.current) sampleShelfSubstances else emptyList(),
+    onSaveProducts: (suspend (List<String>) -> Unit)? = null,
+    onUnsupportedAction: ((String) -> Unit)? = null,
+    loadProtection: (suspend (String) -> String)? = null,
+    onOpenProductRoom: ((String) -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
     var tab by rememberSaveable { mutableStateOf(if (initialSubstancesTab) ShelfTab.Substances else ShelfTab.Products) }
@@ -89,7 +99,7 @@ fun ShelfScreen(
     var sort by rememberSaveable { mutableStateOf<ShelfSort?>(ShelfSort.Alphabetical) }
     var filtersVisible by rememberSaveable { mutableStateOf(initialFiltersVisible) }
     var favoriteSubstanceIds by rememberSaveable { mutableStateOf(initialFavoriteSubstanceIds) }
-    var expandedSubstanceIds by rememberSaveable { mutableStateOf(sampleShelfSubstances.map { it.id }) }
+    var expandedSubstanceIds by rememberSaveable { mutableStateOf(substanceItems.map { it.id }) }
     var expandedIds by rememberSaveable { mutableStateOf(savedIds.take(1)) }
     var actionId by rememberSaveable { mutableStateOf<String?>(null) }
     var detailId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -100,11 +110,20 @@ fun ShelfScreen(
         if (successVisible) { delay(4_000); successVisible = false }
     }
 
-    val products = remember(savedIds, query, sort, favoriteIds) {
-        filterShelfProducts(sampleCatalogProducts, savedIds, favoriteIds, query, sort)
+    val requests = androidx.compose.runtime.rememberCoroutineScope()
+    val protection = remember { mutableStateMapOf<String, String>() }
+    LaunchedEffect(expandedIds, loadProtection) {
+        if (loadProtection != null) expandedIds.filter { it in savedIds && it !in protection }.forEach { id ->
+            try { protection[id] = loadProtection(id) }
+            catch (error: kotlinx.coroutines.CancellationException) { throw error }
+            catch (error: Exception) { protection[id] = com.quimia.android.data.project.apiErrorMessage(error) }
+        }
     }
-    val substances = remember(query, sort, favoriteSubstanceIds) {
-        val filtered = sampleShelfSubstances.filter {
+    val products = remember(savedIds, query, sort, favoriteIds, catalog) {
+        filterShelfProducts(catalog, savedIds, favoriteIds, query, sort)
+    }
+    val substances = remember(query, sort, favoriteSubstanceIds, substanceItems) {
+        val filtered = substanceItems.filter {
             it.name.contains(query.trim(), true) && (sort != ShelfSort.Favorites || it.id in favoriteSubstanceIds)
         }
         when (sort) {
@@ -162,6 +181,7 @@ fun ShelfScreen(
                         placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz",
                         searchIconSize = 24.dp, horizontalPadding = 16.dp, verticalPadding = 12.dp,
                         spacedBy = 10.dp, textStyle = ShelfBodyStyle.copy(fontSize = 16.sp),
+                        onClick = { onUnsupportedAction?.invoke("A pesquisa por voz ainda não está conectada no aplicativo. Isso não é uma rota ausente da API.") },
                     )
                     QuimiaIconButton(
                         icon = Lucide.Settings2, size = QuimiaIconButtonSize.Medium,
@@ -181,12 +201,16 @@ fun ShelfScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         ShelfSort.entries.take(3).forEach { item ->
                             ShelfFilterChip(item, sort == item, Modifier.weight(if (item == ShelfSort.Alphabetical) 1.37f else 1f)) {
-                                sort = if (sort == item) null else item
+                                if (onUnsupportedAction != null && item != ShelfSort.Alphabetical)
+                                    onUnsupportedAction(if (item == ShelfSort.Favorites) com.quimia.android.data.project.ApiContractGaps.Favorites
+                                        else "A API da estante aceita apenas ordem=alfabetica. Não há data de inclusão nem ordem recente suportada.")
+                                else sort = if (sort == item) null else item
                             }
                         }
                     }
                     ShelfFilterChip(ShelfSort.Oldest, sort == ShelfSort.Oldest, Modifier.width(97.dp)) {
-                        sort = if (sort == ShelfSort.Oldest) null else ShelfSort.Oldest
+                        if (onUnsupportedAction != null) onUnsupportedAction("A API da estante não suporta ordem por mais antigos nem retorna data de inclusão.")
+                        else sort = if (sort == ShelfSort.Oldest) null else ShelfSort.Oldest
                     }
                 }
             }
@@ -205,18 +229,24 @@ fun ShelfScreen(
                     expanded = substance.id in expandedSubstanceIds,
                     favorite = substance.id in favoriteSubstanceIds,
                     onExpand = { expandedSubstanceIds = expandedSubstanceIds.toggle(substance.id) },
-                    onFavorite = { favoriteSubstanceIds = favoriteSubstanceIds.toggle(substance.id) },
-                    onRoom = { roomId = substance.id },
-                    onMix = { onMixProduct(substance.id) },
-                    onMixtures = { onViewMixtures(substance.id) },
+                    onFavorite = {
+                        if (onUnsupportedAction != null) onUnsupportedAction(com.quimia.android.data.project.ApiContractGaps.Favorites)
+                        else favoriteSubstanceIds = favoriteSubstanceIds.toggle(substance.id)
+                    },
+                    onRoom = { onUnsupportedAction?.invoke(com.quimia.android.data.project.ApiContractGaps.SubstanceRoom) },
+                    onMix = { onUnsupportedAction?.invoke("A consulta de misturas recebe produtoIdA/produtoIdB, não IDs de substâncias.") },
+                    onMixtures = { onUnsupportedAction?.invoke("GET /api/v1/misturas filtra por produtoId, não por substância.") },
                 )
             } else items(products, key = { it.id }) { product ->
                 ShelfProductCard(
                     product, expanded = product.id in expandedIds, favorite = product.id in favoriteIds,
+                    protectionText = protection[product.id],
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = if (product.id == products.first().id) 24.dp else 16.dp),
                     onExpand = { expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id },
                     onFavorite = { onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
-                    onActions = { actionId = product.id }, onRoom = { roomId = product.id },
+                    onActions = { actionId = product.id }, onRoom = {
+                        if (onOpenProductRoom != null) onOpenProductRoom(product.id) else roomId = product.id
+                    },
                     onMix = { onMixProduct(product.id) },
                 )
             }
@@ -232,7 +262,7 @@ fun ShelfScreen(
         }
     }
 
-    sampleCatalogProducts.find { it.id == actionId }?.let { product ->
+    catalog.find { it.id == actionId }?.let { product ->
         ShelfActionsPanel(
             product, onDismiss = { actionId = null },
             onRemove = { actionId = null; removeId = product.id },
@@ -240,18 +270,22 @@ fun ShelfScreen(
             onInformation = { actionId = null; detailId = product.id },
         )
     }
-    sampleCatalogProducts.find { it.id == detailId }?.let { product ->
+    catalog.find { it.id == detailId }?.let { product ->
         ShelfProductInformation(product, onDismiss = { detailId = null })
     }
-    sampleCatalogProducts.find { it.id == removeId }?.let { product ->
+    catalog.find { it.id == removeId }?.let { product ->
         ShelfRemoveConfirmation(
             product, onDismiss = { removeId = null },
             onConfirm = {
-                onSavedIdsChange(savedIds - product.id)
-                onFavoriteIdsChange(favoriteIds - product.id)
-                expandedIds = expandedIds - product.id
-                removeId = null
-                successVisible = true
+                requests.launch {
+                    try {
+                        if (onSaveProducts != null) onSaveProducts(savedIds - product.id) else onSavedIdsChange(savedIds - product.id)
+                        expandedIds = expandedIds - product.id
+                        removeId = null
+                        successVisible = true
+                    } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+                    catch (error: Exception) { onUnsupportedAction?.invoke(com.quimia.android.data.project.apiErrorMessage(error)) }
+                }
             },
         )
     }
@@ -271,6 +305,7 @@ private fun ShelfFilterChip(item: ShelfSort, selected: Boolean, modifier: Modifi
 private fun ShelfProductCard(
     product: CatalogProduct, expanded: Boolean, favorite: Boolean, modifier: Modifier,
     onExpand: () -> Unit, onFavorite: () -> Unit, onActions: () -> Unit, onRoom: () -> Unit, onMix: () -> Unit,
+    protectionText: String? = null,
 ) {
     val tokens = quimiaColorTokens()
     QuimiaCard(
@@ -280,7 +315,7 @@ private fun ShelfProductCard(
     ) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             QuimiaImage(
-                painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes), contentDescription = product.name,
+                painter = if (androidx.compose.ui.platform.LocalInspectionMode.current && product.id.startsWith("squeeze")) painterResource(R.drawable.shelf_mr_musculo_figma) else product.imagePainter(detail = true), contentDescription = product.name,
                 modifier = Modifier.size(45.dp),
                 backgroundColor = tokens.surfaceBase,
                 contentScale = if (product.id.startsWith("squeeze")) ContentScale.Crop else ContentScale.Fit,
@@ -291,7 +326,7 @@ private fun ShelfProductCard(
                     style = ShelfBodyStyle, color = tokens.foregroundPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    when { product.id.startsWith("squeeze") -> "Mr Músculos"; product.id == "veja" -> "Veja"; else -> "Omo" },
+                    product.brandName.ifBlank { if (androidx.compose.ui.platform.LocalInspectionMode.current) "Marca de exemplo" else "Marca não retornada pela API" },
                     style = ShelfBodyStyle, color = tokens.foregroundSubtle,
                 )
             }
@@ -305,7 +340,7 @@ private fun ShelfProductCard(
         if (expanded) {
             Spacer(Modifier.height(32.dp))
             QuimiaListItem(
-                title = "Como se proteger?", subtitle = "Description",
+                title = "Como se proteger?", subtitle = protectionText ?: product.safetyInformation ?: "Informação de segurança ainda não retornada pela API.",
             )
         }
         Spacer(Modifier.height(32.dp))

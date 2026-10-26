@@ -38,10 +38,11 @@ fun Cadastro2Screen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onSkip: () -> Unit = {},
-    onEnter: () -> Unit = {}
+    onEnter: (String, String, String, String, String, String) -> Unit = { _, _, _, _, _, _ -> }
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
     var cep by remember { mutableStateOf("") }
+    var uf by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var neighborhood by remember { mutableStateOf("") }
     var number by remember { mutableStateOf("") }
@@ -110,6 +111,7 @@ fun Cadastro2Screen(
         ) {
             UfField(
                 modifier = Modifier.weight(0.38f),
+                value = uf, onValueChange = { uf = it.uppercase().take(2) },
                 textColor = tokens.textPrimary,
                 containerColor = tokens.secondary
             )
@@ -214,7 +216,7 @@ fun Cadastro2Screen(
                     .height(46.dp),
                 containerColor = tokens.primary,
                 textColor = tokens.onPrimary,
-                onClick = onEnter,
+                onClick = { onEnter(cep, uf, city, neighborhood, number, complement) },
                 iconSize = 20,
                 espacamento = 0,
                 textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
@@ -225,6 +227,7 @@ fun Cadastro2Screen(
 
 @Composable
 private fun UfField(
+    value: String, onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     textColor: Color,
     containerColor: Color
@@ -244,7 +247,8 @@ private fun UfField(
                 .background(containerColor),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "SP⌄", style = Typography.bodySmall, color = textColor)
+            QuimiaInput(value = value, onValueChange = onValueChange, placeholder = "UF", trailingIcon = null,
+                textStyle = Typography.bodySmall, containerColor = containerColor, primaryTextColor = textColor)
         }
     }
 }

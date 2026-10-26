@@ -1,6 +1,7 @@
 package com.quimia.android.presentation.screens.auth.registration
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +39,8 @@ import theme.QuimiaTheme
 @Composable
 fun Cadastro1Screen(
     modifier: Modifier = Modifier,
-    onContinue: () -> Unit = {}
+    onContinue: (String, String, String) -> Unit = { _, _, _ -> },
+    onGoogleClick: () -> Unit = {}, onMicrosoftClick: () -> Unit = {}
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
     var name by remember { mutableStateOf("") }
@@ -108,6 +110,7 @@ fun Cadastro1Screen(
                 value = password,
                 onValueChange = { password = it },
                 label = "Crie uma senha",
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                 placeholder = "12345",
                 textStyle = Typography.bodySmall,
                 containerColor = tokens.secondary,
@@ -125,7 +128,7 @@ fun Cadastro1Screen(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CadastroSocialIcon(containerColor = tokens.secondary) {
+            CadastroSocialIcon(containerColor = tokens.secondary, onClick = onGoogleClick) {
                 Icon(
                     painter = painterResource(R.drawable.social_google),
                     contentDescription = "Continuar com Google",
@@ -133,7 +136,7 @@ fun Cadastro1Screen(
                     tint = Color.Unspecified
                 )
             }
-            CadastroSocialIcon(containerColor = tokens.secondary) {
+            CadastroSocialIcon(containerColor = tokens.secondary, onClick = onMicrosoftClick) {
                 Icon(
                     painter = painterResource(R.drawable.social_microsoft),
                     contentDescription = "Continuar com Microsoft",
@@ -160,7 +163,7 @@ fun Cadastro1Screen(
                 .height(46.dp),
             containerColor = tokens.primary,
             textColor = tokens.onPrimary,
-            onClick = onContinue,
+            onClick = { onContinue(name, email, password) },
             iconSize = 20,
             espacamento = 0,
             textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
@@ -181,13 +184,14 @@ fun Cadastro1Screen(
 @Composable
 private fun CadastroSocialIcon(
     containerColor: Color,
+    onClick: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(44.dp)
             .clip(CircleShape)
-            .background(containerColor),
+            .background(containerColor).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         content()

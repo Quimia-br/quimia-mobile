@@ -44,7 +44,8 @@ fun Login1Screen(
     modifier: Modifier = Modifier,
     onContinue: (email: String, password: String) -> Unit = { _, _ -> },
     onCreateAccount: () -> Unit = {},
-    onForgotPassword: () -> Unit = {}
+    onForgotPassword: () -> Unit = {},
+    onGoogleClick: () -> Unit = {}, onMicrosoftClick: () -> Unit = {}
 ) {
     val tokens = quimiaColorTokens(forceDark = false)
     var email by remember { mutableStateOf("") }
@@ -129,7 +130,7 @@ fun Login1Screen(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SocialIcon(containerColor = tokens.secondary) {
+            SocialIcon(containerColor = tokens.secondary, onClick = onGoogleClick) {
                 Icon(
                     painter = painterResource(R.drawable.social_google),
                     contentDescription = "Continuar com Google",
@@ -137,7 +138,7 @@ fun Login1Screen(
                     tint = Color.Unspecified
                 )
             }
-            SocialIcon(containerColor = tokens.secondary) {
+            SocialIcon(containerColor = tokens.secondary, onClick = onMicrosoftClick) {
                 Icon(
                     painter = painterResource(R.drawable.social_microsoft),
                     contentDescription = "Continuar com Microsoft",
@@ -191,13 +192,14 @@ fun Login1Screen(
 @Composable
 private fun SocialIcon(
     containerColor: Color,
+    onClick: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(44.dp)
             .clip(CircleShape)
-            .background(containerColor),
+            .background(containerColor).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         content()

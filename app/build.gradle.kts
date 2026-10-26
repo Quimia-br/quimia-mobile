@@ -53,6 +53,7 @@ android {
         versionName = releaseVersionName
         manifestPlaceholders["MAPS_API_KEY"] = if (mapsConfigured) mapsApiKey else ""
         buildConfigField("boolean", "GOOGLE_MAPS_CONFIGURED", mapsConfigured.toString())
+        buildConfigField("String", "QUIMIA_API_BASE_URL", "\"https://quimia.discloud.app/\"")
     }
 
     signingConfigs {
@@ -108,6 +109,7 @@ dependencies {
     implementation(libs.play.services.auth)
     
     testImplementation(libs.junit)
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
