@@ -141,7 +141,7 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
     val preview = LocalInspectionMode.current
     val seed = initialAddress ?: if (preview) NearbyAddress("04001000", "SP", "São Paulo", "Vila Mariana", "", "100", "")
         else NearbyAddress("", "", "", "", "", "", "")
-    var postalCode by rememberSaveable { mutableStateOf(seed.postalCode) }
+    var postalCode by rememberSaveable { mutableStateOf(normalizedPostalCode(seed.postalCode)) }
     var number by rememberSaveable { mutableStateOf(seed.number) }
     var complement by rememberSaveable { mutableStateOf(seed.complement) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
@@ -162,8 +162,9 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 Spacer(Modifier.height(31.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     if (error != null) QuimiaToast(message = error.orEmpty(), type = QuimiaToastType.Error, onDismiss = { error = null })
-                    QuimiaInput(value = postalCode, onValueChange = { postalCode = normalizedPostalCode(it); error = null },
-                        label = "CEP", placeholder = "00000000", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    QuimiaInput(value = normalizedPostalCode(postalCode), onValueChange = { postalCode = normalizedPostalCode(it); error = null },
+                        label = "CEP", placeholder = "00000-000", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        visualTransformation = PostalCodeVisualTransformation,
                         trailingIcon = if (postalCode.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { postalCode = "" })
                     if (lookup.state.loading || lookup.state.error != null) PostalLookupNotice(lookup)
                     PostalCityFields(address)

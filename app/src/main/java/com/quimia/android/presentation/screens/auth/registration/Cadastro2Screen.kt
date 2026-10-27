@@ -43,6 +43,7 @@ fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSk
         Spacer(Modifier.height(31.dp))
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             QuimiaInput(cep, { cep = normalizedPostalCode(it) }, label = "CEP", placeholder = "00000-000",
+                visualTransformation = PostalCodeVisualTransformation,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             if (lookup.state.loading || lookup.state.error != null) PostalLookupNotice(lookup)
             PostalCityFields(address)
