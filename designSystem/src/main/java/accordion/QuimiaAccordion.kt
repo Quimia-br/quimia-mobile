@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import theme.LightTokens
 import theme.PaddingMedium
 import theme.PaddingSmall
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import theme.QuimiaTheme
 
 @Composable
@@ -55,6 +57,7 @@ fun QuimiaAccordion(
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize()
+            .quimiaContrastOutline(RoundedCornerShape(16.dp))
     ) {
         Row(
             modifier = Modifier

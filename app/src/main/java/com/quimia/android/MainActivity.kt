@@ -12,13 +12,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImagePainter
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quimia.android.domain.auth.AuthResult
@@ -35,12 +40,22 @@ import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
-import com.quimia.android.presentation.screens.kemi.KemiController
-import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
-import com.quimia.android.presentation.screens.kemi.KemiScreen
+import com.quimia.android.presentation.screens.rooms.QuimiaRoom
+import com.quimia.android.presentation.screens.rooms.RoomListSaver
+import com.quimia.android.presentation.screens.rooms.RoomsScreen
+import com.quimia.android.presentation.screens.profile.*
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.quimia.android.presentation.screens.kemi.KemiController
+import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
+import com.quimia.android.presentation.screens.kemi.KemiScreen
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.quimia.android.presentation.screens.auth.AuthDestination
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,29 +71,59 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            QuimiaTheme(darkTheme = false) {
-                HideSystemNavigationBar()
-                QuimiaApp()
+            val store = remember { ProfilePreferencesStore(this) }
+            var preferences by remember { mutableStateOf(store.load()) }
+            val dark = preferences.theme.usesDarkColors(isSystemInDarkTheme())
+            val density = LocalDensity.current
+            SideEffect {
+                WindowInsetsControllerCompat(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
+            CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * preferences.textScale)) {
+                QuimiaTheme(darkTheme = dark, highContrast = preferences.theme == ProfileTheme.HighContrast,
+                    useDyslexicFont = preferences.dyslexicFont) {
+                    HideSystemNavigationBar()
+                    QuimiaApp(preferences) { preferences = it; store.save(it) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun QuimiaApp() {
+private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (ProfilePreferences) -> Unit) {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
-    var showLoginHome by rememberSaveable { mutableStateOf(true) }
-    var showLoginPass1 by rememberSaveable { mutableStateOf(false) }
-    var showLoginPassCode by rememberSaveable { mutableStateOf(false) }
-    var showLoginPass2 by rememberSaveable { mutableStateOf(false) }
-    var showLoginPassSucces by rememberSaveable { mutableStateOf(false) }
-    var showCadastro1 by rememberSaveable { mutableStateOf(false) }
-    var showCadastro2 by rememberSaveable { mutableStateOf(false) }
+    var authRouteName by rememberSaveable { mutableStateOf(AuthDestination.Welcome.name) }
+    val authDestination = AuthDestination.valueOf(authRouteName)
+    val authScreens = rememberSaveableStateHolder()
+    var recoveryEmail by rememberSaveable { mutableStateOf("") }
+    var authNotice by rememberSaveable { mutableStateOf<String?>(null) }
+    fun navigateAuth(destination: AuthDestination) { authRouteName = destination.name }
+    val registrationUnavailable = {
+        authNotice = "O cadastro ainda é visual nesta branch. Nenhuma conta ou endereço foi enviado. A integração de autenticação permanece separada."
+    }
     var selectedMainTab by rememberSaveable { mutableStateOf(0) }
     val sessionUid = (authState as? AuthResult.Success)?.uid
+    val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
+    val context = LocalContext.current
+    val profileStore = remember(sessionUid, sessionEmail) { LocalProfileStore(context, sessionUid.orEmpty(), sessionEmail) }
+    var displayName by rememberSaveable(sessionUid, sessionEmail) {
+        mutableStateOf(profileStore.displayName() ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
+    }
+    var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri()) }
+    var profileEmail by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.email() ?: sessionEmail) }
+    var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.birthDate()) }
+    val photoPainter = rememberAsyncImagePainter(photoUri)
+    val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
+    var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
     var savedProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
+    var rooms by rememberSaveable(sessionUid, stateSaver = RoomListSaver) { mutableStateOf(emptyList<QuimiaRoom>()) }
+    var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
+    var roomToOpenId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
     var referenceAddress by rememberSaveable(sessionUid) { mutableStateOf("Defina seu endereço de referência") }
     var referenceAddressFields by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
@@ -86,35 +131,50 @@ private fun QuimiaApp() {
     val kemiController = rememberSaveable(sessionUid, saver = KemiControllerSaver) { KemiController() }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
-        if (index in 0..3) selectedMainTab = index
+        if (index in 0..4) selectedMainTab = index
         else unavailableTab = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
             .getOrElse(index) { "Esta tela" }
     }
 
     val currentScreen = when {
-        authState is AuthResult.Success -> if (showKemi) "kemi" else when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; else -> "home" }
-        showLoginHome -> "login_welcome"
-        showCadastro2 -> "registration_details"
-        showCadastro1 -> "registration"
-        showLoginPass1 -> "password_recovery_email"
-        showLoginPassCode -> "password_recovery_code"
-        showLoginPass2 -> "password_recovery_new_password"
-        showLoginPassSucces -> "password_recovery_success"
-        else -> "login"
+        authState is AuthResult.Success && showKemi -> "kemi"
+        authState is AuthResult.Success && showProfile -> "profile"
+        authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; 4 -> "rooms"; else -> "home" }
+        else -> authDestination.screenName
     }
 
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && !showKemi && selectedMainTab in 2..3) {
-        selectedMainTab = 0
+    BackHandler(enabled = authState is AuthResult.Success && !showKemi && (showProfile || selectedMainTab in 2..4)) {
+        if (showProfile) showProfile = false else selectedMainTab = 0
+    }
+
+    BackHandler(enabled = authState !is AuthResult.Success && authDestination != AuthDestination.Welcome) {
+        navigateAuth(authDestination.back())
     }
 
     when (authState) {
         is AuthResult.Success -> {
             Box(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().then(if (showKemi) Modifier.clearAndSetSemantics { } else Modifier)) {
-                    when (selectedMainTab) {
+                    if (showProfile) ProfileScreen(
+                        displayName = displayName, email = profileEmail, preferences = preferences, birthDate = birthDate,
+                        onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
+                        onDisplayNameChange = { displayName = it; profileStore.saveDisplayName(it) },
+                        onPhotoUriChange = { photoUri = it; profileStore.savePhotoUri(it) },
+                        onDetailsChange = { details ->
+                            profileStore.saveDetails(details)
+                            displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
+                        },
+                        onLogout = {
+                            showProfile = false; selectedMainTab = 0
+                            navigateAuth(AuthDestination.Welcome)
+                            AuthDestination.entries.forEach { authScreens.removeState(it.name) }
+                            recoveryEmail = ""; authNotice = null
+                            authViewModel.logout()
+                        },
+                    ) else when (selectedMainTab) {
                         1 -> CatalogScreen(
                             onMenuItemSelected = onMainTabSelected,
                             onAiClick = { showKemi = true },
@@ -131,7 +191,17 @@ private fun QuimiaApp() {
                             onAiClick = { showKemi = true },
                             onMixProduct = { unavailableTab = "Misturas" },
                             onViewMixtures = { unavailableTab = "Misturas" },
-                            onCreateRoom = { unavailableTab = "Cômodos" },
+                            onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
+                            rooms = rooms,
+                            onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
+                        )
+                        4 -> RoomsScreen(
+                            rooms = rooms, onRoomsChange = { rooms = it }, savedProductIds = savedProductIds,
+                            onMenuItemSelected = onMainTabSelected, onAiClick = { showKemi = true },
+                            onOpenCatalog = { selectedMainTab = 1 }, initialProductId = roomDraftProductId,
+                            onInitialProductConsumed = { roomDraftProductId = null },
+                            initialRoomId = roomToOpenId,
+                            onInitialRoomConsumed = { roomToOpenId = null },
                         )
                         3 -> ProximityScreen(
                             onMenuItemSelected = onMainTabSelected,
@@ -143,6 +213,8 @@ private fun QuimiaApp() {
                             onAddressFieldsChange = { referenceAddressFields = it },
                         )
                         else -> HomeScreen(
+                            avatarInitials = profileInitials(displayName), avatarPhoto = photo,
+                            onAvatarClick = { showProfile = true },
                             onMenuItemSelected = onMainTabSelected,
                             onFindDropOffClick = { selectedMainTab = 3 },
                             onShelfClick = { selectedMainTab = 2 },
@@ -153,20 +225,14 @@ private fun QuimiaApp() {
                 if (showKemi) {
                     KemiScreen(
                         controller = kemiController,
-                        displayName = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                            ?.takeIf { it.uid == sessionUid }?.displayName?.substringBefore(' '),
+                        displayName = displayName.takeUnless { it == "Seu nome" }?.substringBefore(' '),
                         onClose = { showKemi = false },
                         onHome = { showKemi = false; selectedMainTab = 0 },
                         onSignInAgain = {
-                            showKemi = false
-                            showLoginHome = false
-                            showCadastro1 = false
-                            showCadastro2 = false
-                            showLoginPass1 = false
-                            showLoginPassCode = false
-                            showLoginPass2 = false
-                            showLoginPassSucces = false
-                            selectedMainTab = 0
+                            showKemi = false; showProfile = false; selectedMainTab = 0
+                            navigateAuth(AuthDestination.Login)
+                            AuthDestination.entries.forEach { authScreens.removeState(it.name) }
+                            recoveryEmail = ""; authNotice = null
                             authViewModel.logout()
                         },
                     )
@@ -182,76 +248,47 @@ private fun QuimiaApp() {
             }
         }
         else -> {
-            if (showLoginHome) {
-                LoginHomeScreen(
-                    onStart = {
-                        showLoginHome = false
-                    }
-                )
-            } else if (showCadastro2) {
-                Cadastro2Screen(
-                    onBack = {
-                        showCadastro2 = false
-                    }
-                )
-            } else if (showCadastro1) {
-                Cadastro1Screen(
-                    onContinue = {
-                        showCadastro2 = true
-                    }
-                )
-            } else if (showLoginPass1) {
-                LoginPass1Screen(
-                    onBack = {
-                        showLoginPass1 = false
-                    },
-                    onContinue = {
-                        showLoginPass1 = false
-                        showLoginPassCode = true
-                    }
-                )
-            } else if (showLoginPassCode) {
-                LoginPassCodeScreen(
-                    onBack = {
-                        showLoginPassCode = false
-                        showLoginPass1 = true
-                    },
-                    onConfirm = {
-                        showLoginPassCode = false
-                        showLoginPass2 = true
-                    }
-                )
-            } else if (showLoginPass2) {
-                LoginPass2Screen(
-                    onBack = {
-                        showLoginPass2 = false
-                        showLoginPassCode = true
-                    },
-                    onConfirm = {
-                        showLoginPass2 = false
-                        showLoginPassSucces = true
-                    }
-                )
-            } else if (showLoginPassSucces) {
-                LoginPassSuccesScreen(
-                    onStart = {
-                        showLoginPassSucces = false
-                        showLoginHome = true
-                    }
-                )
-            } else {
-                Login1Screen(
-                    onContinue = { email, password ->
-                        authViewModel.loginWithEmail(email, password)
-                    },
-                    onCreateAccount = {
-                        showCadastro1 = true
-                    },
-                    onForgotPassword = {
-                        showLoginPass1 = true
-                    }
-                )
+            authScreens.SaveableStateProvider(authDestination.name) {
+                when (authDestination) {
+                    AuthDestination.Welcome -> LoginHomeScreen(onStart = { navigateAuth(AuthDestination.Login) })
+                    AuthDestination.Login -> Login1Screen(
+                        onContinue = { email, password -> authViewModel.loginWithEmail(email, password) },
+                        onCreateAccount = { navigateAuth(AuthDestination.Registration) },
+                        onForgotPassword = { navigateAuth(AuthDestination.RecoveryEmail) },
+                    )
+                    AuthDestination.Registration -> Cadastro1Screen(
+                        onContinue = { navigateAuth(AuthDestination.Address) },
+                        onLogin = { navigateAuth(AuthDestination.Login) },
+                    )
+                    AuthDestination.Address -> Cadastro2Screen(
+                        onBack = { navigateAuth(AuthDestination.Registration) },
+                        onSkip = registrationUnavailable, onEnter = registrationUnavailable,
+                    )
+                    AuthDestination.RecoveryEmail -> LoginPass1Screen(
+                        onBack = { navigateAuth(AuthDestination.Login) },
+                        onEmailContinue = { email ->
+                            recoveryEmail = email
+                            navigateAuth(AuthDestination.RecoveryCode)
+                            authNotice = "Recuperação em demonstração nesta branch: nenhum e-mail foi enviado. O envio e a validação do código dependem da integração de autenticação."
+                        },
+                    )
+                    AuthDestination.RecoveryCode -> LoginPassCodeScreen(
+                        email = recoveryEmail,
+                        onBack = { navigateAuth(AuthDestination.RecoveryEmail) },
+                        onResend = { authNotice = "O reenvio de códigos ainda não está conectado nesta branch." },
+                        onConfirm = { navigateAuth(AuthDestination.NewPassword) },
+                    )
+                    AuthDestination.NewPassword -> LoginPass2Screen(
+                        onBack = { navigateAuth(AuthDestination.RecoveryCode) },
+                        onConfirm = { authNotice = "Nenhuma senha foi alterada. A redefinição ainda depende da integração de autenticação, mantida fora desta branch." },
+                    )
+                    AuthDestination.RecoverySuccess -> LoginPassSuccesScreen(onStart = { navigateAuth(AuthDestination.Login) })
+                }
             }
         }
+    }
+    authNotice?.let { notice ->
+        AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
+            text = { Text(notice) }, confirmButton = { TextButton(onClick = { authNotice = null }) { Text("Entendi") } })
     }
 }

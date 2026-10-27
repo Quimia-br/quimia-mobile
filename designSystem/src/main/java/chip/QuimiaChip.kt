@@ -26,6 +26,8 @@ import com.composables.icons.lucide.X
 import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
+import theme.quimiaHighContrastEnabled
 
 @Composable
 fun QuimiaChip(
@@ -43,7 +45,11 @@ fun QuimiaChip(
         selected -> tokens.primary
         else -> tokens.surfaceBase
     }
-    val contentColor = if (enabled) tokens.foregroundPrimary else tokens.foregroundDisabled
+    val contentColor = when {
+        !enabled -> tokens.foregroundDisabled
+        selected && quimiaHighContrastEnabled() -> tokens.onPrimary
+        else -> tokens.foregroundPrimary
+    }
 
     Row(
         modifier = modifier
@@ -51,6 +57,7 @@ fun QuimiaChip(
             .semantics { this.selected = selected }
             .clip(RoundedCornerShape(RadiusFull.dp))
             .background(containerColor)
+            .quimiaContrastOutline(RoundedCornerShape(RadiusFull.dp))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(5.dp, if (centerContent) Alignment.CenterHorizontally else Alignment.Start),
@@ -62,7 +69,7 @@ fun QuimiaChip(
                 imageVector = Lucide.X,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = if (enabled) tokens.foregroundPrimary else tokens.foregroundDisabled,
+                tint = contentColor,
             )
         }
     }

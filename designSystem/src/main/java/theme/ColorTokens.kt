@@ -129,6 +129,7 @@ val DarkTokens = QuimiaColorTokens(
 
 @Composable
 fun quimiaColorTokens(forceDark: Boolean? = null): QuimiaColorTokens {
+    if (LocalQuimiaHighContrast.current) return HighContrastTokens
     val useDark = forceDark ?: LocalQuimiaDarkTheme.current
     return if (!useDark) LightTokens else DarkTokens
 }

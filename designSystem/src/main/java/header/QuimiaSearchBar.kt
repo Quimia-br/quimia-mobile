@@ -45,6 +45,7 @@ import theme.QuimiaColorTokens
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import theme.QuimiaTheme
 
 enum class QuimiaSearchBarVariant { Primary, Secondary }
@@ -123,6 +124,7 @@ fun QuimiaSearchBar(
                 color = colors.container,
                 shape = shape
             )
+            .quimiaContrastOutline(shape)
             .padding(horizontalPadding, verticalPadding),
     ) {
         Icon(

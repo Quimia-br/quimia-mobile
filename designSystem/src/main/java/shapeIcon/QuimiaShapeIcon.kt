@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -23,6 +24,7 @@ import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import theme.QuimiaTheme
 
 
@@ -44,6 +46,7 @@ fun QuimiaShapeIcon(
     iconColor: Color? = null,
     iconSize: Dp = 24.dp,
     contentDescription: String? = null,
+    iconPainter: Painter? = null,
 ) {
     val tokens = quimiaColorTokens()
     val background = containerColor ?: when (theme) {
@@ -67,10 +70,16 @@ fun QuimiaShapeIcon(
                 } else {
                     Modifier
                 }
-            ),
+            )
+            .quimiaContrastOutline(CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
+        if (iconPainter != null) Icon(
+            painter = iconPainter,
+            contentDescription = contentDescription,
+            tint = foreground,
+            modifier = Modifier.size(iconSize),
+        ) else Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = foreground,
