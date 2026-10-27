@@ -15,7 +15,7 @@ fun LoginPass2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onC
     var password by rememberSaveable { mutableStateOf("") }
     var confirmation by rememberSaveable { mutableStateOf("") }
     val passwordError = authNewPasswordError(password)
-    val confirmationError = if (password != confirmation) "As senhas precisam ser iguais." else authNewPasswordError(confirmation)
+    val confirmationError = authPasswordConfirmationError(password, confirmation)
     AuthScreenLayout(modifier, onBack = onBack, bodyVerticalPadding = 0.dp, bottomPadding = 24.dp, footer = {
         AuthPrimaryButton("Confirmar", { onPasswordConfirm?.invoke(password) ?: onConfirm() }, enabled = passwordError == null && confirmationError == null)
     }) {
