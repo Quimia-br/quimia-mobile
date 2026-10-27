@@ -129,7 +129,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
                     state.saveError?.let { CatalogError(it) { scope.launch { controller.save(listOf(product.id)) } } }
                     state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
                 })
-        } ?: CatalogDetailStatus(state.detailLoading, state.detailError, controller::closeDetail) {
+        } ?: CatalogDetailStatus(state.detailLoading, state.detailError, controller::closeDetail, state.lookupBarcode) {
             scope.launch { controller.retryDetail() }
         }
     }
@@ -155,7 +155,7 @@ internal fun CatalogError(problem: CatalogProblem, retry: () -> Unit) {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CatalogDetailStatus(loading: Boolean, error: CatalogProblem?, close: () -> Unit, retry: () -> Unit) {
+private fun CatalogDetailStatus(loading: Boolean, error: CatalogProblem?, close: () -> Unit, barcode: String? = null, retry: () -> Unit) {
     val tokens = quimiaColorTokens()
     ModalBottomSheet(onDismissRequest = close, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = 560.dp,
@@ -163,6 +163,7 @@ private fun CatalogDetailStatus(loading: Boolean, error: CatalogProblem?, close:
         HideSystemNavigationBar()
         Column(Modifier.fillMaxWidth().padding(24.dp)) {
             QuimiaIconButton(icon = Lucide.X, contentDescription = "Fechar detalhes", onClick = close)
+            barcode?.let { Text("Código lido: $it", style = Typography.bodyMedium, color = tokens.textPrimary) }
             if (loading) CatalogLoading("Carregando detalhes…")
             error?.let { CatalogError(it, retry) }
         }

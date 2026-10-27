@@ -38,7 +38,6 @@ import com.composables.icons.lucide.X
 import com.quimia.android.R
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import java.io.File
-import kotlinx.coroutines.CancellationException
 import theme.QuimiaTheme
 import theme.Typography
 import theme.quimiaColorTokens
@@ -48,29 +47,14 @@ import theme.quimiaContrastOutline
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit, onBarcode: ((String) -> Unit)? = null) {
+    if (onBarcode != null) {
+        if (visible) CatalogBarcodeScannerSheet(onDismiss, onBarcode)
+        return
+    }
     val context = LocalContext.current
     var imageUri by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingCameraUri by rememberSaveable { mutableStateOf<String?>(null) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
-    var scanning by remember { mutableStateOf(false) }
-    val latestBarcode by rememberUpdatedState(onBarcode)
-    val latestDismiss by rememberUpdatedState(onDismiss)
-    LaunchedEffect(visible, imageUri) {
-        if (!visible) { imageUri = null; error = null; return@LaunchedEffect }
-        val uri = imageUri
-        if (uri == null || latestBarcode == null) return@LaunchedEffect
-        scanning = true
-        error = null
-        try {
-            val code = decodeCatalogBarcode(context, uri)
-            imageUri = null
-            latestDismiss()
-            latestBarcode?.invoke(code)
-        } catch (cancelled: CancellationException) { throw cancelled
-        } catch (_: Exception) {
-            error = "Não foi possível ler o código de barras. Fotografe o código inteiro, com boa iluminação, ou tente outra imagem."
-        } finally { scanning = false }
-    }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             runCatching {
@@ -110,8 +94,7 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit, onBarcod
                 )
                 LabelScannerContent(
                     imageUri = imageUri,
-                    error = if (scanning) "Lendo código de barras…" else error,
-                    barcodeMode = onBarcode != null,
+                    error = error,
                     onClose = onDismiss,
                     onChooseImage = {
                         error = null
