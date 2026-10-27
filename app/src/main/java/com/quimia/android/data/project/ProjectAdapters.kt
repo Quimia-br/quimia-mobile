@@ -59,6 +59,9 @@ suspend fun <T> readApiPages(fetch: suspend (Int) -> ApiPage<T>): List<T> {
 fun ApiPoint.fullAddress() = listOfNotNull(rua, numero?.toString(), bairro, estado, cep, complemento)
     .filter(String::isNotBlank).joinToString(", ")
 
+fun ApiAddress.fullAddress() = listOfNotNull(rua, numero?.toString(), bairro, estado, cep, complemento)
+    .filter(String::isNotBlank).joinToString(", ")
+
 fun ApiSavedProducts.requireSaved(requested: List<String>) {
     val expected = requested.map { it.toInt() }.toSet()
     if (itens.map { it.produtoId }.toSet() != expected || itens.size != expected.size)

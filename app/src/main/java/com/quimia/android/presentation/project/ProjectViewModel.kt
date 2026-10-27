@@ -8,6 +8,8 @@ import com.quimia.android.presentation.screens.catalog.CatalogProduct
 import com.quimia.android.presentation.screens.rooms.*
 import com.quimia.android.presentation.screens.shelf.ShelfSubstance
 import com.quimia.android.presentation.screens.proximity.*
+import com.quimia.android.presentation.screens.profile.ProfileDetails
+import com.quimia.android.presentation.screens.kemi.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
@@ -51,6 +53,25 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun retry(section: String) { viewModelScope.launch { load(section) } }
+
+    suspend fun replyToKemi(request: KemiRequest): KemiReply {
+        val id = owner ?: return KemiReply.Failure(com.quimia.android.presentation.screens.errors.GenericErrorKind.SessionExpired)
+        val question = request.conversation.messages.firstOrNull { it.id == request.messageId }?.text.orEmpty().trim()
+        if (question.length !in 1..2000) return KemiReply.Failure(
+            com.quimia.android.presentation.screens.errors.GenericErrorKind.ContentUnavailable,
+            "A API aceita mensagens entre 1 e 2000 caracteres.")
+        return try {
+            val reply = withContext(Dispatchers.IO) { api.chat(buildJsonObject {
+                put("texto", question)
+                request.conversation.apiSessionId?.let { put("sessaoId", it) }
+            }).toKemiReply() }
+            checked(id) { it }
+            if (request.conversation.apiSessionId != null && reply.sessionId != request.conversation.apiSessionId)
+                throw ApiContractException("A API alterou o sessaoId de uma conversa existente.")
+            reply
+        } catch (error: CancellationException) { throw error }
+        catch (error: Exception) { KemiReply.Failure(apiErrorKind(error), apiErrorMessage(error)) }
+    }
 
     fun sendChat(text: String) {
         if (state.value.chatBusy) return
@@ -107,7 +128,7 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         try {
             withContext(Dispatchers.IO) {
                 when (section) {
-                    "profile" -> api.me().let { value -> checked(id) { it.copy(profile = value) } }
+                    "profile" -> api.me().let { value -> birthDateFromApi(value.dataNasc); checked(id) { it.copy(profile = value) } }
                     "catalog" -> readApiPages { api.products(it) }.map { it.toProduct() }.let { value -> checked(id) { it.copy(products = value) } }
                     "shelf" -> readApiPages { api.shelf(it) }.map { it.toProduct() }.let { value -> checked(id) { it.copy(shelf = value) } }
                     "substances" -> api.substances().itens.map { it.toSubstance() }.let { value -> checked(id) { it.copy(substances = value) } }
@@ -117,7 +138,11 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                             products = (it.products + details.flatMap { room -> room.produtos.map { product -> product.toProduct() } }).distinctBy { it.id }) }
                     }
                     "points" -> {
-                        val points = readApiPages { api.points(it) }
+                        val points = listOf("compra", "descarte").flatMap { type ->
+                            readApiPages { api.points(it, type = type) }.also { values ->
+                                if (values.any { it.tipo != type }) throw ApiContractException("A API retornou ponto com tipo diferente do filtro '$type'.")
+                            }
+                        }.distinctBy { it.id }
                         checked(id) { it.copy(points = points) }
                         checked(id) { it.copy(mapPoints = emptyList()) }
                     }
@@ -171,6 +196,7 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
 
     suspend fun createRoom(draft: QuimiaRoom): QuimiaRoom = write { id ->
         requireSnapshot("shelf")
+        if (draft.productIds.distinct().size !in 2..20) throw ApiContractException("A API exige de 2 a 20 produtos para criar um cômodo.")
         val body = buildJsonObject { put("nome", draft.name); put("icone", draft.icon.apiCode()); put("produtoIds", apiIds(draft.productIds).getValue("produtoIds")) }
         val real = api.createRoom(body).toRoom()
         checked(id) { it.copy(rooms = it.rooms.upsertRoom(real)) }
@@ -186,6 +212,14 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
 
     suspend fun updateProfileName(name: String) = write { id ->
         val real = api.updateProfile(apiBody("nome" to name))
+        checked(id) { it.copy(profile = real) }
+    }
+
+    suspend fun updateProfileDetails(details: ProfileDetails) = write { id ->
+        requireSnapshot("profile")
+        val current = state.value.profile ?: throw ApiContractException("O perfil ainda não foi confirmado pela API.")
+        val real = api.updateProfile(profileUpdateBody(details, current))
+        birthDateFromApi(real.dataNasc)
         checked(id) { it.copy(profile = real) }
     }
 

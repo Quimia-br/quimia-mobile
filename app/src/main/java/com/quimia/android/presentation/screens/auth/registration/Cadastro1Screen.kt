@@ -1,207 +1,51 @@
 package com.quimia.android.presentation.screens.auth.registration
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import buttons.QuimiaButton
-import com.quimia.android.R
+import com.quimia.android.presentation.screens.auth.*
+import com.quimia.android.presentation.components.BirthDateField
 import input.QuimiaInput
-import theme.Typography
-import theme.quimiaColorTokens
 import theme.QuimiaTheme
+import title.QuimiaMainTitle
 
 @Composable
-fun Cadastro1Screen(
-    modifier: Modifier = Modifier,
-    onContinue: (String, String, String) -> Unit = { _, _, _ -> },
-    onGoogleClick: () -> Unit = {}, onMicrosoftClick: () -> Unit = {}
-) {
-    val tokens = quimiaColorTokens(forceDark = false)
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(50.dp))
-            .background(tokens.surfaceBackground)
-            .padding(start = 20.dp, end = 20.dp, bottom = 50.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 105.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-
-            Spacer(modifier = Modifier.height(50.dp))
-
-            Text(
-                text = "Seja bem-vindo!\nFaça cadastro abaixo",
-                style = Typography.titleLarge.copy(
-                    fontSize = 19.sp,
-                    lineHeight = 22.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                color = tokens.textPrimary
-            )
-
-            Spacer(modifier = Modifier.height(26.dp))
-
-            QuimiaInput(
-                value = name,
-                onValueChange = { name = it },
-                label = "Nome",
-                placeholder = "Gabriela Benfica",
-                textStyle = Typography.bodySmall,
-                containerColor = tokens.secondary,
-                primaryTextColor = tokens.textPrimary,
-                secondaryTextColor = tokens.textSecondary,
-                radius = 1000,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            QuimiaInput(
-                value = email,
-                onValueChange = { email = it },
-                label = "E-mail",
-                placeholder = "gabrielabenfica@gmail.com.br",
-                textStyle = Typography.bodySmall,
-                containerColor = tokens.secondary,
-                primaryTextColor = tokens.textPrimary,
-                secondaryTextColor = tokens.textSecondary,
-                radius = 1000,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            QuimiaInput(
-                value = password,
-                onValueChange = { password = it },
-                label = "Crie uma senha",
-                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                placeholder = "12345",
-                textStyle = Typography.bodySmall,
-                containerColor = tokens.secondary,
-                primaryTextColor = tokens.textPrimary,
-                secondaryTextColor = tokens.textSecondary,
-                focusColor = tokens.success,
-                radius = 1000,
-                modifier = Modifier.fillMaxWidth()
-            )
+fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: (String, String, String, String) -> Unit = { _, _, _, _ -> }, onLogin: () -> Unit = {},
+    onGoogleClick: () -> Unit = {}, onMicrosoftClick: () -> Unit = {}) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var birthDate by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    val emailFocus = remember { FocusRequester() }
+    val valid = authNameError(name) == null && authBirthDateError(birthDate) == null &&
+        authEmailError(email) == null && authPasswordError(password) == null
+    AuthScreenLayout(modifier, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footerHorizontalPadding = 35.5.dp, footer = {
+        AuthPrimaryButton("Continuar", { onContinue(name, birthDate, email, password) }, enabled = valid)
+        Spacer(Modifier.height(8.dp))
+        AuthFooterLink("Já tem cadastro? ", "Faça login aqui", onLogin)
+    }) {
+        QuimiaMainTitle(title = "Seja bem-vindo!\nFaça cadastro abaixo")
+        Spacer(Modifier.height(31.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            QuimiaInput(name, { name = it.take(80) }, label = "Nome", placeholder = "Daniel Filho",
+                error = authNameError(name).takeIf { name.isNotEmpty() })
+            BirthDateField(birthDate, { birthDate = it }, error = authBirthDateError(birthDate).takeIf { birthDate.isNotEmpty() })
+            QuimiaInput(email, { email = it }, label = "E-mail", placeholder = "exemplo@quimia.com",
+                modifier = Modifier.focusRequester(emailFocus), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                error = authEmailError(email).takeIf { email.isNotEmpty() })
+            AuthPasswordInput(password, { password = it }, "Crie uma senha", authPasswordError(password).takeIf { password.isNotEmpty() })
         }
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CadastroSocialIcon(containerColor = tokens.secondary, onClick = onGoogleClick) {
-                Icon(
-                    painter = painterResource(R.drawable.social_google),
-                    contentDescription = "Continuar com Google",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
-                )
-            }
-            CadastroSocialIcon(containerColor = tokens.secondary, onClick = onMicrosoftClick) {
-                Icon(
-                    painter = painterResource(R.drawable.social_microsoft),
-                    contentDescription = "Continuar com Microsoft",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
-                )
-            }
-            CadastroSocialIcon(containerColor = tokens.secondary) {
-                Icon(
-                    painter = painterResource(R.drawable.social_mail),
-                    contentDescription = "Continuar com e-mail",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(78.dp))
-
-        QuimiaButton(
-            text = "Continuar",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(46.dp),
-            containerColor = tokens.primary,
-            textColor = tokens.onPrimary,
-            onClick = { onContinue(name, email, password) },
-            iconSize = 20,
-            espacamento = 0,
-            textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
-        )
-
-        Spacer(modifier = Modifier.height(13.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Não tem conta no Quimia? ", style = Typography.bodySmall, color = tokens.textSecondary)
-            Text("Crie já", style = Typography.bodySmall, color = tokens.textPrimary, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun CadastroSocialIcon(
-    containerColor: Color,
-    onClick: () -> Unit = {},
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(containerColor).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        content()
+        Spacer(Modifier.height(58.dp))
+        AuthSocialButtons(onGoogle = onGoogleClick, onMicrosoft = onMicrosoftClick) { emailFocus.requestFocus() }
     }
 }
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Composable
-private fun Cadastro1ScreenPreview() {
-    QuimiaTheme {
-        Cadastro1Screen()
-    }
-}
+private fun Cadastro1ScreenPreview() { QuimiaTheme { Cadastro1Screen() } }

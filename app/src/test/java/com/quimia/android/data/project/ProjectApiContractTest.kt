@@ -214,6 +214,19 @@ class ProjectApiContractTest {
         assertEquals("api-session-1", Json.parseToJsonElement(request().body.readUtf8()).jsonObject.getValue("sessaoId").jsonPrimitive.content)
     }
 
+    @Test fun htmlWithHttp200IsStillAContractFailureInsteadOfAChatReply() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(200).setHeader("Content-Type", "text/html").setBody("<!doctype html><title>Erro Interno</title>"))
+        try { client.api.chat(apiBody("texto" to "Olá")); fail("HTTP 200 com HTML não é resposta da Kemi") }
+        catch (error: ApiContractException) { assertTrue(error.message.orEmpty().contains("HTML")) }
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test fun pointsAlwaysIncludeTheMandatoryTypeFilter() = runBlocking {
+        server.enqueue(json("""{"itens":[],"pagina":0,"tamanho":50,"totalItens":0,"totalPaginas":0}"""))
+        client.api.points(0, type = "descarte")
+        assertEquals("descarte", request().requestUrl?.queryParameter("tipo"))
+    }
+
     @Test fun substanceKeepsTheProductIdsActuallyReturnedByTheApi() = runBlocking {
         server.enqueue(json("""{"itens":[{"id":3,"nome":"Substância da API","classes":["Classe"],"produtos":[{"id":12,"nome":"Produto 12"},{"id":19,"nome":"Produto 19"}]}]}"""))
         val result = client.api.substances().itens.single().toSubstance()

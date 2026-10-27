@@ -48,7 +48,10 @@ import com.quimia.android.presentation.screens.catalog.CatalogProduct
 import com.quimia.android.R
 import chip.QuimiaChip
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
+import com.quimia.android.presentation.screens.rooms.QuimiaRoom
+import com.quimia.android.presentation.screens.rooms.roomsForProduct
 import header.QuimiaSearchBar
+import com.quimia.android.presentation.components.rememberVoiceInput
 import image.QuimiaImage
 import listItem.QuimiaListItem
 import menuBar.QuimiaMenuBar
@@ -92,10 +95,13 @@ fun ShelfScreen(
     onUnsupportedAction: ((String) -> Unit)? = null,
     loadProtection: (suspend (String) -> String)? = null,
     onOpenProductRoom: ((String) -> Unit)? = null,
+    rooms: List<QuimiaRoom> = emptyList(),
+    onOpenRoom: (String) -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     var tab by rememberSaveable { mutableStateOf(if (initialSubstancesTab) ShelfTab.Substances else ShelfTab.Products) }
     var query by rememberSaveable { mutableStateOf("") }
+    val voiceInput = rememberVoiceInput { query = it }
     var sort by rememberSaveable { mutableStateOf<ShelfSort?>(ShelfSort.Alphabetical) }
     var filtersVisible by rememberSaveable { mutableStateOf(initialFiltersVisible) }
     var favoriteSubstanceIds by rememberSaveable { mutableStateOf(initialFavoriteSubstanceIds) }
@@ -179,9 +185,9 @@ fun ShelfScreen(
                     QuimiaSearchBar(
                         value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(58.dp),
                         placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz",
+                        onClick = voiceInput,
                         searchIconSize = 24.dp, horizontalPadding = 16.dp, verticalPadding = 12.dp,
                         spacedBy = 10.dp, textStyle = ShelfBodyStyle.copy(fontSize = 16.sp),
-                        onClick = { onUnsupportedAction?.invoke("A pesquisa por voz ainda não está conectada no aplicativo. Isso não é uma rota ausente da API.") },
                     )
                     QuimiaIconButton(
                         icon = Lucide.Settings2, size = QuimiaIconButtonSize.Medium,
@@ -245,7 +251,10 @@ fun ShelfScreen(
                     onExpand = { expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id },
                     onFavorite = { onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
                     onActions = { actionId = product.id }, onRoom = {
-                        if (onOpenProductRoom != null) onOpenProductRoom(product.id) else roomId = product.id
+                        val linkedRooms = roomsForProduct(rooms, product.id)
+                        if (onOpenProductRoom != null) onOpenProductRoom(product.id)
+                        else if (linkedRooms.size == 1) onOpenRoom(linkedRooms.single().id)
+                        else roomId = product.id
                     },
                     onMix = { onMixProduct(product.id) },
                 )
@@ -289,11 +298,20 @@ fun ShelfScreen(
             },
         )
     }
-    if (roomId != null) ShelfNoRoomConfirmation(onDismiss = { roomId = null }, onCreate = {
-        val productId = roomId
-        roomId = null
-        productId?.let(onCreateRoom)
-    })
+    roomId?.let { productId ->
+        val linkedRooms = if (tab == ShelfTab.Products) roomsForProduct(rooms, productId) else emptyList()
+        if (linkedRooms.isEmpty()) {
+            ShelfNoRoomConfirmation(onDismiss = { roomId = null }, onCreate = {
+                roomId = null
+                onCreateRoom(productId)
+            })
+        } else {
+            ShelfRoomsPanel(rooms = linkedRooms, onDismiss = { roomId = null }, onOpenRoom = {
+                roomId = null
+                onOpenRoom(it)
+            })
+        }
+    }
 }
 
 @Composable

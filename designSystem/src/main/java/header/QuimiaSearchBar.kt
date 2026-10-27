@@ -3,6 +3,7 @@ package header
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +45,7 @@ import theme.QuimiaColorTokens
 import theme.RadiusFull
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import theme.QuimiaTheme
 
 enum class QuimiaSearchBarVariant { Primary, Secondary }
@@ -94,7 +98,11 @@ fun QuimiaSearchBar(
     textStyle: TextStyle = QuimiaTextStyles.medium16,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    leadingIcon: ImageVector = Lucide.Search,
+    leadingIconDescription: String? = null,
+    onLeadingIconClick: (() -> Unit)? = null,
+    trailingIconSize: Dp? = null,
 ) {
     val tokens = quimiaColorTokens()
     val colors = resolveSearchBarColors(variant, tokens)
@@ -116,13 +124,15 @@ fun QuimiaSearchBar(
                 color = colors.container,
                 shape = shape
             )
+            .quimiaContrastOutline(shape)
             .padding(horizontalPadding, verticalPadding),
     ) {
         Icon(
-            imageVector = Lucide.Search,
-            contentDescription = null,
+            imageVector = leadingIcon,
+            contentDescription = leadingIconDescription,
             tint = tokens.foregroundPrimary,
-            modifier = Modifier.size(searchIconSize)
+            modifier = Modifier.size(searchIconSize).then(if (onLeadingIconClick != null)
+                Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onLeadingIconClick) else Modifier)
         )
         BasicTextField(
             value = value,
@@ -144,7 +154,8 @@ fun QuimiaSearchBar(
                         Text(
                             text = placeholder,
                             style = resolvedTextStyle,
-                            color = tokens.textSecondary
+                            color = tokens.textSecondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
                     innerTextField()
@@ -155,10 +166,11 @@ fun QuimiaSearchBar(
         icon?.let {
             QuimiaIconButton(
                 icon = icon,
-                onClick = { onClick?.invoke() },
+                onClick = { if (enabled) onClick?.invoke() },
                 containerColor = colors.sticky,
                 iconColor = colors.icon,
                 size = iconButtonSize,
+                iconSize = trailingIconSize,
                 contentDescription = iconDescription
             )
         }

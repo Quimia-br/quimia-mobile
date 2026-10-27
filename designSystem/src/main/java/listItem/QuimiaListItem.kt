@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -40,6 +41,8 @@ import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.Zap
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
+import theme.quimiaHighContrastEnabled
 import com.composables.icons.lucide.ToolCase
 import theme.QuimiaColorTokens
 
@@ -111,7 +114,10 @@ fun QuimiaListItem(
     subtitleMaxLines: Int = 2,
     cornerRadius: Dp = 32.dp,
     horizontalSpacing: Dp = 10.dp,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    titleTextStyle: TextStyle = QuimiaTextStyles.medium16,
+    subtitleTextStyle: TextStyle = QuimiaTextStyles.medium14,
+    textSpacing: Dp = 8.dp,
 ) {
     val tokens = quimiaColorTokens(forceDark = forceDark)
     val resolvedLeftIcon = leftIcon ?: icon
@@ -130,6 +136,7 @@ fun QuimiaListItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(cornerRadius))
             .background(resolvedContainerColor)
+            .quimiaContrastOutline(RoundedCornerShape(cornerRadius), quimiaHighContrastEnabled() && resolvedContainerColor != Color.Transparent)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -158,10 +165,9 @@ fun QuimiaListItem(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
         ) {
-            val titleStyle = QuimiaTextStyles.medium16.copy(
+            val titleStyle = titleTextStyle.copy(
                 color = resolvedTitleColor,
                 fontWeight = FontWeight.Medium,
-                lineHeight = 19.sp,
                 letterSpacing = 0.sp,
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
             )
@@ -173,8 +179,8 @@ fun QuimiaListItem(
             )
 
             if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                val subtitleStyle = QuimiaTextStyles.medium14.copy(
+                Spacer(modifier = Modifier.height(textSpacing))
+                val subtitleStyle = subtitleTextStyle.copy(
                     color = resolvedSubtitleColor,
                     fontWeight = FontWeight.Medium
                 )

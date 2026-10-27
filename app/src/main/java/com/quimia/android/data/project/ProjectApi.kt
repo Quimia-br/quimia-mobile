@@ -31,7 +31,7 @@ interface ProjectApi {
     @POST("api/v1/comodos") suspend fun createRoom(@Body body: JsonObject): ApiRoom
     @POST("api/v1/comodos/{id}/produtos") suspend fun addRoomProducts(@Path("id") id: Int, @Body body: JsonObject): ApiRoom
     @DELETE("api/v1/comodos/{id}/produtos/{productId}") suspend fun removeRoomProduct(@Path("id") id: Int, @Path("productId") productId: Int)
-    @GET("api/v1/pontos") suspend fun points(@Query("page") page: Int, @Query("size") size: Int = 50): ApiPage<ApiPoint>
+    @GET("api/v1/pontos") suspend fun points(@Query("page") page: Int, @Query("size") size: Int = 50, @Query("tipo") type: String): ApiPage<ApiPoint>
     @GET("api/v1/misturas") suspend fun mixtures(@Query("page") page: Int, @Query("size") size: Int = 50,
         @Query("produtoId") productId: Int? = null): ApiPage<ApiMixture>
     @POST("api/v1/misturas") suspend fun mix(@Body body: JsonObject): ApiMixture

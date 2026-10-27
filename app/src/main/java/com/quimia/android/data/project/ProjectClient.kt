@@ -58,7 +58,13 @@ class ProjectClient(val sessions: SessionStorage, private val baseUrl: String = 
     val api: ProjectApi = buildApi(anonymousClient.newBuilder().addInterceptor { chain ->
         val request = chain.request()
         val timedChain = if (request.url.encodedPath == "/api/v1/chat/mensagens") chain.withReadTimeout(125, TimeUnit.SECONDS) else chain
-        authorizedResponse(timedChain, request)
+        val response = authorizedResponse(timedChain, request)
+        if (response.isSuccessful && response.code != 204 && response.peekBody(256).string().trimStart().startsWith("<")) {
+            val status = response.code
+            response.close()
+            throw ApiContractException("A API retornou HTML em vez de JSON (HTTP $status) em ${request.url.encodedPath}. Confira o serviço publicado; nenhum dado foi simulado.")
+        }
+        response
     }.authenticator { _, response ->
         if (response.request.header("Authorization") == null || response.priorResponse != null) null
         else synchronized(this) {

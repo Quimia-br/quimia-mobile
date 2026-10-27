@@ -24,6 +24,7 @@ import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import theme.QuimiaTheme
 
 
@@ -69,7 +70,8 @@ fun QuimiaShapeIcon(
                 } else {
                     Modifier
                 }
-            ),
+            )
+            .quimiaContrastOutline(CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (iconPainter != null) Icon(

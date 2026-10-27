@@ -1,215 +1,54 @@
 package com.quimia.android.presentation.screens.auth.login
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import buttons.QuimiaButton
-import com.quimia.android.R
+import androidx.compose.material3.Text
+import com.quimia.android.presentation.screens.auth.*
 import input.QuimiaInput
-import theme.Typography
-import theme.quimiaColorTokens
+import theme.QuimiaTextStyles
 import theme.QuimiaTheme
+import theme.quimiaColorTokens
+import title.QuimiaMainTitle
 
 @Composable
 fun Login1Screen(
-    modifier: Modifier = Modifier,
-    onContinue: (email: String, password: String) -> Unit = { _, _ -> },
-    onCreateAccount: () -> Unit = {},
-    onForgotPassword: () -> Unit = {},
-    onGoogleClick: () -> Unit = {}, onMicrosoftClick: () -> Unit = {}
+    modifier: Modifier = Modifier, onContinue: (String, String) -> Unit = { _, _ -> },
+    onCreateAccount: () -> Unit = {}, onForgotPassword: () -> Unit = {},
+    onGoogleClick: () -> Unit = {}, onMicrosoftClick: () -> Unit = {},
 ) {
-    val tokens = quimiaColorTokens(forceDark = false)
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(50.dp))
-            .background(tokens.surfaceBackground)
-            .padding(start = 20.dp, end = 20.dp, bottom = 50.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 150.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-
-            Spacer(modifier = Modifier.height(80.dp))
-
-
-            Text(
-                text = "Seja bem-vindo de volta!\nFaça login abaixo",
-                style = Typography.titleLarge.copy(
-                    fontSize = 19.sp,
-                    lineHeight = 22.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                color = tokens.textPrimary
-            )
-
-            Spacer(modifier = Modifier.height(34.dp))
-
-            QuimiaInput(
-                value = email,
-                onValueChange = { email = it },
-                label = "E-mail",
-                placeholder = "exemplo@quimia.com",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                textStyle = Typography.bodySmall,
-                containerColor = tokens.secondary,
-                primaryTextColor = tokens.textPrimary,
-                secondaryTextColor = tokens.textSecondary,
-                radius = 1000,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            QuimiaInput(
-                value = password,
-                onValueChange = { password = it },
-                label = "Senha",
-                placeholder = "123456",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
-                textStyle = Typography.bodySmall,
-                containerColor = tokens.secondary,
-                primaryTextColor = tokens.textPrimary,
-                secondaryTextColor = tokens.textSecondary,
-                radius = 1000,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text(
-                text = "Esqueci a senha",
-                style = Typography.bodySmall,
-                color = tokens.textPrimary,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .clickable(onClick = onForgotPassword)
-            )
-
-            Spacer(modifier = Modifier.height(56.dp))
-
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SocialIcon(containerColor = tokens.secondary, onClick = onGoogleClick) {
-                Icon(
-                    painter = painterResource(R.drawable.social_google),
-                    contentDescription = "Continuar com Google",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
-                )
-            }
-            SocialIcon(containerColor = tokens.secondary, onClick = onMicrosoftClick) {
-                Icon(
-                    painter = painterResource(R.drawable.social_microsoft),
-                    contentDescription = "Continuar com Microsoft",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
-                )
-            }
-            SocialIcon(containerColor = tokens.secondary) {
-                Icon(
-                    painter = painterResource(R.drawable.social_mail),
-                    contentDescription = "Continuar com e-mail",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(80.dp))
-
-        QuimiaButton(
-            text = "Continuar",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(46.dp),
-            containerColor = tokens.primary,
-            textColor = tokens.onPrimary,
-            onClick = { onContinue(email, password) },
-            iconSize = 20,
-            espacamento = 0,
-            textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Não tem conta no Quimia? ", style = Typography.bodySmall, color = tokens.textSecondary)
-            Text(
-                text = "Crie já",
-                style = Typography.bodySmall,
-                color = tokens.textPrimary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable(onClick = onCreateAccount)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SocialIcon(
-    containerColor: Color,
-    onClick: () -> Unit = {},
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(containerColor).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        content()
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    val emailFocus = remember { FocusRequester() }
+    val emailError = authEmailError(email)
+    val passwordError = if (password.isBlank() || password.length > 72) "Informe sua senha (até 72 caracteres)." else null
+    AuthScreenLayout(modifier, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footerHorizontalPadding = 35.5.dp, footer = {
+        AuthPrimaryButton("Continuar", { onContinue(email.trim(), password) }, enabled = emailError == null && passwordError == null)
+        Spacer(Modifier.height(8.dp))
+        AuthFooterLink("Não tem conta no Quimia? ", "Crie já", onCreateAccount)
+    }) {
+        QuimiaMainTitle(title = "Seja bem-vindo de volta!\nFaça login abaixo")
+        Spacer(Modifier.height(34.dp))
+        QuimiaInput(email, { email = it }, label = "E-mail", placeholder = "exemplo@quimia.com",
+            modifier = Modifier.focusRequester(emailFocus), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            error = emailError.takeIf { email.isNotEmpty() })
+        Spacer(Modifier.height(18.dp))
+        AuthPasswordInput(password, { password = it }, "Senha", passwordError.takeIf { password.isNotEmpty() })
+        Text("Esqueci a senha", color = quimiaColorTokens().foregroundPrimary, style = QuimiaTextStyles.medium16,
+            modifier = Modifier.clickable(role = Role.Button, onClick = onForgotPassword).padding(top = 8.dp))
+        Spacer(Modifier.height(56.dp))
+        AuthSocialButtons(onGoogle = onGoogleClick, onMicrosoft = onMicrosoftClick) { emailFocus.requestFocus() }
     }
 }
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Composable
-private fun Login1ScreenPreview() {
-    QuimiaTheme {
-        Login1Screen()
-    }
-}
+private fun Login1ScreenPreview() { QuimiaTheme { Login1Screen() } }

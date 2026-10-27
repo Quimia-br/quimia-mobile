@@ -96,7 +96,8 @@ fun QuimiaNav(
     showBackButton: Boolean = false,
     showCloseButton: Boolean = true,
     onBackClick: () -> Unit = {},
-    onCloseClick: () -> Unit = {}
+    onCloseClick: () -> Unit = {},
+    buttonModifier: Modifier = Modifier,
 ) {
     val tokens = quimiaColorTokens()
 
@@ -111,7 +112,7 @@ fun QuimiaNav(
     ) {
         if (showBackButton) {
             QuimiaIconButton(
-                modifier = Modifier.align(Alignment.CenterStart),
+                modifier = Modifier.align(Alignment.CenterStart).then(buttonModifier),
                 icon = Lucide.ChevronLeft,
                 onClick = onBackClick,
                 containerColor = actualButtonColor,
@@ -121,7 +122,7 @@ fun QuimiaNav(
             )
         }
         if (showCloseButton) QuimiaIconButton(
-            modifier = Modifier.align(Alignment.CenterEnd),
+            modifier = Modifier.align(Alignment.CenterEnd).then(buttonModifier),
             icon = Lucide.X,
             onClick = onCloseClick,
             containerColor = actualButtonColor,

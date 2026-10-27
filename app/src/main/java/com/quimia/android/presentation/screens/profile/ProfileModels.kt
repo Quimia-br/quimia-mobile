@@ -2,6 +2,21 @@ package com.quimia.android.presentation.screens.profile
 
 import java.security.MessageDigest
 import java.util.Locale
+import com.quimia.android.presentation.components.completeBirthDateError
+
+data class ProfileDetails(val name: String, val birthDate: String, val email: String)
+
+internal fun profileBirthDateError(value: String): String? = completeBirthDateError(value)
+
+internal fun formatProfileBirthDate(value: String): String {
+    val digits = value.filter(Char::isDigit).take(8)
+    return when { digits.length > 4 -> digits.take(2) + "/" + digits.substring(2, 4) + "/" + digits.drop(4)
+        digits.length > 2 -> digits.take(2) + "/" + digits.drop(2)
+        else -> digits }
+}
+
+internal fun profileEmailError(value: String): String? =
+    if (value.trim().length <= 254 && value.trim().matches(Regex("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"))) null else "Informe um e-mail válido."
 
 enum class ProfileTheme(val label: String) {
     Light("Claro"), Dark("Escuro"), HighContrast("Alto contraste"), System("Sistema");

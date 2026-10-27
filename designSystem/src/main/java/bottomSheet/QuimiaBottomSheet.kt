@@ -3,6 +3,7 @@ package bottomSheet
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -37,6 +38,7 @@ import listItem.QuimiaListItem
 import theme.QuimiaTheme
 import theme.QuimiaFontFamily
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 
 enum class QuimiaBottomSheetTheme { Primary, Secondary }
 
@@ -60,35 +62,35 @@ fun QuimiaBottomSheet(
     contentHeight: Dp? = 547.dp,
     scrimColor: Color? = null,
     shape: androidx.compose.ui.graphics.Shape? = null,
+    contentPadding: PaddingValues = PaddingValues(32.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (!isVisible) return
 
     val tokens = quimiaColorTokens()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetShape = shape ?: RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         sheetState = sheetState,
         sheetMaxWidth = sheetMaxWidth,
-        shape = shape ?: RoundedCornerShape(
-            topStart = 40.dp,
-            topEnd = 40.dp,
-        ),
+        shape = sheetShape,
         containerColor = if (theme == QuimiaBottomSheetTheme.Primary) tokens.surfaceBase else tokens.secondary,
         contentColor = tokens.textPrimary,
         scrimColor = scrimColor ?: tokens.black.copy(alpha = 0.32f),
         dragHandle = null,
     ) {
         QuimiaBottomSheetContent(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().quimiaContrastOutline(sheetShape),
             title = title, description = description, theme = theme,
             showDragHandle = showDragHandle, showCloseButton = showCloseButton,
             onClose = onDismissRequest, primaryActionLabel = primaryActionLabel,
             secondaryActionLabel = secondaryActionLabel, primaryActionEnabled = primaryActionEnabled,
             onPrimaryActionClick = onPrimaryActionClick, onSecondaryActionClick = onSecondaryActionClick,
             contentHeight = contentHeight,
+            contentPadding = contentPadding,
             content = content,
         )
     }
@@ -109,12 +111,13 @@ fun QuimiaBottomSheetContent(
     onPrimaryActionClick: () -> Unit = {},
     onSecondaryActionClick: () -> Unit = {},
     contentHeight: Dp? = 547.dp,
+    contentPadding: PaddingValues = PaddingValues(32.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = quimiaColorTokens()
     val secondary = if (theme == QuimiaBottomSheetTheme.Primary) tokens.secondary else tokens.surfaceBase
     Column(
-        modifier = modifier.fillMaxWidth().then(if (contentHeight != null) Modifier.height(contentHeight) else Modifier).padding(32.dp),
+        modifier = modifier.fillMaxWidth().then(if (contentHeight != null) Modifier.height(contentHeight) else Modifier).padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (showDragHandle) QuimiaDragger(color = secondary, height = 3.dp)

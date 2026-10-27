@@ -36,6 +36,7 @@ import shapeIcon.QuimiaShapeIconTheme
 import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
 
 enum class QuimiaToastType { Info, Success, Warning, Error }
 
@@ -50,6 +51,7 @@ fun QuimiaToast(
     containerColor: Color? = null,
     leadingIcon: ImageVector? = null,
     description: String? = null,
+    statusIconContainerColor: Color? = null,
 ) {
     val tokens = quimiaColorTokens()
     val accent = when (type) {
@@ -76,6 +78,7 @@ fun QuimiaToast(
         shape = RoundedCornerShape(RadiusFull.dp),
         color = containerColor ?: tokens.surfaceBase,
         contentColor = tokens.textPrimary,
+        border = quimiaContrastBorder(),
     ) {
         Row(
             modifier = Modifier
@@ -88,6 +91,7 @@ fun QuimiaToast(
                 size = QuimiaShapeIconSize.Small.value,
                 icon = statusIcon,
                 theme = iconTheme,
+                containerColor = statusIconContainerColor,
             )
             Column(
                 modifier = Modifier.weight(1f).sizeIn(minHeight = 50.dp),

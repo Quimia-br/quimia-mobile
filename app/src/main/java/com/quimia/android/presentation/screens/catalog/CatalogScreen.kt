@@ -73,6 +73,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Mic
 import com.composables.icons.lucide.X
 import header.QuimiaSearchBar
+import com.quimia.android.presentation.components.rememberVoiceInput
 import image.QuimiaImage
 import menuBar.QuimiaMenuBar
 import menuBar.QuimiaMenuBarBackdrop
@@ -85,6 +86,9 @@ import theme.QuimiaTheme
 import theme.RadiusLarge
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.quimiaHighContrastEnabled
+import theme.quimiaContrastBorder
+import theme.quimiaContrastOutline
 import title.QuimiaSectionTitle
 
 internal val CatalogModalScrimColor = Color(0xFF808080).copy(alpha = 0.16f)
@@ -109,6 +113,7 @@ fun CatalogScreen(
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
+    val voiceInput = rememberVoiceInput { query = it }
     var bannerVisible by rememberSaveable { mutableStateOf(initialBannerVisible) }
     var showLabelScanner by rememberSaveable { mutableStateOf(false) }
     var savedIds by remember(initialSavedProductIds) { mutableStateOf(initialSavedProductIds.toSet()) }
@@ -188,11 +193,11 @@ fun CatalogScreen(
             ) {
                 QuimiaSearchBar(
                     value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(60.dp),
-                    placeholder = "Pesquisar",icon = Lucide.Mic,
+                    placeholder = "Pesquisar", icon = Lucide.Mic,
+                    iconDescription = "Pesquisar por voz", onClick = voiceInput,
                     horizontalPadding = 16.dp, verticalPadding = 12.dp,
                     spacedBy = 12.dp, textStyle = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
                     searchIconSize = 22.dp,
-                    onClick = { dialogMessage = "A pesquisa por voz ainda não está conectada no aplicativo. Isso não é uma rota ausente da API." },
                     onSearch = {
                         if (onBarcodeSearch != null && query.trim().all(Char::isDigit) && query.isNotBlank()) requests.launch {
                             try { detailProduct = onBarcodeSearch(query.trim()) }
@@ -291,7 +296,8 @@ fun CatalogScreen(
             } else {
                 Row(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(56.dp)).background(tokens.surfaceBase).padding(32.dp),
+                        .clip(RoundedCornerShape(56.dp)).background(tokens.surfaceBase)
+                        .quimiaContrastOutline(RoundedCornerShape(56.dp)).padding(32.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -350,6 +356,7 @@ private fun CatalogBanner(message: String, success: Boolean, onDismiss: () -> Un
     Row(
         modifier = Modifier.fillMaxWidth().padding(16.dp)
             .clip(RoundedCornerShape(40.dp)).background(tokens.surfaceBase)
+            .quimiaContrastOutline(RoundedCornerShape(40.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -392,10 +399,10 @@ private fun ProductCard(
 ) {
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
+    val outline = resolveCatalogProductOutline(tokens, quimiaHighContrastEnabled(), selectionMode, selected)
     QuimiaCard(
         modifier = modifier
             .clip(cardShape)
-            .then(if (selected) Modifier.border(2.dp, tokens.success, cardShape) else Modifier)
             .combinedClickable(
                 onClick = { if (selectionMode) onLongSelect() else onInfo() },
                 onLongClick = onLongSelect,
@@ -409,6 +416,10 @@ private fun ProductCard(
         endIcon = null,
         contentPadding = 0.dp,
         sectionSpacing = 0.dp,
+        contrastOutline = false,
+        outline = outline != null,
+        outlineColor = outline?.color,
+        outlineWidth = outline?.width ?: 3.dp,
     ) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -509,6 +520,7 @@ private fun CatalogProductDetailsContent(
         shape = RoundedCornerShape(36.dp),
         color = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
+        border = quimiaContrastBorder(),
     ) {
         Column(Modifier.fillMaxWidth().padding(32.dp)) {
             Row(verticalAlignment = Alignment.Top) {

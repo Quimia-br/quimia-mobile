@@ -16,6 +16,8 @@ enum class RoomIcon(val label: String) {
 @Serializable
 enum class RoomSafety { NotEvaluated, Critical, Safe }
 
+enum class RoomPage { List, Create, Detail, Saving, Success, Error }
+
 @Serializable
 data class QuimiaRoom(
     val id: String,
@@ -23,21 +25,42 @@ data class QuimiaRoom(
     val icon: RoomIcon,
     val productIds: List<String>,
     val safety: RoomSafety = RoomSafety.NotEvaluated,
+    val apiStatus: String? = null,
+    val apiDescription: String? = null,
 )
 
 internal enum class RoomSort(val label: String) { Alphabetical("Alfabética"), Recent("Recentes"), Oldest("Antigos") }
+
+internal fun roomGridColumns(availableWidthDp: Float): Int = when {
+    availableWidthDp >= 700f -> 4
+    availableWidthDp >= 500f -> 3
+    else -> 2
+}
+
+internal fun roomIconColumns(availableWidthDp: Float): Int =
+    ((availableWidthDp + 8f) / 64f).toInt().coerceIn(1, 5)
+
+internal fun roomStartPage(productId: String?, roomId: String?, fallback: RoomPage = RoomPage.List): RoomPage = when {
+    productId != null -> RoomPage.Create
+    roomId != null && fallback == RoomPage.List -> RoomPage.Detail
+    else -> fallback
+}
+
+internal fun roomsForProduct(rooms: List<QuimiaRoom>, productId: String): List<QuimiaRoom> =
+    rooms.filter { productId in it.productIds }.distinctBy { it.id }
 
 val RoomListSaver = Saver<List<QuimiaRoom>, String>(
     save = { Json.encodeToString(it) },
     restore = { runCatching { Json.decodeFromString<List<QuimiaRoom>>(it) }.getOrDefault(emptyList()) },
 )
 
-internal fun roomValidationError(name: String, icon: RoomIcon?, selectedIds: List<String>, availableIds: List<String>): String? = when {
+internal fun roomValidationError(name: String, icon: RoomIcon?, selectedIds: List<String>, availableIds: List<String>, productRange: IntRange = 1..Int.MAX_VALUE): String? = when {
     name.isBlank() -> "Informe o nome do cômodo."
     name.trim().length > 60 -> "Use até 60 caracteres no nome."
     icon == null -> "Escolha um ícone para o cômodo."
     selectedIds.none { it in availableIds } -> "Selecione pelo menos um produto da sua estante."
     selectedIds.any { it !in availableIds } -> "A lista de produtos mudou. Confira sua seleção."
+    selectedIds.distinct().size !in productRange -> "Selecione de ${productRange.first} a ${productRange.last} produtos para criar o cômodo."
     else -> null
 }
 

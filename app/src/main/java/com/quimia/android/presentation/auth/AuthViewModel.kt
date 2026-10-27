@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.quimia.android.data.project.*
 import com.quimia.android.domain.auth.AuthResult
+import com.quimia.android.presentation.components.BirthDate
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
@@ -23,7 +24,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         private set
     private var challenge: String? = null
     private var resetToken: String? = null
-    private var registration: Triple<String, String, String>? = null
+    private data class Registration(val name: String, val email: String, val password: String, val birthDate: String, val created: Boolean = false)
+    private var registration: Registration? = null
     val hasRegistration get() = registration != null
     val hasRecoveryChallenge get() = challenge != null
     val hasResetGrant get() = resetToken != null
@@ -52,11 +54,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         request { client.sessions.save(api.login(apiBody("email" to email.trim(), "senha" to password))) }
     }
 
-    fun prepareRegistration(name: String, email: String, password: String, onContinue: () -> Unit) {
+    fun prepareRegistration(name: String, birthDate: String, email: String, password: String, onContinue: () -> Unit) {
         if (name.trim().length < 2 || email.isBlank() || password.length !in 8..72) {
             message.value = "Informe nome, e-mail e uma senha entre 8 e 72 caracteres."; return
         }
-        registration = Triple(name.trim(), email.trim(), password)
+        val date = BirthDate.parse(birthDate)
+        if (date == null || date >= BirthDate.today()) { message.value = "Informe uma data de nascimento anterior a hoje."; return }
+        registration = Registration(name.trim(), email.trim(), password, birthDateToApi(birthDate))
         onContinue()
     }
 
@@ -64,12 +68,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val draft = registration ?: run { message.value = "Preencha os dados do cadastro novamente."; return }
         request {
             val body = buildJsonObject {
-                put("nome", draft.first); put("email", draft.second); put("senha", draft.third)
+                put("nome", draft.name); put("email", draft.email); put("senha", draft.password); put("dataNasc", draft.birthDate)
                 if (address != null) put("localizacao", Json.encodeToJsonElement(address))
             }
-            api.register(body)
+            if (!draft.created) {
+                api.register(body)
+                registration = draft.copy(created = true)
+            }
+            client.sessions.save(api.login(apiBody("email" to draft.email, "senha" to draft.password)))
             registration = null
-            client.sessions.save(api.login(apiBody("email" to draft.second, "senha" to draft.third)))
         }
     }
 

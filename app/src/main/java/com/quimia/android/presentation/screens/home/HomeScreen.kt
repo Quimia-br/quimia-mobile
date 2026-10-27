@@ -60,6 +60,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Mic
 import com.composables.icons.lucide.MapPin
 import com.quimia.android.utils.AnalyticsLogger
+import com.quimia.android.presentation.components.rememberVoiceInput
 import header.QuimiaSearchBar
 import menuBar.QuimiaMenuBar
 import menuBar.QuimiaMenuBarBackdrop
@@ -105,6 +106,7 @@ fun HomeScreen(
     val tokens = quimiaColorTokens()
     val isPreview = LocalInspectionMode.current
     var searchValue by rememberSaveable { mutableStateOf("") }
+    val voiceInput = rememberVoiceInput { searchValue = it }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     fun unavailable(feature: String) {
@@ -186,7 +188,7 @@ fun HomeScreen(
                     },
                     onClick = {
                         AnalyticsLogger.logInteraction("home", "microphone_tapped")
-                        if (onMicClick != null) onMicClick() else unavailable("Busca por voz")
+                        if (onMicClick != null) onMicClick() else voiceInput()
                     },
                 )
 

@@ -75,11 +75,12 @@ fun QuimiaTheme(
 ) {
     val colorScheme = when {
         highContrast -> DarkColorScheme.copy(
-            primary = HighContrastTokens.primary, onPrimary = Color.White,
+            primary = HighContrastTokens.primary, onPrimary = HighContrastTokens.onPrimary,
             secondary = HighContrastTokens.secondary, onSecondary = Color.White,
-            surface = Color.Black, onSurface = Color.White, background = Color.Black, onBackground = Color.White,
+            surface = HighContrastTokens.surfaceBase, onSurface = Color.White,
+            background = HighContrastTokens.surfaceBackground, onBackground = Color.White,
             surfaceVariant = HighContrastTokens.secondary, onSurfaceVariant = Color.White,
-            outline = Color.White, outlineVariant = Color.White,
+            outline = HighContrastTokens.borderFocus, outlineVariant = HighContrastTokens.borderPrimary,
             error = HighContrastTokens.error, onError = Color.White,
         )
         darkTheme -> DarkColorScheme

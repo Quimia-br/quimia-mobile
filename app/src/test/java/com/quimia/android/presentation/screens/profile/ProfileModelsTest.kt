@@ -62,5 +62,24 @@ class ProfileModelsTest {
         fun contrast(first: Float, second: Float) = (maxOf(first, second) + .05f) / (minOf(first, second) + .05f)
         assertTrue(contrast(HighContrastTokens.onPrimary.luminance(), HighContrastTokens.primary.luminance()) >= 4.5f)
         assertTrue(contrast(HighContrastTokens.textPrimary.luminance(), HighContrastTokens.surfaceBackground.luminance()) >= 7f)
+        assertEquals(theme.DarkTokens.surfaceBackground, HighContrastTokens.surfaceBackground)
+        assertEquals(theme.DarkTokens.primary, HighContrastTokens.primary)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF00DC9D), HighContrastTokens.borderFocus)
+    }
+
+    @Test fun birthDateRequiresTheCompleteRealDate() {
+        listOf("", "20/04/2000", "29/02/2000", "31/12/1990").forEach { assertNull(it, profileBirthDateError(it)) }
+        listOf("20/04", "31/04/2000", "30/02/2000", "00/12/2000", "20/13/2000", "29/02/2001", "abcd", "01/01/2999").forEach {
+            assertNotNull(it, profileBirthDateError(it))
+        }
+        assertEquals("20/04", formatProfileBirthDate("2004"))
+        assertEquals("20/04", formatProfileBirthDate("20/04"))
+        assertEquals("20", formatProfileBirthDate("20"))
+        assertEquals("20/04/2000", formatProfileBirthDate("20042000"))
+    }
+
+    @Test fun validatesEditableEmailWithoutChangingTheAuthenticationScope() {
+        assertNull(profileEmailError("gabrielabenfica@gmail.com.br"))
+        listOf("", "sem-arroba", "a@", "a b@gmail.com", "a@@b.com").forEach { assertNotNull(profileEmailError(it)) }
     }
 }

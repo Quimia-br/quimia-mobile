@@ -1,262 +1,61 @@
 package com.quimia.android.presentation.screens.auth.registration
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import buttons.QuimiaButton
+import com.quimia.android.data.address.normalizedPostalCode
+import com.quimia.android.presentation.components.*
+import com.quimia.android.presentation.screens.auth.*
 import input.QuimiaInput
-import theme.Typography
-import theme.quimiaColorTokens
+import theme.QuimiaTextStyles
 import theme.QuimiaTheme
+import theme.quimiaColorTokens
+import title.QuimiaMainTitle
 
 @Composable
-fun Cadastro2Screen(
-    modifier: Modifier = Modifier,
-    onBack: () -> Unit = {},
-    onSkip: () -> Unit = {},
-    onEnter: (String, String, String, String, String, String) -> Unit = { _, _, _, _, _, _ -> }
-) {
-    val tokens = quimiaColorTokens(forceDark = false)
-    var cep by remember { mutableStateOf("") }
-    var uf by remember { mutableStateOf("") }
-    var city by remember { mutableStateOf("") }
-    var neighborhood by remember { mutableStateOf("") }
-    var number by remember { mutableStateOf("") }
-    var complement by remember { mutableStateOf("") }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(50.dp))
-            .background(tokens.surfaceBackground)
-            .padding(start = 20.dp, end = 20.dp, bottom = 38.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 72.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(tokens.secondary)
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "‹",
-                color = tokens.textPrimary,
-                fontSize = 24.sp,
-                lineHeight = 24.sp
-            )
+fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSkip: () -> Unit = {}, onEnter: (com.quimia.android.presentation.screens.proximity.NearbyAddress) -> Unit = {}) {
+    var cep by rememberSaveable { mutableStateOf("") }
+    var number by rememberSaveable { mutableStateOf("") }
+    var complement by rememberSaveable { mutableStateOf("") }
+    val lookup = rememberPostalLookup(cep)
+    val address = lookup.state.address
+    val tokens = quimiaColorTokens()
+    AuthScreenLayout(modifier, onBack = onBack, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footer = {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            QuimiaButton(text = "Pular", onClick = onSkip, modifier = Modifier.weight(1f).height(58.dp),
+                containerColor = tokens.secondary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
+            AuthPrimaryButton("Entrar", {
+                val resolved = address ?: return@AuthPrimaryButton
+                onEnter(com.quimia.android.presentation.screens.proximity.NearbyAddress(cep, resolved.state, resolved.city,
+                    resolved.district, resolved.street, number, complement))
+            }, modifier = Modifier.weight(1f),
+                enabled = lookup.state.ready && number.isNotBlank())
         }
-
-        Spacer(modifier = Modifier.height(61.dp))
-
-        Text(
-            text = "Cadastre seu endereço\nabaixo",
-            style = Typography.titleLarge.copy(
-                fontSize = 19.sp,
-                lineHeight = 22.sp,
-                fontWeight = FontWeight.Medium
-            ),
-            color = tokens.textPrimary
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        QuimiaInput(
-            value = cep,
-            onValueChange = { cep = it },
-            label = "CEP",
-            placeholder = "0000-00",
-            textStyle = Typography.bodySmall,
-            containerColor = tokens.secondary,
-            primaryTextColor = tokens.textPrimary,
-            secondaryTextColor = tokens.textSecondary,
-            radius = 1000,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            UfField(
-                modifier = Modifier.weight(0.38f),
-                value = uf, onValueChange = { uf = it.uppercase().take(2) },
-                textColor = tokens.textPrimary,
-                containerColor = tokens.secondary
-            )
-            Box(modifier = Modifier.weight(1f)) {
-                QuimiaInput(
-                    value = city,
-                    onValueChange = { city = it },
-                    label = "Cidade",
-                    placeholder = "Osasco",
-                    textStyle = Typography.bodySmall,
-                    containerColor = tokens.secondary,
-                    primaryTextColor = tokens.textPrimary,
-                    secondaryTextColor = tokens.textSecondary,
-                    radius = 1000,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                )
+    }) {
+        QuimiaMainTitle(title = "Cadastre seu endereço\nabaixo")
+        Spacer(Modifier.height(31.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            androidx.compose.material3.Text(com.quimia.android.data.project.ApiContractGaps.City,
+                style = QuimiaTextStyles.medium12, color = tokens.textSecondary)
+            QuimiaInput(cep, { cep = normalizedPostalCode(it) }, label = "CEP", placeholder = "00000-000",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            if (lookup.state.loading || lookup.state.error != null) PostalLookupNotice(lookup)
+            PostalCityFields(address)
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                Box(Modifier.weight(1.9f)) { PostalReadOnlyInput(address?.district.orEmpty(), "Bairro") }
+                Box(Modifier.weight(1f)) { QuimiaInput(number, { number = it }, label = "Nº", placeholder = "100", showClearButton = false,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)) }
             }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Box(modifier = Modifier.weight(1.4f)) {
-                QuimiaInput(
-                    value = neighborhood,
-                    onValueChange = { neighborhood = it },
-                    label = "Bairro",
-                    placeholder = "Parque Continental",
-                    textStyle = Typography.bodySmall,
-                    containerColor = tokens.secondary,
-                    primaryTextColor = tokens.textPrimary,
-                    secondaryTextColor = tokens.textSecondary,
-                    radius = 1000,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                )
-            }
-            Box(modifier = Modifier.weight(0.6f)) {
-                QuimiaInput(
-                    value = number,
-                    onValueChange = { number = it },
-                    label = "Nº",
-                    placeholder = "100",
-                    textStyle = Typography.bodySmall,
-                    containerColor = tokens.secondary,
-                    primaryTextColor = tokens.textPrimary,
-                    secondaryTextColor = tokens.textSecondary,
-                    radius = 1000,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        QuimiaInput(
-            value = complement,
-            onValueChange = { complement = it },
-            label = "Complemento",
-            placeholder = "Apto 1234",
-            textStyle = Typography.bodySmall,
-            containerColor = tokens.secondary,
-            primaryTextColor = tokens.textPrimary,
-            secondaryTextColor = tokens.textSecondary,
-            radius = 1000,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            QuimiaButton(
-                text = "Pular",
-                modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp),
-                containerColor = tokens.secondary,
-                textColor = tokens.textPrimary,
-                onClick = onSkip,
-                iconSize = 20,
-                espacamento = 0,
-                textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
-            )
-            QuimiaButton(
-                text = "Entrar",
-                modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp),
-                containerColor = tokens.primary,
-                textColor = tokens.onPrimary,
-                onClick = { onEnter(cep, uf, city, neighborhood, number, complement) },
-                iconSize = 20,
-                espacamento = 0,
-                textStyle = Typography.titleMedium.copy(fontWeight = FontWeight.Medium)
-            )
-        }
-    }
-}
-
-@Composable
-private fun UfField(
-    value: String, onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    textColor: Color,
-    containerColor: Color
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = "UF",
-            style = Typography.bodySmall,
-            color = textColor,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp)
-                .clip(RoundedCornerShape(1000.dp))
-                .background(containerColor),
-            contentAlignment = Alignment.Center
-        ) {
-            QuimiaInput(value = value, onValueChange = onValueChange, placeholder = "UF", trailingIcon = null,
-                textStyle = Typography.bodySmall, containerColor = containerColor, primaryTextColor = textColor)
+            QuimiaInput(complement, { complement = it }, label = "Complemento", placeholder = "Apto 1234")
         }
     }
 }
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
 @Composable
-private fun Cadastro2ScreenPreview() {
-    QuimiaTheme {
-        Cadastro2Screen()
-    }
-}
+private fun Cadastro2ScreenPreview() { QuimiaTheme { Cadastro2Screen() } }

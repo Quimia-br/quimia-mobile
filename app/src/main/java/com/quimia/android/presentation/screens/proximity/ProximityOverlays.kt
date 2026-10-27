@@ -35,10 +35,14 @@ import com.quimia.android.R
 import com.quimia.android.presentation.screens.catalog.CatalogModalScrimColor
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import input.QuimiaInput
+import com.quimia.android.data.address.PostalAddress
+import com.quimia.android.data.address.normalizedPostalCode
+import com.quimia.android.presentation.components.*
 import listItem.QuimiaListItem
 import states.QuimiaEmptyState
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
 import toast.QuimiaToast
 import toast.QuimiaToastType
 
@@ -60,7 +64,7 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
             ProximityScreen(initialHeaderExpanded = false)
             Box(Modifier.fillMaxSize().background(CatalogModalScrimColor), contentAlignment = Alignment.BottomCenter) {
                 Surface(Modifier.statusBarsPadding().padding(horizontal = 17.dp).widthIn(max = 560.dp).fillMaxWidth(),
-                    shape = RoundedCornerShape(40.dp), color = tokens.secondary, content = sheetContent)
+                    shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder(), content = sheetContent)
             }
         }
     } else {
@@ -69,7 +73,10 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
             modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp),
             sheetMaxWidth = 560.dp, shape = RoundedCornerShape(40.dp), containerColor = tokens.secondary,
             scrimColor = CatalogModalScrimColor, dragHandle = null,
-        ) { HideSystemNavigationBar(); sheetContent() }
+        ) {
+            HideSystemNavigationBar()
+            Surface(shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder(), content = sheetContent)
+        }
     }
 }
 
@@ -92,7 +99,7 @@ internal fun NearbySavedPointsSheet(ids: List<Int>, onDismiss: () -> Unit, onSel
                 fillAvailableSpace = false, title = "Nenhum ponto salvo",
                 description = "Selecione um ponto no mapa de demonstração e toque em Salvar.", icon = Lucide.MapPin,
             ) else points.forEach { point ->
-                Surface(shape = RoundedCornerShape(32.dp), color = tokens.surfaceBase) {
+                Surface(shape = RoundedCornerShape(32.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         QuimiaListItem(
                             title = point.name, subtitle = point.address, titleMaxLines = 1, subtitleMaxLines = 1,
@@ -135,14 +142,12 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
     val seed = initialAddress ?: if (preview) NearbyAddress("04001000", "SP", "São Paulo", "Vila Mariana", "", "100", "")
         else NearbyAddress("", "", "", "", "", "", "")
     var postalCode by rememberSaveable { mutableStateOf(seed.postalCode) }
-    var state by rememberSaveable { mutableStateOf(seed.state) }
-    var city by rememberSaveable { mutableStateOf(seed.city) }
-    var street by rememberSaveable { mutableStateOf(seed.street) }
-    var district by rememberSaveable { mutableStateOf(seed.district) }
     var number by rememberSaveable { mutableStateOf(seed.number) }
     var complement by rememberSaveable { mutableStateOf(seed.complement) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
-    var statesVisible by rememberSaveable { mutableStateOf(false) }
+    val lookup = rememberPostalLookup(postalCode, previewAddress = if (preview)
+        PostalAddress(seed.postalCode, seed.state, seed.city, seed.district, seed.street) else null)
+    val address = lookup.state.address
     val tokens = quimiaColorTokens()
     Surface(Modifier.fillMaxSize(), color = tokens.surfaceBackground) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().statusBarsPadding().imePadding()) {
@@ -157,33 +162,14 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 Spacer(Modifier.height(31.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     if (error != null) QuimiaToast(message = error.orEmpty(), type = QuimiaToastType.Error, onDismiss = { error = null })
-                    QuimiaInput(value = street, onValueChange = { street = it; error = null }, label = "Rua",
-                        trailingIcon = if (street.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { street = "" })
-                    QuimiaInput(value = postalCode, onValueChange = { postalCode = it.filter(Char::isDigit).take(8); error = null },
+                    QuimiaInput(value = postalCode, onValueChange = { postalCode = normalizedPostalCode(it); error = null },
                         label = "CEP", placeholder = "00000000", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         trailingIcon = if (postalCode.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { postalCode = "" })
-                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Column(Modifier.weight(.26f)) {
-                            Box {
-                                QuimiaInput(value = state, onValueChange = { state = it.filter(Char::isLetter).uppercase().take(2); error = null }, label = "UF",
-                                    trailingIcon = Lucide.ChevronDown, onTrailingIconClick = { statesVisible = true },
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                                    showTrailingIconWhenEmpty = true)
-                                DropdownMenu(expanded = statesVisible, onDismissRequest = { statesVisible = false }) {
-                                    nearbyStates.forEach { uf -> DropdownMenuItem(text = { Text(uf, style = QuimiaTextStyles.medium16) },
-                                        onClick = { state = uf; error = null; statesVisible = false }) }
-                                }
-                            }
-                        }
-                        Column(Modifier.weight(.74f)) {
-                            QuimiaInput(value = city, onValueChange = { city = it; error = null }, label = "Cidade",
-                                trailingIcon = if (city.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { city = "" })
-                        }
-                    }
+                    if (lookup.state.loading || lookup.state.error != null) PostalLookupNotice(lookup)
+                    PostalCityFields(address)
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         Column(Modifier.weight(.65f)) {
-                            QuimiaInput(value = district, onValueChange = { district = it; error = null }, label = "Bairro",
-                                trailingIcon = if (district.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { district = "" })
+                            PostalReadOnlyInput(address?.district.orEmpty(), "Bairro")
                         }
                         Column(Modifier.weight(.35f)) {
                             QuimiaInput(value = number, onValueChange = { number = it; error = null }, label = "Nº",
@@ -199,8 +185,9 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Cancelar", textStyle = QuimiaTextStyles.medium16,
                     iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = onDismiss)
                 QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Salvar", textStyle = QuimiaTextStyles.medium16,
-                    iconSize = 0, espacamento = 0, onClick = {
-                        val value = NearbyAddress(postalCode, state, city.trim(), district.trim(), street.trim(), number.trim(), complement.trim())
+                    iconSize = 0, espacamento = 0, enabled = lookup.state.ready && number.isNotBlank(), onClick = {
+                        val resolved = address ?: return@QuimiaButton
+                        val value = NearbyAddress(postalCode, resolved.state, resolved.city, resolved.district, resolved.street, number.trim(), complement.trim())
                         error = value.validationError()
                         if (error == null) onSave(value)
                     })
