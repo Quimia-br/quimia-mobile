@@ -81,6 +81,9 @@ import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 import title.QuimiaSectionTitle
 import kotlinx.coroutines.launch
+import com.quimia.android.presentation.screens.mixtures.MixtureResult
+import com.quimia.android.presentation.screens.mixtures.MixtureHistoryCard
+import com.quimia.android.presentation.screens.mixtures.previewMixtureHistory
 
 @Composable
 fun HomeScreen(
@@ -97,7 +100,8 @@ fun HomeScreen(
     onMixClick: (() -> Unit)? = null,
     onMenuItemSelected: ((Int) -> Unit)? = null,
     onAiClick: (() -> Unit)? = null,
-    showMockHistory: Boolean = false,
+    mixtureHistory: List<MixtureResult> = emptyList(),
+    onMixtureHistoryClick: (MixtureResult) -> Unit = {},
 ) {
     HomeSystemBarsEffect()
 
@@ -217,14 +221,15 @@ fun HomeScreen(
                     verticalPadding = 12.dp,
                 )
 
-                if (showMockHistory) {
-                    HomeMockMixtureCard(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                        onClick = {
-                            AnalyticsLogger.logInteraction("home", "mixture_history_tapped")
-                            if (onMixturesClick != null) onMixturesClick() else unavailable("Detalhes da mistura")
-                        },
-                    )
+                if (mixtureHistory.isNotEmpty()) {
+                    mixtureHistory.forEach { result ->
+                        MixtureHistoryCard(result,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp),
+                            onClick = {
+                                AnalyticsLogger.logInteraction("home", "mixture_history_tapped")
+                                onMixtureHistoryClick(result)
+                            })
+                    }
                 } else QuimiaEmptyState(
                     modifier = Modifier.fillMaxWidth(),
                     fillAvailableSpace = false,
@@ -402,62 +407,6 @@ private fun HomeQuickActions(
     }
 }
 
-@Composable
-private fun HomeMockMixtureCard(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    val tokens = quimiaColorTokens()
-    QuimiaCard(
-        modifier = modifier,
-        title = "Limpador Cozinha Squeeze & Lava-Roupas Líquido Omo",
-        description = null,
-        primaryActionLabel = null,
-        secondaryActionLabel = null,
-        endIcon = null,
-        contentPadding = 24.dp,
-        sectionSpacing = 14.dp,
-        actionHeight = 42.dp,
-        titleTextStyle = Typography.bodyLarge,
-        descriptionTextStyle = Typography.bodySmall,
-        actionTextStyle = Typography.bodySmall,
-        onPrimaryActionClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                image.QuimiaImage(
-                    painter = painterResource(R.drawable.catalog_mr_musculo),
-                    contentDescription = "Limpador multiuso",
-                    modifier = Modifier.weight(1f).height(124.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                    backgroundColor = tokens.surfaceBase,
-                )
-                image.QuimiaImage(
-                    painter = painterResource(R.drawable.catalog_omo),
-                    contentDescription = "Lava-roupas líquido",
-                    modifier = Modifier.weight(1f).height(124.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                    backgroundColor = tokens.surfaceBase,
-                )
-            }
-            Box(Modifier.weight(1f).height(124.dp)
-                .background(tokens.surfaceBackground, RoundedCornerShape(32.dp)),
-                contentAlignment = Alignment.Center) {
-                QuimiaShapeIcon(size = 54.dp, icon = Lucide.Skull,
-                    containerColor = tokens.error, iconColor = tokens.white)
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        QuimiaButton(text = "Ver mistura", modifier = Modifier.fillMaxWidth().height(44.dp),
-            containerColor = tokens.secondary, textColor = tokens.textPrimary,
-            textStyle = Typography.bodyLarge, iconSize = 0, espacamento = 0, onClick = onClick)
-    }
-}
-
 @Preview(name = "Reference 360", showBackground = true, showSystemUi = true, widthDp = 360, heightDp = 900)
 @Preview(name = "Android 420", showBackground = true, showSystemUi = true, widthDp = 420, heightDp = 911)
 @Preview(name = "Compact 320", showBackground = true, showSystemUi = true, widthDp = 320, heightDp = 640)
@@ -481,6 +430,6 @@ private fun HomeScreenPreview() {
 @Composable
 private fun HomeHistoryPreview() {
     QuimiaTheme(darkTheme = false) {
-        HomeScreen(avatarInitials = "G", showMockHistory = true)
+        HomeScreen(avatarInitials = "G", mixtureHistory = previewMixtureHistory())
     }
 }

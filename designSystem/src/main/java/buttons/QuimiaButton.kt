@@ -37,6 +37,7 @@ import theme.quimiaColorTokens
 import theme.quimiaContrastBorder
 import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
+import theme.actionContentColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,9 +68,9 @@ fun QuimiaButton(
     val tokens = quimiaColorTokens()
     val actualContainer = containerColor ?: tokens.primary
     val actualIndicator = indicatorColor ?: tokens.textSecondary
-    val defaultContentColor = if (quimiaHighContrastEnabled() && actualContainer == tokens.primary) tokens.onPrimary else tokens.textPrimary
-    val actualTextColor = textColor ?: defaultContentColor
-    val actualIconColor = if (enabled) iconColor ?: defaultContentColor else tokens.foregroundDisabled
+    val actualTextColor = actionContentColor(actualContainer, textColor, tokens)
+    val disabledContentColor = actionContentColor(actualContainer, tokens.foregroundDisabled, tokens)
+    val actualIconColor = if (enabled) actionContentColor(actualContainer, iconColor, tokens) else disabledContentColor
 
     Button(
         modifier = modifier,
@@ -79,7 +80,7 @@ fun QuimiaButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = actualContainer,
             disabledContainerColor = if (actualContainer == tokens.primary) tokens.primaryDisabled else tokens.surfaceDisabled,
-            disabledContentColor = tokens.foregroundDisabled,
+            disabledContentColor = disabledContentColor,
         ),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(curvaCirculo.dp),
         contentPadding = contentPadding,
@@ -109,7 +110,7 @@ fun QuimiaButton(
                 Spacer(modifier = Modifier.width(espacamento.dp))
             }
             val resolvedTextStyle = textStyle.copy(
-                color = if (enabled) actualTextColor else tokens.foregroundDisabled,
+                color = if (enabled) actualTextColor else disabledContentColor,
                 fontFamily = fontFamily ?: textStyle.fontFamily,
                 fontWeight = fontWeight ?: textStyle.fontWeight
             )

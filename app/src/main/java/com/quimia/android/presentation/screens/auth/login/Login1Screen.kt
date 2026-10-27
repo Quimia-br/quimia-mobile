@@ -23,6 +23,7 @@ import title.QuimiaMainTitle
 fun Login1Screen(
     modifier: Modifier = Modifier, onContinue: (String, String) -> Unit = { _, _ -> },
     onCreateAccount: () -> Unit = {}, onForgotPassword: () -> Unit = {},
+    onGoogleClick: () -> Unit = {},
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -44,7 +45,7 @@ fun Login1Screen(
         Text("Esqueci a senha", color = quimiaColorTokens().foregroundPrimary, style = QuimiaTextStyles.medium16,
             modifier = Modifier.clickable(role = Role.Button, onClick = onForgotPassword).padding(top = 8.dp))
         Spacer(Modifier.height(56.dp))
-        AuthSocialButtons { emailFocus.requestFocus() }
+        AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
     }
 }
 

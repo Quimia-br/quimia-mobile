@@ -18,6 +18,7 @@ import theme.quimiaColorTokens
 import theme.quimiaContrastOutline
 import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
+import theme.actionContentColor
 
 enum class QuimiaIconButtonSize(
     val buttonSize: Dp,
@@ -57,7 +58,7 @@ fun QuimiaIconButton(
     val tokens = quimiaColorTokens()
 
     val actualContainerColor = containerColor ?: tokens.primary
-    val actualIconColor = iconColor ?: if (quimiaHighContrastEnabled() && actualContainerColor == tokens.primary) tokens.onPrimary else tokens.textPrimary
+    val actualIconColor = actionContentColor(actualContainerColor, iconColor, tokens)
 
     IconButton(
         onClick = onClick,

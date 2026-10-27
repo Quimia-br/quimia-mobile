@@ -19,6 +19,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.AsyncImagePainter
 import androidx.compose.material3.AlertDialog
@@ -56,6 +58,19 @@ import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
 import com.quimia.android.presentation.screens.kemi.KemiScreen
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.quimia.android.presentation.screens.auth.AuthDestination
+import com.quimia.android.presentation.screens.mixtures.*
+import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
+import com.quimia.android.presentation.screens.shelf.sampleShelfSubstances
+import kotlinx.coroutines.delay
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import com.quimia.android.data.auth.GoogleSignInHelper
+import com.quimia.android.presentation.screens.auth.registration.GoogleDetailsScreen
+import com.quimia.android.presentation.screens.proximity.NearbyAddress
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,6 +111,10 @@ class MainActivity : ComponentActivity() {
 private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (ProfilePreferences) -> Unit) {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val googleDraft by authViewModel.googleOnboarding.collectAsStateWithLifecycle()
+    val authBusy by authViewModel.busy.collectAsStateWithLifecycle()
+    val authMessage by authViewModel.message.collectAsStateWithLifecycle()
+    var choosingGoogle by rememberSaveable { mutableStateOf(false) }
     var authRouteName by rememberSaveable { mutableStateOf(AuthDestination.Welcome.name) }
     val authDestination = AuthDestination.valueOf(authRouteName)
     val authScreens = rememberSaveableStateHolder()
@@ -109,11 +128,39 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val sessionUid = (authState as? AuthResult.Success)?.uid
     val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
     val context = LocalContext.current
+    val authScope = rememberCoroutineScope()
+    val google = remember(context) { GoogleSignInHelper(context) }
+    val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        choosingGoogle = false
+        if (result.resultCode == Activity.RESULT_OK) {
+            try {
+                val token = google.accountFromResult(result.data)?.idToken
+                    ?: error("Não foi possível confirmar sua conta Google. Tente novamente.")
+                authViewModel.loginWithGoogle(token)
+            } catch (error: Exception) { authNotice = error.message ?: "Não foi possível entrar com Google. Tente novamente." }
+        }
+    }
+    val onGoogle: () -> Unit = {
+        if (!choosingGoogle && !authBusy) {
+            choosingGoogle = true
+            authScope.launch {
+                try { googleLauncher.launch(google.chooseAccountIntent())
+                } catch (cancelled: CancellationException) { choosingGoogle = false; throw cancelled
+                } catch (error: Exception) { choosingGoogle = false; authNotice = error.message ?: "Não foi possível abrir o acesso Google." }
+            }
+        }
+    }
+    LaunchedEffect(googleDraft?.uid, googleDraft?.addressStep) {
+        googleDraft?.let { navigateAuth(it.destination) }
+    }
+    LaunchedEffect(authMessage) {
+        authMessage?.let { authNotice = it; authViewModel.message.value = null }
+    }
     val profileStore = remember(sessionUid, sessionEmail) { LocalProfileStore(context, sessionUid.orEmpty(), sessionEmail) }
     var displayName by rememberSaveable(sessionUid, sessionEmail) {
         mutableStateOf(profileStore.displayName() ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
     }
-    var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri()) }
+    var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri() ?: authViewModel.providerPhotoUrl) }
     var profileEmail by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.email() ?: sessionEmail) }
     var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.birthDate()) }
     val photoPainter = rememberAsyncImagePainter(photoUri)
@@ -125,9 +172,30 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var roomToOpenId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
-    var referenceAddress by rememberSaveable(sessionUid) { mutableStateOf("Defina seu endereço de referência") }
-    var referenceAddressFields by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
+    val storedGoogleAddress = remember(sessionUid, sessionEmail) { authViewModel.savedAddress(sessionUid.orEmpty(), sessionEmail) }
+    var referenceAddress by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(storedGoogleAddress.takeIf { it.size == 7 }?.let {
+        NearbyAddress(it[0], it[1], it[2], it[3], it[4], it[5], it[6]).formatted()
+    } ?: "Defina seu endereço de referência") }
+    var referenceAddressFields by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(storedGoogleAddress) }
     var showKemi by rememberSaveable(sessionUid) { mutableStateOf(false) }
+    var showMixtures by rememberSaveable(sessionUid) { mutableStateOf(false) }
+    var openMixtureHistory by rememberSaveable(sessionUid) { mutableStateOf(false) }
+    var mixtureHistoryFilter by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
+    var demoMixtureIndex by rememberSaveable(sessionUid) { mutableStateOf(0) }
+    val mixtureStore = remember(sessionUid, sessionEmail) { MixtureHistoryStore(context, sessionUid.orEmpty(), sessionEmail) }
+    val mixtures = rememberSaveable(sessionUid, sessionEmail, saver = MixtureControllerSaver) {
+        MixtureController(MixtureState(history = mixtureStore.load()))
+    }
+    LaunchedEffect(mixtures.state.history) { if (sessionUid != null) mixtureStore.save(mixtures.state.history) }
+    fun openMixtures(id: String? = null, history: Boolean = false) {
+        mixtures.cancel(); mixtures.closeResult()
+        val ingredient = sampleCatalogProducts.firstOrNull { it.id == id }?.mixtureIngredient()
+            ?: sampleShelfSubstances.firstOrNull { it.id == id }?.let { MixtureIngredient(it.id, it.name, MixtureIngredientKind.Substance) }
+        if (ingredient != null && !history) mixtures.startWith(ingredient)
+        mixtureHistoryFilter = if (history) id else null
+        openMixtureHistory = history
+        showMixtures = true
+    }
     val kemiController = rememberSaveable(sessionUid, saver = KemiControllerSaver) { KemiController() }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
@@ -137,6 +205,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
 
     val currentScreen = when {
+        authState is AuthResult.Success && showMixtures -> "mixtures"
         authState is AuthResult.Success && showKemi -> "kemi"
         authState is AuthResult.Success && showProfile -> "profile"
         authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; 4 -> "rooms"; else -> "home" }
@@ -146,18 +215,22 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && !showKemi && (showProfile || selectedMainTab in 2..4)) {
+    BackHandler(enabled = authState is AuthResult.Success && !showKemi && !showMixtures && (showProfile || selectedMainTab in 2..4)) {
         if (showProfile) showProfile = false else selectedMainTab = 0
     }
 
     BackHandler(enabled = authState !is AuthResult.Success && authDestination != AuthDestination.Welcome) {
-        navigateAuth(authDestination.back())
+        if (!authBusy) when (authDestination) {
+            AuthDestination.GoogleDetails -> { authViewModel.cancelGoogle(); navigateAuth(AuthDestination.Login) }
+            AuthDestination.GoogleAddress -> authViewModel.backGoogle()
+            else -> navigateAuth(authDestination.back())
+        }
     }
 
     when (authState) {
         is AuthResult.Success -> {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.fillMaxSize().then(if (showKemi) Modifier.clearAndSetSemantics { } else Modifier)) {
+                Box(Modifier.fillMaxSize().then(if (showKemi || showMixtures) Modifier.clearAndSetSemantics { } else Modifier)) {
                     if (showProfile) ProfileScreen(
                         displayName = displayName, email = profileEmail, preferences = preferences, birthDate = birthDate,
                         onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
@@ -168,7 +241,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
                         },
                         onLogout = {
-                            showProfile = false; selectedMainTab = 0
+                            showProfile = false; showMixtures = false; selectedMainTab = 0
                             navigateAuth(AuthDestination.Welcome)
                             AuthDestination.entries.forEach { authScreens.removeState(it.name) }
                             recoveryEmail = ""; authNotice = null
@@ -189,8 +262,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             onMenuItemSelected = onMainTabSelected,
                             onAddProduct = { selectedMainTab = 1 },
                             onAiClick = { showKemi = true },
-                            onMixProduct = { unavailableTab = "Misturas" },
-                            onViewMixtures = { unavailableTab = "Misturas" },
+                            onMixProduct = { openMixtures(it) },
+                            onViewMixtures = { openMixtures(it, history = true) },
                             onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
                             rooms = rooms,
                             onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
@@ -219,9 +292,26 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             onFindDropOffClick = { selectedMainTab = 3 },
                             onShelfClick = { selectedMainTab = 2 },
                             onAiClick = { showKemi = true },
+                            onMixturesClick = { openMixtures() }, onMixClick = { openMixtures() },
+                            mixtureHistory = mixtures.state.history,
+                            onMixtureHistoryClick = { result -> openMixtures(history = true); mixtures.openResult(result.id) },
                         )
                     }
                 }
+                if (showMixtures) MixturesScreen(
+                    controller = mixtures, savedProductIds = savedProductIds,
+                    onClose = { showMixtures = false },
+                    onOpenCatalog = { showMixtures = false; selectedMainTab = 1 },
+                    initialHistory = openMixtureHistory, historyProductId = mixtureHistoryFilter,
+                    demonstration = true,
+                    analyzer = { request ->
+                        delay(800)
+                        val scenarios = listOf(MixtureRisk.Dangerous, MixtureRisk.Safe, MixtureRisk.Caution, MixtureRisk.Extreme)
+                        val risk = scenarios[demoMixtureIndex.mod(scenarios.size)]
+                        demoMixtureIndex = (demoMixtureIndex + 1).mod(scenarios.size)
+                        MixtureReply.Evaluated(MixtureResult(request.id, request.ingredients, risk, System.currentTimeMillis(), demonstration = true))
+                    },
+                )
                 if (showKemi) {
                     KemiScreen(
                         controller = kemiController,
@@ -248,21 +338,31 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
             }
         }
         else -> {
-            authScreens.SaveableStateProvider(authDestination.name) {
+            authScreens.SaveableStateProvider(authDestination.name + if (authDestination == AuthDestination.GoogleDetails || authDestination == AuthDestination.GoogleAddress) googleDraft?.uid.orEmpty() else "") {
                 when (authDestination) {
                     AuthDestination.Welcome -> LoginHomeScreen(onStart = { navigateAuth(AuthDestination.Login) })
                     AuthDestination.Login -> Login1Screen(
-                        onContinue = { email, password -> authViewModel.loginWithEmail(email, password) },
+                        onContinue = { email, password -> if (!choosingGoogle && !authBusy) authViewModel.loginWithEmail(email, password) },
                         onCreateAccount = { navigateAuth(AuthDestination.Registration) },
                         onForgotPassword = { navigateAuth(AuthDestination.RecoveryEmail) },
+                        onGoogleClick = onGoogle,
                     )
                     AuthDestination.Registration -> Cadastro1Screen(
                         onContinue = { navigateAuth(AuthDestination.Address) },
                         onLogin = { navigateAuth(AuthDestination.Login) },
+                        onGoogleClick = onGoogle,
                     )
                     AuthDestination.Address -> Cadastro2Screen(
                         onBack = { navigateAuth(AuthDestination.Registration) },
                         onSkip = registrationUnavailable, onEnter = registrationUnavailable,
+                    )
+                    AuthDestination.GoogleDetails -> googleDraft?.let { draft -> GoogleDetailsScreen(
+                        profile = draft, onChange = authViewModel::editGoogle, onContinue = authViewModel::continueGoogle,
+                        onLogin = { authViewModel.cancelGoogle(); navigateAuth(AuthDestination.Login) },
+                    ) }
+                    AuthDestination.GoogleAddress -> Cadastro2Screen(
+                        onBack = authViewModel::backGoogle, onSkip = { authViewModel.finishGoogle() },
+                        onAddressContinue = { authViewModel.finishGoogle(it) },
                     )
                     AuthDestination.RecoveryEmail -> LoginPass1Screen(
                         onBack = { navigateAuth(AuthDestination.Login) },
@@ -287,6 +387,15 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
             }
         }
     }
+    if (authBusy) androidx.compose.material3.AlertDialog(
+        onDismissRequest = {}, confirmButton = {},
+        properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+        text = { androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
+            androidx.compose.material3.CircularProgressIndicator(Modifier.size(24.dp))
+            Text(if (googleDraft == null) "Entrando com Google…" else "Salvando seus dados…")
+        } },
+    )
     authNotice?.let { notice ->
         AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
             text = { Text(notice) }, confirmButton = { TextButton(onClick = { authNotice = null }) { Text("Entendi") } })

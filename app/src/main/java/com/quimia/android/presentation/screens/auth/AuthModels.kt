@@ -8,7 +8,7 @@ enum class AuthDestination(val screenName: String) {
     Welcome("login_welcome"), Login("login"), Registration("registration"),
     Address("registration_details"), RecoveryEmail("password_recovery_email"),
     RecoveryCode("password_recovery_code"), NewPassword("password_recovery_new_password"),
-    RecoverySuccess("password_recovery_success");
+    RecoverySuccess("password_recovery_success"), GoogleDetails("google_details"), GoogleAddress("google_address");
 
     fun back(): AuthDestination = when (this) {
         Welcome, Login -> Welcome
@@ -16,6 +16,8 @@ enum class AuthDestination(val screenName: String) {
         Address -> Registration
         RecoveryCode -> RecoveryEmail
         NewPassword -> RecoveryCode
+        GoogleDetails -> Login
+        GoogleAddress -> GoogleDetails
     }
 }
 

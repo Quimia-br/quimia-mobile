@@ -5,6 +5,7 @@ import theme.QuimiaTextStyles
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -20,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
@@ -28,6 +30,7 @@ import theme.RadiusFull
 import theme.quimiaColorTokens
 import theme.quimiaContrastOutline
 import theme.quimiaHighContrastEnabled
+import theme.actionContentColor
 
 @Composable
 fun QuimiaChip(
@@ -38,6 +41,8 @@ fun QuimiaChip(
     enabled: Boolean = true,
     showSelectedIcon: Boolean = true,
     centerContent: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+    labelTextStyle: TextStyle = QuimiaTextStyles.medium15,
 ) {
     val tokens = quimiaColorTokens()
     val containerColor = when {
@@ -47,7 +52,7 @@ fun QuimiaChip(
     }
     val contentColor = when {
         !enabled -> tokens.foregroundDisabled
-        selected && quimiaHighContrastEnabled() -> tokens.onPrimary
+        selected -> actionContentColor(tokens.primary, null, tokens)
         else -> tokens.foregroundPrimary
     }
 
@@ -59,11 +64,11 @@ fun QuimiaChip(
             .background(containerColor)
             .quimiaContrastOutline(RoundedCornerShape(RadiusFull.dp))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(5.dp, if (centerContent) Alignment.CenterHorizontally else Alignment.Start),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = label, style = QuimiaTextStyles.medium15, color = contentColor, maxLines = 1)
+        Text(text = label, style = labelTextStyle, color = contentColor, maxLines = 1)
         if (selected && showSelectedIcon) {
             Icon(
                 imageVector = Lucide.X,

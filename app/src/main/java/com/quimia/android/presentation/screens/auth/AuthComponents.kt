@@ -87,19 +87,13 @@ internal fun AuthPasswordInput(value: String, onValueChange: (String) -> Unit, l
 }
 
 @Composable
-internal fun AuthSocialButtons(onEmailClick: () -> Unit) {
+internal fun AuthSocialButtons(onGoogleClick: () -> Unit = {}, onEmailClick: () -> Unit) {
     val tokens = quimiaColorTokens()
-    var unavailable by remember { mutableStateOf<String?>(null) }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(27.dp, Alignment.CenterHorizontally)) {
-        listOf("Google" to R.drawable.social_google, "Microsoft" to R.drawable.social_microsoft).forEach { (provider, drawable) ->
-            QuimiaIconButton(icon = Lucide.Mail, iconPainter = painterResource(drawable), iconColor = tokens.foregroundPrimary,
-                containerColor = tokens.secondary, iconSize = if (provider == "Google") 17.dp else 20.dp,
-                contentDescription = "Continuar com $provider", onClick = { unavailable = provider })
-        }
+        QuimiaIconButton(icon = Lucide.Mail, iconPainter = painterResource(R.drawable.social_google), iconColor = tokens.foregroundPrimary,
+            containerColor = tokens.secondary, iconSize = 17.dp,
+            contentDescription = "Continuar com Google", onClick = onGoogleClick)
         QuimiaIconButton(icon = Lucide.Mail, iconPainter = painterResource(R.drawable.social_mail), iconColor = tokens.foregroundPrimary,
             containerColor = tokens.secondary, iconSize = 20.dp, contentDescription = "Continuar com e-mail", onClick = onEmailClick)
     }
-    if (unavailable != null) AlertDialog(onDismissRequest = { unavailable = null }, title = { Text("Login com $unavailable") },
-        text = { Text("Este acesso ainda não está conectado nesta branch de telas. A integração de autenticação permanece separada.") },
-        confirmButton = { TextButton(onClick = { unavailable = null }) { Text("Entendi") } })
 }

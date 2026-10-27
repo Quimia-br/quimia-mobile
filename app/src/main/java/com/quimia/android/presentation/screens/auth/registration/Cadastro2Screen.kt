@@ -16,9 +16,11 @@ import theme.QuimiaTextStyles
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
 import title.QuimiaMainTitle
+import com.quimia.android.presentation.screens.proximity.NearbyAddress
 
 @Composable
-fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSkip: () -> Unit = {}, onEnter: () -> Unit = {}) {
+fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSkip: () -> Unit = {}, onEnter: () -> Unit = {},
+    onAddressContinue: ((NearbyAddress) -> Unit)? = null) {
     var cep by rememberSaveable { mutableStateOf("") }
     var number by rememberSaveable { mutableStateOf("") }
     var complement by rememberSaveable { mutableStateOf("") }
@@ -29,7 +31,11 @@ fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSk
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuimiaButton(text = "Pular", onClick = onSkip, modifier = Modifier.weight(1f).height(58.dp),
                 containerColor = tokens.secondary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
-            AuthPrimaryButton("Entrar", onEnter, modifier = Modifier.weight(1f),
+            AuthPrimaryButton("Entrar", {
+                if (onAddressContinue == null) onEnter() else address?.let {
+                    onAddressContinue(NearbyAddress(it.postalCode, it.state, it.city, it.district, it.street, number.trim(), complement.trim()))
+                }
+            }, modifier = Modifier.weight(1f),
                 enabled = lookup.state.ready && number.isNotBlank())
         }
     }) {
