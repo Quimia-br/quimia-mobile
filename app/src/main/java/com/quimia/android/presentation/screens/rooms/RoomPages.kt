@@ -33,6 +33,10 @@ internal fun RoomForm(
     name: String, icon: RoomIcon?, selectedIds: List<String>, products: List<CatalogProduct>, error: String?,
     onNameChange: (String) -> Unit, onIconChange: (RoomIcon) -> Unit, onToggleProduct: (String) -> Unit,
     onClose: () -> Unit, onOpenCatalog: () -> Unit, onSubmit: () -> Unit,
+    formTitle: String = "Cadastrar cômodo", submitLabel: String = "Criar cômodo", nameLimit: Int = 60,
+    showIdentity: Boolean = true, canSubmit: Boolean? = null, showEmpty: Boolean = true,
+    selectionHint: String = "Escolha os produtos que você usa para limpar esse cômodo",
+    statusContent: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -41,12 +45,13 @@ internal fun RoomForm(
                 Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
                 QuimiaNav(showBackButton = true, onBackClick = onClose, onCloseClick = onClose)
                 Column(Modifier.fillMaxWidth().padding(24.dp)) {
-                    QuimiaMainTitle(title = "Cadastrar cômodo")
+                    QuimiaMainTitle(title = formTitle)
                     Spacer(Modifier.height(4.dp))
                     Text("Insira as informações do cômodo", style = QuimiaTextStyles.medium16, color = tokens.textSecondary)
                 }
+                if (showIdentity) {
                 Box(Modifier.fillMaxWidth().padding(24.dp)) {
-                    QuimiaInput(value = name, onValueChange = { onNameChange(it.take(60)) }, label = "Nome", placeholder = "Sala de estar",
+                    QuimiaInput(value = name, onValueChange = { onNameChange(it.take(nameLimit)) }, label = "Nome", placeholder = "Sala de estar",
                         highlighted = name.isNotBlank(), borderWidth = 3.dp,
                         trailingIconSize = 16.dp, trailingIconContentDescription = "Limpar nome do cômodo",
                         trailingIcon = if (name.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { onNameChange("") })
@@ -73,12 +78,14 @@ internal fun RoomForm(
                         }
                     }
                 }
+                }
                 Text("Produtos", Modifier.padding(horizontal = 24.dp), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
-                Text("Escolha os produtos que você usa para limpar esse cômodo", Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                Text(selectionHint, Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
                     style = QuimiaTextStyles.medium14, color = tokens.textSecondary)
+                statusContent?.invoke()
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val columns = roomGridColumns(maxWidth.value)
-                    if (products.isEmpty()) {
+                    if (products.isEmpty() && showEmpty) {
                         Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             QuimiaListItem(title = "Sua estante está vazia", subtitle = "Guarde produtos no Catálogo para associá-los a um cômodo.")
                             QuimiaButton(text = "Abrir Catálogo", iconSize = 0, espacamento = 0, onClick = onOpenCatalog)
@@ -102,17 +109,18 @@ internal fun RoomForm(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
             QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp),
-                text = "Criar cômodo", textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0,
-                enabled = roomValidationError(name, icon, selectedIds, products.map { it.id }) == null, onClick = onSubmit)
+                text = submitLabel, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0,
+                enabled = canSubmit ?: (roomValidationError(name, icon, selectedIds, products.map { it.id }) == null), onClick = onSubmit)
         }
     }
 }
 
 @Composable
-internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClose: () -> Unit, onProductActions: (String) -> Unit) {
+internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClose: () -> Unit, onProductActions: (String) -> Unit,
+    apiAssessment: (@Composable () -> Unit)? = null, onAddProducts: (() -> Unit)? = null, statusContent: (@Composable () -> Unit)? = null) {
     val tokens = quimiaColorTokens()
     val preview = LocalInspectionMode.current
-    val safety = if (preview) room.safety else RoomSafety.NotEvaluated
+    val safety = if (preview || apiAssessment != null) room.safety else RoomSafety.NotEvaluated
     var noticeVisible by rememberSaveable(room.id) { mutableStateOf(true) }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         BoxWithConstraints(Modifier.widthIn(max = 840.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -123,7 +131,7 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                 LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                     item {
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            RoomShapeIcon(room.icon, 76.dp, critical = safety == RoomSafety.Critical, onBase = true)
+                            RoomShapeIcon(room.icon, 76.dp, critical = safety == RoomSafety.Critical, onBase = true, knownIcon = room.knownIcon)
                             Spacer(Modifier.height(if (safety == RoomSafety.Critical) 18.dp else 26.dp))
                             Text(room.name, Modifier.padding(24.dp), style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
                             Spacer(Modifier.height(if (safety == RoomSafety.Critical) 18.dp else 26.dp))
@@ -137,7 +145,7 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                                 RoomSafety.Safe -> "A combinação é segura"
                                 RoomSafety.NotEvaluated -> "Não misture produtos. Siga as orientações dos rótulos."
                             }
-                            QuimiaListItem(title = title, subtitle = description, modifier = Modifier.padding(horizontal = 24.dp),
+                            if (apiAssessment != null) apiAssessment() else QuimiaListItem(title = title, subtitle = description, modifier = Modifier.padding(horizontal = 24.dp),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = if (safety == RoomSafety.Critical) 16.dp else 24.dp),
                                 horizontalSpacing = 20.dp, cornerRadius = 32.dp,
                                 containerColor = if (safety == RoomSafety.Critical) tokens.error else tokens.surfaceBase,
@@ -148,7 +156,10 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                                     icon = when (safety) { RoomSafety.Critical -> Lucide.ShieldX; RoomSafety.Safe -> Lucide.Check; else -> Lucide.Info },
                                     containerColor = if (safety == RoomSafety.Safe) tokens.success else tokens.surfaceBase,
                                     iconColor = if (safety == RoomSafety.Critical) tokens.error else tokens.foregroundPrimary) })
-                            if (safety == RoomSafety.Critical && noticeVisible) Box(Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(16.dp), contentAlignment = Alignment.Center) {
+                            statusContent?.invoke()
+                            onAddProducts?.let { add -> QuimiaButton(text = "Adicionar produtos", iconSize = 0, espacamento = 0,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).height(48.dp), onClick = add) }
+                            if (apiAssessment == null && safety == RoomSafety.Critical && noticeVisible) Box(Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(16.dp), contentAlignment = Alignment.Center) {
                                 QuimiaToast(message = "Alterar status da mistura", description = "Adicione ou remova produtos do cômodo para recalcular",
                                     onDismiss = { noticeVisible = false })
                             } else Spacer(Modifier.height(24.dp))
@@ -185,7 +196,8 @@ internal fun RoomCreating(name: String) {
 }
 
 @Composable
-internal fun RoomCreationResult(success: Boolean, name: String, onClose: () -> Unit, onContinue: () -> Unit) {
+internal fun RoomCreationResult(success: Boolean, name: String, onClose: () -> Unit, onContinue: () -> Unit,
+    errorMessage: String? = null, failureAction: String = "Voltar para cômodos") {
     val tokens = quimiaColorTokens()
     val preview = LocalInspectionMode.current
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -199,7 +211,7 @@ internal fun RoomCreationResult(success: Boolean, name: String, onClose: () -> U
                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(if (success) "Cômodo ${name.lowercase()} criado com sucesso" else "Não foi possível criar o cômodo.",
                         style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    if (!success) Text(if (preview) "Por favor verifique sua conexão e tente novamente." else "Não foi possível salvar o cômodo neste aparelho. Tente novamente.",
+                    if (!success) Text(errorMessage ?: if (preview) "Por favor verifique sua conexão e tente novamente." else "Não foi possível salvar o cômodo neste aparelho. Tente novamente.",
                         style = QuimiaTextStyles.medium16, color = tokens.foregroundSubtle, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
                 if (success) Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -209,7 +221,7 @@ internal fun RoomCreationResult(success: Boolean, name: String, onClose: () -> U
                         leadingContent = { QuimiaIconButton(icon = Lucide.Puzzle, containerColor = tokens.secondary) })
                 }
             }
-            QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp), text = if (success) "Abrir cômodo" else "Voltar para cômodos",
+            QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp), text = if (success) "Abrir cômodo" else failureAction,
                 iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16, onClick = onContinue)
         }
     }

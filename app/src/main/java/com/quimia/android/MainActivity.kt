@@ -42,9 +42,7 @@ import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogRoute
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfRoute
-import com.quimia.android.presentation.screens.rooms.QuimiaRoom
-import com.quimia.android.presentation.screens.rooms.RoomListSaver
-import com.quimia.android.presentation.screens.rooms.RoomsScreen
+import com.quimia.android.presentation.screens.rooms.RoomsRoute
 import com.quimia.android.presentation.screens.profile.*
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
@@ -186,7 +184,6 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
     var savedProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
-    var rooms by rememberSaveable(sessionUid, stateSaver = RoomListSaver) { mutableStateOf(emptyList<QuimiaRoom>()) }
     var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var roomToOpenId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
@@ -290,19 +287,25 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             onMenuItemSelected = onMainTabSelected,
                             onAddProduct = { selectedMainTab = 1 },
                             onAiClick = { showKemi = true },
+                            onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
+                            onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
                             onSessionExpired = {
                                 selectedMainTab = 0; showProfile = false; showMixtures = false
                                 navigateAuth(AuthDestination.Login); authViewModel.logout()
                                 authNotice = "Sua sessão expirou. Entre novamente para continuar."
                             },
                         )
-                        4 -> RoomsScreen(
-                            rooms = rooms, onRoomsChange = { rooms = it }, savedProductIds = savedProductIds,
+                        4 -> RoomsRoute(
+                            userId = sessionUid.orEmpty(),
                             onMenuItemSelected = onMainTabSelected, onAiClick = { showKemi = true },
                             onOpenCatalog = { selectedMainTab = 1 }, initialProductId = roomDraftProductId,
-                            onInitialProductConsumed = { roomDraftProductId = null },
                             initialRoomId = roomToOpenId,
-                            onInitialRoomConsumed = { roomToOpenId = null },
+                            onInitialConsumed = { roomDraftProductId = null; roomToOpenId = null },
+                            onSessionExpired = {
+                                selectedMainTab = 0; showProfile = false; showMixtures = false
+                                navigateAuth(AuthDestination.Login); authViewModel.logout()
+                                authNotice = "Sua sessão expirou. Entre novamente para continuar."
+                            },
                         )
                         3 -> ProximityScreen(
                             onMenuItemSelected = onMainTabSelected,
