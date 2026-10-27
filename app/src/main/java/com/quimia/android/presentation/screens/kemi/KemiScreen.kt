@@ -47,6 +47,7 @@ fun KemiScreen(
     initialNewChatConfirmation: Boolean = false,
     initialCopiedMessageId: String? = null,
     now: Long = System.currentTimeMillis(),
+    historyNotice: String? = null,
 ) {
     val tokens = quimiaColorTokens()
     val state = controller.state
@@ -59,6 +60,7 @@ fun KemiScreen(
     var panel by rememberSaveable { mutableStateOf(initialPanel) }
     var confirmation by rememberSaveable { mutableStateOf(initialNewChatConfirmation) }
     var error by rememberSaveable { mutableStateOf<GenericErrorKind?>(null) }
+    var errorDescription by rememberSaveable { mutableStateOf<String?>(null) }
     var copied by rememberSaveable { mutableIntStateOf(if (initialCopied) 1 else 0) }
     var copiedMessageId by rememberSaveable { mutableStateOf(initialCopiedMessageId) }
     var voiceUnavailable by rememberSaveable { mutableStateOf(false) }
@@ -67,12 +69,12 @@ fun KemiScreen(
     fun submit(request: KemiRequest?) {
         if (request == null) return
         keyboard?.hide()
-        error = null
+        error = null; errorDescription = null
         requestJob = scope.launch {
             val reply = requestKemiReply(responder, request)
             ensureActive()
             controller.complete(request, reply)
-            if (reply is KemiReply.Failure && controller.state.current?.id == request.conversation.id) error = reply.kind
+            if (reply is KemiReply.Failure && controller.state.current?.id == request.conversation.id) { error = reply.kind; errorDescription = reply.description }
         }
     }
     fun close() {
@@ -98,7 +100,7 @@ fun KemiScreen(
     }
 
     val voice = rememberVoiceInput(prompt = "Dite sua mensagem para a Kemi",
-        onUnavailable = { voiceUnavailable = true }) { draft = it }
+        onUnavailable = { voiceUnavailable = true }) { draft = it.take(2000) }
     DisposableEffect(controller) {
         onDispose { requestJob?.cancel(); controller.interruptPending() }
     }
@@ -163,8 +165,8 @@ fun KemiScreen(
                         iconSize = 0, espacamento = 0, modifier = Modifier.fillMaxWidth().height(43.dp),
                         onClick = { if (state.active != null) controller.resumeActive() else openNewChat() })
                 }
-            } else KemiComposer(draft, { draft = it }, ::send, onVoice = voice,
-                enabled = !state.pending, compact = keyboardVisible)
+            } else KemiComposer(draft, { draft = it.take(2000) }, ::send, onVoice = voice,
+                enabled = !state.pending && messages.none { it.delivery == KemiDelivery.Failed }, compact = keyboardVisible)
         }
         if (error == null && (copied > 0 || voiceUnavailable)) {
             QuimiaToast(message = if (voiceUnavailable) "Entrada por voz indisponível neste aparelho" else "Mensagem copiada",
@@ -174,7 +176,7 @@ fun KemiScreen(
                 modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp)
                     .padding(horizontal = 24.dp).padding(top = maxOf(62.dp, statusTop) + 93.dp))
         }
-        if (error == null) KemiHistoryPanel(panel, state.history, now, onPanelChange = { panel = it },
+        if (error == null) KemiHistoryPanel(panel, state.history, now, notice = historyNotice, onPanelChange = { panel = it },
             onOpen = { controller.viewConversation(it); panel = KemiPanel.Hidden; keyboard?.hide() }, onNewChat = ::openNewChat)
         if (confirmation) KemiNewChatDialog(onDismiss = { confirmation = false }, onConfirm = {
             requestJob?.cancel()
@@ -188,7 +190,7 @@ fun KemiScreen(
         })
         error?.let { kind ->
             Box(Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { } }) {
-                GenericErrorScreen(kind, onClose = { error = null }, onAction = { action ->
+                GenericErrorScreen(kind, description = errorDescription ?: kind.description, onClose = { error = null }, onAction = { action ->
                     when (action) {
                         GenericErrorAction.Retry -> submit(controller.retry())
                         GenericErrorAction.Home -> { controller.interruptPending(); onHome() }

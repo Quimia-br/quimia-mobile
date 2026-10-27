@@ -15,7 +15,8 @@ class KemiController(initialState: KemiState = KemiState()) {
         private set
 
     fun send(text: String, now: Long = System.currentTimeMillis()): KemiRequest? {
-        if (text.isBlank() || state.readOnly || state.pending) return null
+        if (text.isBlank() || text.length > 2000 || state.readOnly || state.pending ||
+            state.current?.messages?.any { it.delivery == KemiDelivery.Failed } == true) return null
         val current = state.active ?: KemiConversation(UUID.randomUUID().toString(), now)
         val message = KemiMessage(UUID.randomUUID().toString(), text.trim(), KemiRole.User, now, KemiDelivery.Pending)
         val updated = current.copy(messages = current.messages + message)
@@ -44,7 +45,8 @@ class KemiController(initialState: KemiState = KemiState()) {
             if (it.id == request.messageId) it.copy(delivery = if (answer != null) KemiDelivery.Delivered else KemiDelivery.Failed) else it
         }
         replace(conversation.copy(messages = if (answer == null) messages else
-            messages + KemiMessage(UUID.randomUUID().toString(), answer, KemiRole.Assistant, now)))
+            messages + KemiMessage(UUID.randomUUID().toString(), answer, KemiRole.Assistant,
+                (reply as? KemiReply.Answer)?.respondedAt ?: now)))
     }
 
     fun interruptPending() {

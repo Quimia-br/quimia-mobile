@@ -41,7 +41,7 @@ enum class KemiPanel { Hidden, Collapsed, Expanded }
 @Composable
 internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>, now: Long,
     onPanelChange: (KemiPanel) -> Unit, onOpen: (String) -> Unit, onNewChat: () -> Unit,
-    modifier: Modifier = Modifier) {
+    modifier: Modifier = Modifier, notice: String? = null) {
     if (panel == KemiPanel.Hidden) return
     val tokens = quimiaColorTokens()
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
@@ -84,6 +84,7 @@ internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>,
                     QuimiaIconButton(icon = Lucide.X, onClick = { onPanelChange(KemiPanel.Hidden) },
                         containerColor = tokens.secondary, contentDescription = "Fechar histórico")
                 }
+                if (notice != null) Text(notice, style = QuimiaTextStyles.medium12, color = tokens.foregroundSubtle)
                 LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (history.isEmpty()) item {

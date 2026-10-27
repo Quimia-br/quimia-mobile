@@ -7,6 +7,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class KemiControllerTest {
+    @Test fun failedMessageMustBeRetriedOrArchivedBeforeSendingAnother() {
+        val controller = KemiController()
+        val request = controller.send("Pergunta")!!
+        controller.complete(request, KemiReply.Failure(GenericErrorKind.Timeout))
+        assertNull(controller.send("Outra pergunta"))
+        assertEquals(request.messageId, controller.retry()!!.messageId)
+        assertNull(controller.send("a".repeat(2001)))
+    }
+
+    @Test fun assistantMessageUsesBackendTimestamp() {
+        val controller = KemiController()
+        val request = controller.send("Pergunta", 100)!!
+        controller.complete(request, KemiReply.Answer("Resposta", respondedAt = 200), now = 300)
+        assertEquals(200L, controller.state.current!!.messages.last().createdAt)
+    }
+
     @Test fun blankMessagesAreIgnored() {
         val controller = KemiController()
         assertNull(controller.send(" \n "))

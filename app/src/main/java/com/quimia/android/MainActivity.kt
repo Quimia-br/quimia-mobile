@@ -55,7 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.quimia.android.presentation.screens.kemi.KemiController
 import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
-import com.quimia.android.presentation.screens.kemi.KemiScreen
+import com.quimia.android.presentation.screens.kemi.KemiRoute
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.quimia.android.presentation.screens.auth.AuthDestination
 import com.quimia.android.presentation.screens.mixtures.*
@@ -330,8 +330,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                     },
                 )
                 if (showKemi) {
-                    KemiScreen(
-                        controller = kemiController,
+                    KemiRoute(
+                        controller = kemiController, userId = sessionUid.orEmpty(),
                         displayName = displayName.takeUnless { it == "Seu nome" }?.substringBefore(' '),
                         onClose = { showKemi = false },
                         onHome = { showKemi = false; selectedMainTab = 0 },

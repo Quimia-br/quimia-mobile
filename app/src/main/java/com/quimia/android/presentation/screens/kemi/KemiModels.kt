@@ -41,8 +41,8 @@ data class KemiState(
 data class KemiRequest(val conversation: KemiConversation, val messageId: String)
 
 sealed interface KemiReply {
-    data class Answer(val text: String) : KemiReply
-    data class Failure(val kind: GenericErrorKind) : KemiReply
+    data class Answer(val text: String, val respondedAt: Long? = null) : KemiReply
+    data class Failure(val kind: GenericErrorKind, val description: String? = null) : KemiReply
 }
 
 typealias KemiResponder = suspend (KemiRequest) -> KemiReply
