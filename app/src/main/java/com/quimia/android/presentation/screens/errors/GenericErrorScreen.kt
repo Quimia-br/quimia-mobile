@@ -18,6 +18,7 @@ import feedback.QuimiaFeedbackItem
 import nav.QuimiaNav
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import theme.LightTokens
 
 @Composable
 fun GenericErrorScreen(
@@ -25,6 +26,7 @@ fun GenericErrorScreen(
     onClose: () -> Unit,
     onAction: (GenericErrorAction) -> Unit,
     modifier: Modifier = Modifier,
+    description: String = kind.description,
 ) {
     val tokens = quimiaColorTokens()
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -41,12 +43,12 @@ fun GenericErrorScreen(
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(kind.title, Modifier.fillMaxWidth(), style = QuimiaTextStyles.medium24,
                         color = tokens.foregroundPrimary, textAlign = TextAlign.Center)
-                    Text(kind.description, Modifier.fillMaxWidth(), style = QuimiaTextStyles.medium16,
+                    Text(description, Modifier.fillMaxWidth(), style = QuimiaTextStyles.medium16,
                         color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
                 }
             }
             QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp),
-                text = kind.action.label, textStyle = QuimiaTextStyles.medium16, textColor = tokens.foregroundPrimary,
+                text = kind.action.label, textStyle = QuimiaTextStyles.medium16, textColor = LightTokens.foregroundPrimary,
                 iconSize = 0, espacamento = 0, onClick = { onAction(kind.action) })
         }
     }

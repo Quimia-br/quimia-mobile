@@ -14,6 +14,7 @@ import com.quimia.android.data.auth.*
 import com.quimia.android.presentation.components.BirthDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import com.quimia.android.presentation.screens.errors.*
 
 internal fun profileIsoDate(value: String): String {
     val date = BirthDate.parse(value) ?: throw IllegalArgumentException("Selecione a data completa de nascimento.")
@@ -33,6 +34,7 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
     var loaded by remember(userId) { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var errorKind by remember { mutableStateOf(GenericErrorKind.Unknown) }
     val scope = rememberCoroutineScope()
     val latestUpdated by rememberUpdatedState(onUpdated)
     suspend fun reload() {
@@ -41,7 +43,7 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
         try { repository.reloadProfile(userId)
             loaded = true; (repository.session.value as? SessionState.Authenticated)?.profile?.let(latestUpdated)
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (failure: Exception) { error = authErrorMessage(failure) }
+        catch (failure: Exception) { errorKind = apiErrorKind(failure, repository.session.value == SessionState.SignedOut); error = authErrorMessage(failure) }
         finally { loading = false }
     }
     val owner = LocalLifecycleOwner.current
@@ -53,6 +55,16 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
     LaunchedEffect(userId) { reload() }
     LaunchedEffect(session) { if (session == SessionState.SignedOut) onLogout() }
     val profile = (session as? SessionState.Authenticated)?.profile?.takeIf { it.id == userId }
+    if (error != null && !loading) {
+        GenericErrorScreen(errorKind, onClose = { if (loaded) error = null else onBack() },
+            description = if (errorKind == GenericErrorKind.Unknown) error.orEmpty() else errorKind.description,
+            onAction = { action -> when (action) {
+                GenericErrorAction.Retry -> scope.launch { reload() }
+                GenericErrorAction.SignIn -> onLogout()
+                GenericErrorAction.Home -> onBack()
+            } })
+        return
+    }
     if (!loaded || profile == null) Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (loading) CircularProgressIndicator()
