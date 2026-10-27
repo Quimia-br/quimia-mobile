@@ -3,6 +3,7 @@ package bottomSheet
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,6 +23,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -36,6 +38,7 @@ import listItem.QuimiaListItem
 import theme.QuimiaTheme
 import theme.QuimiaFontFamily
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 
 enum class QuimiaBottomSheetTheme { Primary, Secondary }
 
@@ -56,34 +59,38 @@ fun QuimiaBottomSheet(
     primaryActionEnabled: Boolean = true,
     onPrimaryActionClick: () -> Unit = {},
     onSecondaryActionClick: () -> Unit = {},
+    contentHeight: Dp? = 547.dp,
+    scrimColor: Color? = null,
+    shape: androidx.compose.ui.graphics.Shape? = null,
+    contentPadding: PaddingValues = PaddingValues(32.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (!isVisible) return
 
     val tokens = quimiaColorTokens()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetShape = shape ?: RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         sheetState = sheetState,
         sheetMaxWidth = sheetMaxWidth,
-        shape = RoundedCornerShape(
-            topStart = 40.dp,
-            topEnd = 40.dp,
-        ),
+        shape = sheetShape,
         containerColor = if (theme == QuimiaBottomSheetTheme.Primary) tokens.surfaceBase else tokens.secondary,
         contentColor = tokens.textPrimary,
-        scrimColor = tokens.black.copy(alpha = 0.32f),
+        scrimColor = scrimColor ?: tokens.black.copy(alpha = 0.32f),
         dragHandle = null,
     ) {
         QuimiaBottomSheetContent(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().quimiaContrastOutline(sheetShape),
             title = title, description = description, theme = theme,
             showDragHandle = showDragHandle, showCloseButton = showCloseButton,
             onClose = onDismissRequest, primaryActionLabel = primaryActionLabel,
             secondaryActionLabel = secondaryActionLabel, primaryActionEnabled = primaryActionEnabled,
             onPrimaryActionClick = onPrimaryActionClick, onSecondaryActionClick = onSecondaryActionClick,
+            contentHeight = contentHeight,
+            contentPadding = contentPadding,
             content = content,
         )
     }
@@ -103,12 +110,14 @@ fun QuimiaBottomSheetContent(
     primaryActionEnabled: Boolean = true,
     onPrimaryActionClick: () -> Unit = {},
     onSecondaryActionClick: () -> Unit = {},
+    contentHeight: Dp? = 547.dp,
+    contentPadding: PaddingValues = PaddingValues(32.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = quimiaColorTokens()
     val secondary = if (theme == QuimiaBottomSheetTheme.Primary) tokens.secondary else tokens.surfaceBase
     Column(
-        modifier = modifier.fillMaxWidth().height(547.dp).padding(32.dp),
+        modifier = modifier.fillMaxWidth().then(if (contentHeight != null) Modifier.height(contentHeight) else Modifier).padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (showDragHandle) QuimiaDragger(color = secondary, height = 3.dp)
@@ -126,7 +135,7 @@ fun QuimiaBottomSheetContent(
                     contentDescription = "Fechar")
             }
         }
-        Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), content = content)
+        Column(modifier = Modifier.weight(1f, fill = contentHeight != null).fillMaxWidth().verticalScroll(rememberScrollState()), content = content)
         if (!primaryActionLabel.isNullOrBlank() || !secondaryActionLabel.isNullOrBlank()) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 val actionStyle = QuimiaTextStyles.medium15

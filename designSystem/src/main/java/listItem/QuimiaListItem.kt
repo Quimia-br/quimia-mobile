@@ -40,6 +40,8 @@ import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.Zap
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
+import theme.quimiaHighContrastEnabled
 import com.composables.icons.lucide.ToolCase
 import theme.QuimiaColorTokens
 
@@ -130,6 +132,7 @@ fun QuimiaListItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(cornerRadius))
             .background(resolvedContainerColor)
+            .quimiaContrastOutline(RoundedCornerShape(cornerRadius), quimiaHighContrastEnabled() && resolvedContainerColor != Color.Transparent)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,

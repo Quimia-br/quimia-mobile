@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
 import theme.QuimiaTheme
 enum class QuimiaShortCutType {
     Large,
@@ -83,6 +84,7 @@ fun QuimiaShortCut(
         modifier = componentModifier,
         shape = shape,
         color = containerColor,
+        border = quimiaContrastBorder(),
     ) {
         when (type) {
             QuimiaShortCutType.Large -> {

@@ -58,6 +58,8 @@ import shapeIcon.QuimiaShapeIcon
 import theme.QuimiaTheme
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
+import theme.quimiaContrastOutline
 
 internal val ShelfRemovalColor = Color(0xFFFF2B6B)
 
@@ -71,6 +73,7 @@ private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, 
                 modifier = Modifier.statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = bottomMargin)
                     .widthIn(max = 560.dp).fillMaxWidth(),
                 color = tokens.surfaceBase, shape = RoundedCornerShape(40.dp),
+                border = quimiaContrastBorder(),
             ) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp), content = content)
             }
@@ -85,7 +88,8 @@ private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, 
         scrimColor = CatalogModalScrimColor, dragHandle = null,
     ) {
         HideSystemNavigationBar()
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp), content = content)
+        Column(Modifier.fillMaxWidth().quimiaContrastOutline(RoundedCornerShape(40.dp))
+            .verticalScroll(rememberScrollState()).padding(32.dp), content = content)
     }
 }
 
@@ -212,7 +216,7 @@ private fun ShelfConfirmation(
 ) {
     val tokens = quimiaColorTokens()
     val confirmation: @Composable () -> Unit = {
-        Surface(Modifier.widthIn(max = 297.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase) {
+        Surface(Modifier.widthIn(max = 297.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
             Column(
                 Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),

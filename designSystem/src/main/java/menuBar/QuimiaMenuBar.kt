@@ -35,6 +35,13 @@ import com.composables.icons.lucide.SoapDispenserDroplet
 import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
+import theme.DarkTokens
+import theme.QuimiaColorTokens
+import theme.quimiaHighContrastEnabled
+import theme.quimiaContrastOutline
+
+fun resolveQuimiaMenuBarIconColor(tokens: QuimiaColorTokens, highContrast: Boolean) =
+    if (highContrast) DarkTokens.foregroundSubtle else tokens.foregroundSubtle
 
 val QuimiaMenuBarHeight = 84.dp
 val QuimiaMenuBarBottomSpacing = 16.dp
@@ -76,6 +83,7 @@ fun QuimiaMenuBar(
     fab: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
+    val iconColor = resolveQuimiaMenuBarIconColor(tokens, quimiaHighContrastEnabled())
     val icons = items ?: listOf(
         Lucide.House,
         SoapDispenserDroplet,
@@ -93,6 +101,7 @@ fun QuimiaMenuBar(
                 .fillMaxWidth()
                 .height(QuimiaMenuBarHeight)
                 .background(tokens.secondary, RoundedCornerShape(RadiusFull.dp))
+                .quimiaContrastOutline(RoundedCornerShape(RadiusFull.dp))
                 .padding(horizontal = 10.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
@@ -113,13 +122,13 @@ fun QuimiaMenuBar(
                         is ImageVector -> Icon(
                             imageVector = element,
                             contentDescription = labels.getOrNull(index),
-                            tint = tokens.foregroundSubtle,
+                            tint = iconColor,
                             modifier = Modifier.size(30.dp),
                         )
                         is Int -> Icon(
                             painter = painterResource(element),
                             contentDescription = labels.getOrNull(index),
-                            tint = tokens.foregroundSubtle,
+                            tint = iconColor,
                             modifier = Modifier.size(30.dp),
                         )
                     }

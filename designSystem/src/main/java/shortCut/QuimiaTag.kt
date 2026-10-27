@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import theme.QuimiaTheme
 
 @Composable
@@ -40,6 +41,7 @@ fun QuimiaTag(
                 color = tokens.brandAccent,
                 shape = RoundedCornerShape(percent = 50),
             )
+            .quimiaContrastOutline(RoundedCornerShape(percent = 50))
             .padding(horizontal = size * 0.48f),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(size * 0.20f),

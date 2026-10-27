@@ -41,6 +41,8 @@ import java.io.File
 import theme.QuimiaTheme
 import theme.Typography
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
+import theme.quimiaContrastOutline
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,38 +80,41 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
         containerColor = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
         scrimColor = CatalogModalScrimColor,
-        dragHandle = {
-            Box(
-                Modifier.padding(top = 8.dp).width(64.dp).height(2.dp)
-                    .background(tokens.secondary, CircleShape),
-            )
-        },
+        dragHandle = null,
     ) {
-        LabelScannerContent(
-            imageUri = imageUri,
-            error = error,
-            onClose = onDismiss,
-            onChooseImage = {
-                error = null
-                runCatching {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }.onFailure { error = "Não foi possível abrir a galeria. Tente novamente." }
-            },
-            onConfigureCamera = {
-                runCatching {
-                    val directory = File(context.cacheDir, "label-images").apply { mkdirs() }
-                    val photo = File.createTempFile("label-", ".jpg", directory)
-                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.label-images", photo)
-                    pendingCameraUri = uri.toString()
-                    camera.launch(uri)
-                }.onFailure {
-                    pendingCameraUri = null
-                    error = "Câmera indisponível. Você pode escolher uma imagem da galeria."
-                }
-            },
-            onImageError = { error = "Não foi possível ler esta imagem. Escolha outra foto." },
-            showDragHandle = false,
-        )
+        Surface(shape = RoundedCornerShape(36.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier.padding(top = 8.dp).width(64.dp).height(2.dp)
+                        .background(tokens.secondary, CircleShape),
+                )
+                LabelScannerContent(
+                    imageUri = imageUri,
+                    error = error,
+                    onClose = onDismiss,
+                    onChooseImage = {
+                        error = null
+                        runCatching {
+                            picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }.onFailure { error = "Não foi possível abrir a galeria. Tente novamente." }
+                    },
+                    onConfigureCamera = {
+                        runCatching {
+                            val directory = File(context.cacheDir, "label-images").apply { mkdirs() }
+                            val photo = File.createTempFile("label-", ".jpg", directory)
+                            val uri = FileProvider.getUriForFile(context, "${context.packageName}.label-images", photo)
+                            pendingCameraUri = uri.toString()
+                            camera.launch(uri)
+                        }.onFailure {
+                            pendingCameraUri = null
+                            error = "Câmera indisponível. Você pode escolher uma imagem da galeria."
+                        }
+                    },
+                    onImageError = { error = "Não foi possível ler esta imagem. Escolha outra foto." },
+                    showDragHandle = false,
+                )
+            }
+        }
     }
 }
 
@@ -159,7 +164,7 @@ internal fun LabelScannerContent(
             val photoHeight = (maxWidth / 0.86f).coerceAtMost(336.dp)
             Box(
                 Modifier.fillMaxWidth().height(photoHeight).clip(RoundedCornerShape(24.dp))
-                    .background(tokens.secondary), contentAlignment = Alignment.Center,
+                    .background(tokens.secondary).quimiaContrastOutline(RoundedCornerShape(24.dp)), contentAlignment = Alignment.Center,
             ) {
                 if (previewImage != null) {
                     Image(previewImage, "Imagem de exemplo do preview", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -239,6 +244,7 @@ private fun LabelScannerOverlayPreview() {
                     .fillMaxWidth().padding(horizontal = 16.dp).navigationBarsPadding(),
                 color = quimiaColorTokens().surfaceBase,
                 shape = RoundedCornerShape(36.dp),
+                border = quimiaContrastBorder(),
             ) {
                 LabelScannerContent(null, {}, {}, {})
             }
