@@ -45,6 +45,9 @@ import theme.quimiaColorTokens
 import theme.quimiaContrastBorder
 import toast.QuimiaToast
 import toast.QuimiaToastType
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import com.quimia.android.data.auth.authErrorMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,16 +131,20 @@ internal fun NearbySavedPointsSheet(ids: List<Int>, onDismiss: () -> Unit, onSel
 }
 
 @Composable
-internal fun NearbyAddressSheet(onDismiss: () -> Unit, onSave: (NearbyAddress) -> Unit, initialAddress: NearbyAddress? = null) {
-    if (LocalInspectionMode.current) NearbyAddressForm(onDismiss, onSave, initialAddress)
+internal fun NearbyAddressSheet(onDismiss: () -> Unit, onSave: (NearbyAddress) -> Unit, initialAddress: NearbyAddress? = null, saveRemote: (suspend (NearbyAddress) -> Unit)? = null) {
+    if (LocalInspectionMode.current) NearbyAddressForm(onDismiss, onSave, initialAddress, saveRemote)
     else Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         HideSystemNavigationBar()
-        NearbyAddressForm(onDismiss, onSave, initialAddress)
+        NearbyAddressForm(onDismiss, onSave, initialAddress, saveRemote)
     }
 }
 
 @Composable
-private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> Unit, initialAddress: NearbyAddress?) {
+private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> Unit, initialAddress: NearbyAddress?, saveRemote: (suspend (NearbyAddress) -> Unit)? = null) {
+    val scope = rememberCoroutineScope()
+    var saving by remember { mutableStateOf(false) }
+    val close: () -> Unit = { if (!saving) onDismiss() }
+    androidx.activity.compose.BackHandler(enabled = saving) { }
     val preview = LocalInspectionMode.current
     val seed = initialAddress ?: if (preview) NearbyAddress("04001000", "SP", "São Paulo", "Vila Mariana", "", "100", "")
         else NearbyAddress("", "", "", "", "", "", "")
@@ -154,7 +161,7 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
             Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
                 QuimiaIconButton(icon = Lucide.ChevronLeft, containerColor = tokens.secondary,
-                    contentDescription = "Voltar sem alterar endereço", onClick = onDismiss)
+                    contentDescription = "Voltar sem alterar endereço", onClick = close)
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 32.dp)) {
                 Spacer(Modifier.height(50.dp))
@@ -184,13 +191,22 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
             }
             Row(Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 50.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Cancelar", textStyle = QuimiaTextStyles.medium16,
-                    iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = onDismiss)
-                QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Salvar", textStyle = QuimiaTextStyles.medium16,
-                    iconSize = 0, espacamento = 0, enabled = lookup.state.ready && number.isNotBlank(), onClick = {
+                    iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = close)
+                QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = if (saving) "Salvando…" else "Salvar", textStyle = QuimiaTextStyles.medium16,
+                    iconSize = 0, espacamento = 0, enabled = !saving && lookup.state.ready && number.isNotBlank(), onClick = {
                         val resolved = address ?: return@QuimiaButton
                         val value = NearbyAddress(postalCode, resolved.state, resolved.city, resolved.district, resolved.street, number.trim(), complement.trim())
                         error = value.validationError()
-                        if (error == null) onSave(value)
+                        if (error == null) {
+                            if (saveRemote == null) onSave(value)
+                            else if (!saving) scope.launch {
+                                saving = true
+                                try { saveRemote(value); onSave(value) }
+                                catch (cancelled: CancellationException) { throw cancelled }
+                                catch (failure: Exception) { error = if (failure is IllegalArgumentException) failure.message else authErrorMessage(failure) }
+                                finally { saving = false }
+                            }
+                        }
                     })
             }
         }

@@ -40,7 +40,7 @@ import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeScreen
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
-import com.quimia.android.presentation.screens.proximity.ProximityScreen
+import com.quimia.android.presentation.screens.proximity.ProximityRoute
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
 import com.quimia.android.presentation.screens.rooms.RoomListSaver
@@ -298,14 +298,9 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             initialRoomId = roomToOpenId,
                             onInitialRoomConsumed = { roomToOpenId = null },
                         )
-                        3 -> ProximityScreen(
-                            onMenuItemSelected = onMainTabSelected,
-                            initialSavedPointIds = savedPointIds,
-                            onSavedPointIdsChange = { savedPointIds = it },
-                            initialAddress = referenceAddress,
-                            onAddressChange = { referenceAddress = it },
-                            initialAddressFields = referenceAddressFields,
-                            onAddressFieldsChange = { referenceAddressFields = it },
+                        3 -> ProximityRoute(
+                            userId = sessionUid.orEmpty(), onMenuItemSelected = onMainTabSelected,
+                            onSessionExpired = { navigateAuth(AuthDestination.Login); authViewModel.logout() },
                         )
                         else -> HomeScreen(
                             avatarInitials = profileInitials(displayName), avatarPhoto = photo,
