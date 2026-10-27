@@ -30,6 +30,7 @@ import theme.RadiusFull
 import theme.quimiaColorTokens
 import theme.quimiaContrastOutline
 import theme.quimiaHighContrastEnabled
+import theme.actionContentColor
 
 @Composable
 fun QuimiaChip(
@@ -51,7 +52,7 @@ fun QuimiaChip(
     }
     val contentColor = when {
         !enabled -> tokens.foregroundDisabled
-        selected && quimiaHighContrastEnabled() -> tokens.onPrimary
+        selected -> actionContentColor(tokens.primary, null, tokens)
         else -> tokens.foregroundPrimary
     }
 

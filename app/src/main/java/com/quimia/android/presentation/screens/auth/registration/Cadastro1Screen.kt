@@ -16,7 +16,7 @@ import theme.QuimiaTheme
 import title.QuimiaMainTitle
 
 @Composable
-fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, onLogin: () -> Unit = {}) {
+fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, onLogin: () -> Unit = {}, onGoogleClick: () -> Unit = {}) {
     var name by rememberSaveable { mutableStateOf("") }
     var birthDate by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
@@ -41,7 +41,7 @@ fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, 
             AuthPasswordInput(password, { password = it }, "Crie uma senha", authPasswordError(password).takeIf { password.isNotEmpty() })
         }
         Spacer(Modifier.height(58.dp))
-        AuthSocialButtons { emailFocus.requestFocus() }
+        AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
     }
 }
 

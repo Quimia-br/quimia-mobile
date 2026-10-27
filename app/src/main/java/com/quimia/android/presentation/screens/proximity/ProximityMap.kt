@@ -171,7 +171,8 @@ private fun NearbyGoogleMap(
             val fix = location.location?.takeIf { location.hasPermission() }
             source.update(fix)
             native.isMyLocationEnabled = fix != null
-            if (fix != null) native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(fix.latitude, fix.longitude), 15.5f))
+            if (fix != null) native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(fix.latitude, fix.longitude),
+                nearbyLocationZoom(location.precise, if (fix.hasAccuracy()) fix.accuracy else 0f)))
         } catch (_: SecurityException) { source.update(null); location.denied(false) }
     }
     Box(Modifier.fillMaxSize()) {

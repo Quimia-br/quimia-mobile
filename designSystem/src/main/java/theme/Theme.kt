@@ -12,7 +12,7 @@ internal val LocalQuimiaDarkTheme = staticCompositionLocalOf { false }
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryLight,
-    onPrimary = PrimaryOnColorLight,
+    onPrimary = ForegroundPrimaryLight,
     primaryContainer = Color(0xFFB3E5CE),
     onPrimaryContainer = PrimaryOnColorLight,
     
@@ -40,7 +40,7 @@ private val LightColorScheme = lightColorScheme(
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
-    onPrimary = PrimaryOnColorDark,
+    onPrimary = ForegroundPrimaryLight,
     primaryContainer = Color(0xFF005A3F),
     onPrimaryContainer = PrimaryOnColorDark,
     

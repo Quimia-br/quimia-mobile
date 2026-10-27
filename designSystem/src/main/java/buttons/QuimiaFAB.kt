@@ -23,6 +23,7 @@ import theme.RadiusSmall
 import theme.quimiaColorTokens
 import theme.quimiaContrastOutline
 import theme.quimiaHighContrastEnabled
+import theme.actionContentColor
 
 val QuimiaFABSize = 72.dp
 
@@ -37,7 +38,7 @@ fun QuimiaFAB(
     val tokens = quimiaColorTokens()
 
     val actualContainerColor = containerColor ?: tokens.primary
-    val actualIconColor = iconColor ?: if (quimiaHighContrastEnabled() && actualContainerColor == tokens.primary) tokens.onPrimary else tokens.textPrimary
+    val actualIconColor = actionContentColor(actualContainerColor, iconColor, tokens)
 
     IconButton(
         onClick = onClick,

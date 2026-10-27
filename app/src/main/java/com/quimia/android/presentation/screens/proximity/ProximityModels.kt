@@ -21,11 +21,15 @@ internal enum class NearbyLocationStatus { Idle, Loading, Ready, PermissionDenie
 
 internal fun nearbyLocationPermission(fine: Boolean, coarse: Boolean): Boolean = fine || coarse
 
-internal fun nearbyLocationProvider(fine: Boolean, enabled: Set<String>): String? = when {
-    "fused" in enabled -> "fused"
-    fine && "gps" in enabled -> "gps"
-    "network" in enabled -> "network"
-    else -> null
+internal fun nearbyLocationProviders(fine: Boolean, enabled: Set<String>): List<String> =
+    listOfNotNull("fused".takeIf { it in enabled }, "gps".takeIf { fine && it in enabled }, "network".takeIf { it in enabled })
+internal fun nearbyLocationProvider(fine: Boolean, enabled: Set<String>): String? = nearbyLocationProviders(fine, enabled).firstOrNull()
+internal fun nearbyFixIsFresh(ageMillis: Long): Boolean = ageMillis in 0..120_000L
+internal fun nearbyLocationZoom(precise: Boolean, accuracyMeters: Float): Float = when {
+    accuracyMeters >= 5_000f -> 10.5f
+    !precise || accuracyMeters >= 1_000f -> 12f
+    accuracyMeters >= 200f -> 14f
+    else -> 15.5f
 }
 
 internal val nearbyPoints = listOf(
@@ -42,7 +46,7 @@ internal fun filterNearbyPoints(points: List<NearbyPoint>, category: NearbyCateg
 internal fun toggleSavedPoint(ids: List<Int>, id: Int): List<Int> =
     if (id in ids) ids.filterNot { it == id } else (ids + id).distinct()
 
-internal data class NearbyAddress(
+data class NearbyAddress(
     val postalCode: String, val state: String, val city: String, val district: String,
     val street: String, val number: String, val complement: String,
 ) {
