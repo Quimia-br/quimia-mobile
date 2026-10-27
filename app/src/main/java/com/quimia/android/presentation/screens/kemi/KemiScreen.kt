@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -58,6 +59,7 @@ fun KemiScreen(
     val clipboard = LocalClipboardManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     val inspection = LocalInspectionMode.current
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     var draft by rememberSaveable(controller) { mutableStateOf("") }
     var panel by rememberSaveable { mutableStateOf(initialPanel) }
     var confirmation by rememberSaveable { mutableStateOf(initialNewChatConfirmation) }
@@ -133,7 +135,7 @@ fun KemiScreen(
             .then(if (error != null) Modifier.clearAndSetSemantics { } else Modifier)) {
             KemiHeader(panel, state.pending || copied > 0, ::close,
                 onHistory = { keyboard?.hide(); panel = if (panel == KemiPanel.Expanded) KemiPanel.Collapsed else KemiPanel.Expanded },
-                onNewChat = ::openNewChat)
+                onNewChat = ::openNewChat, compact = keyboardVisible)
             val messages = state.current?.messages.orEmpty()
             if (messages.isEmpty()) {
                 KemiWelcome(displayName, Modifier.weight(1f).fillMaxWidth())
@@ -177,7 +179,7 @@ fun KemiScreen(
                         putExtra(RecognizerIntent.EXTRA_PROMPT, "Dite sua mensagem para a Kemi")
                     })
                 } catch (_: ActivityNotFoundException) { voiceUnavailable = true }
-            }, enabled = !state.pending)
+            }, enabled = !state.pending, compact = keyboardVisible)
         }
         if (error == null && (copied > 0 || voiceUnavailable)) {
             QuimiaToast(message = if (voiceUnavailable) "Entrada por voz indisponível neste aparelho" else "Mensagem copiada",

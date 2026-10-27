@@ -52,9 +52,10 @@ internal fun KemiBackground(modifier: Modifier = Modifier) {
 internal fun KemiHeader(
     panel: KemiPanel, pending: Boolean, onClose: () -> Unit,
     onHistory: () -> Unit, onNewChat: () -> Unit,
+    compact: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
-    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = if (compact) 8.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
         QuimiaIconButton(icon = Lucide.ChevronLeft, onClick = onClose,
             containerColor = tokens.surfaceBase, contentDescription = "Voltar")
@@ -73,7 +74,8 @@ internal fun KemiWelcome(displayName: String?, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically)) {
         QuimiaImage(painterResource(R.drawable.kemi_character), "Kemi",
-            modifier = Modifier.size(188.dp, 158.dp), contentScale = ContentScale.Crop,
+            modifier = Modifier.weight(1f, fill = false).widthIn(max = 188.dp)
+                .heightIn(max = 158.dp).aspectRatio(188f / 158f), contentScale = ContentScale.Fit,
             shape = RectangleShape, backgroundColor = Color.Transparent)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(displayName?.trim()?.takeIf { it.isNotEmpty() }?.let { "Olá, $it" } ?: "Olá!",
@@ -124,8 +126,8 @@ internal fun KemiPendingBubble() {
 
 @Composable
 internal fun KemiComposer(draft: String, onDraftChange: (String) -> Unit, onSend: () -> Unit,
-    onVoice: () -> Unit, enabled: Boolean) {
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp)) {
+    onVoice: () -> Unit, enabled: Boolean, compact: Boolean = false) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = if (compact) 12.dp else 32.dp)) {
         QuimiaSearchBar(value = draft, onValueChange = onDraftChange,
             placeholder = "Envie uma mensagem", leadingIcon = Lucide.Mic, searchIconSize = 24.dp,
             leadingIconDescription = "Ditar mensagem", onLeadingIconClick = onVoice,
