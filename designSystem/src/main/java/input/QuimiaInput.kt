@@ -74,6 +74,8 @@ fun QuimiaInput(
     showTrailingIconWhenEmpty: Boolean = false,
     showClearButton: Boolean = true,
     trailingIconSize: Dp? = null,
+    highlighted: Boolean = false,
+    borderWidth: Dp = 3.dp,
     ) {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -104,7 +106,7 @@ fun QuimiaInput(
     val borderColor by animateColorAsState(
         when {
             isError -> actualErrorColor
-            isFocused || quimiaHighContrastEnabled() -> actualFocusColor
+            isFocused || highlighted || quimiaHighContrastEnabled() -> actualFocusColor
             else -> Color.Transparent
         }
     )
@@ -138,7 +140,7 @@ fun QuimiaInput(
                     shape = shape
                 )
                 .border(
-                    width = 3.dp,
+                    width = borderWidth,
                     color = borderColor,
                     shape = shape
                 )
