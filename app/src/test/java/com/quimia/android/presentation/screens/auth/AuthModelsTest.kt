@@ -16,16 +16,17 @@ class AuthModelsTest {
         assertEquals(AuthDestination.Login, AuthDestination.RecoverySuccess.back())
         assertEquals(AuthDestination.Welcome, AuthDestination.Login.back())
     }
-    @Test fun registrationRequiresNameEmailPasswordAndValidDayMonth() {
+    @Test fun registrationRequiresNameEmailPasswordAndCompleteBirthDate() {
         assertNotNull(authNameError("  "))
         assertNull(authNameError("Daniel Filho"))
         assertNull(authEmailError(" exemplo@quimia.com "))
         assertNotNull(authEmailError("exemplo@"))
         assertNotNull(authBirthDateError(""))
         assertNotNull(authBirthDateError("31/04"))
-        assertNotNull(authBirthDateError("20/04/2000"))
-        assertNull(authBirthDateError("20/04"))
-        assertNull(authBirthDateError("29/02"))
+        assertNull(authBirthDateError("20/04/2000"))
+        assertNotNull(authBirthDateError("20/04"))
+        assertNotNull(authBirthDateError("29/02"))
+        assertNull(authBirthDateError("29/02/2000"))
     }
     @Test fun passwordConfirmationCannotProceedWithBlankShortOrDifferentPasswords() {
         assertNotNull(authPasswordError(""))

@@ -10,7 +10,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.quimia.android.presentation.screens.auth.*
-import com.quimia.android.presentation.screens.profile.formatProfileBirthDate
+import com.quimia.android.presentation.components.BirthDateField
 import input.QuimiaInput
 import theme.QuimiaTheme
 import title.QuimiaMainTitle
@@ -34,9 +34,7 @@ fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, 
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             QuimiaInput(name, { name = it.take(80) }, label = "Nome", placeholder = "Daniel Filho",
                 error = authNameError(name).takeIf { name.isNotEmpty() })
-            QuimiaInput(birthDate, { birthDate = formatProfileBirthDate(it) }, label = "Data de nascimento", placeholder = "20/04",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), showClearButton = false,
-                error = authBirthDateError(birthDate).takeIf { birthDate.length == 5 })
+            BirthDateField(birthDate, { birthDate = it }, error = authBirthDateError(birthDate).takeIf { birthDate.isNotEmpty() })
             QuimiaInput(email, { email = it }, label = "E-mail", placeholder = "exemplo@quimia.com",
                 modifier = Modifier.focusRequester(emailFocus), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 error = authEmailError(email).takeIf { email.isNotEmpty() })

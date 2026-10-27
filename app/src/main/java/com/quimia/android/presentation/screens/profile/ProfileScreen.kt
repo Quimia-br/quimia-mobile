@@ -39,6 +39,8 @@ import controls.QuimiaSwitch
 import controls.QuimiaTextSizeSlider
 import dragger.QuimiaDragger
 import input.QuimiaInput
+import com.quimia.android.presentation.components.BirthDateField
+import com.quimia.android.presentation.components.BirthDateSheet
 import nav.QuimiaNav
 import theme.LightTokens
 import theme.QuimiaTextStyles
@@ -56,10 +58,11 @@ fun ProfileScreen(
     onDisplayNameChange: (String) -> Unit, onPhotoUriChange: (String) -> Unit,
     onBack: () -> Unit, photo: Painter? = null, initialEditVisible: Boolean = false,
     birthDate: String = "", onDetailsChange: ((ProfileDetails) -> Unit)? = null,
-    onLogout: () -> Unit = {}, initialPhotoVisible: Boolean = false,
+    onLogout: () -> Unit = {}, initialPhotoVisible: Boolean = false, initialBirthDateVisible: Boolean = false,
 ) {
     val context = LocalContext.current
-    var editVisible by rememberSaveable { mutableStateOf(initialEditVisible || initialPhotoVisible) }
+    var editVisible by rememberSaveable { mutableStateOf(initialEditVisible || initialPhotoVisible || initialBirthDateVisible) }
+    var birthDateVisible by rememberSaveable { mutableStateOf(initialBirthDateVisible) }
     var photoVisible by rememberSaveable { mutableStateOf(initialPhotoVisible) }
     var draftName by rememberSaveable { mutableStateOf(displayName) }
     var draftEmail by rememberSaveable { mutableStateOf(email) }
@@ -99,6 +102,8 @@ fun ProfileScreen(
     if (photoVisible) ProfilePhotoSheet(displayName, photo, message,
         onDismiss = { photoVisible = false; message = null },
         onChoose = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+    if (birthDateVisible) BirthDateSheet(draftBirthDate, onDismiss = { birthDateVisible = false },
+        onSave = { draftBirthDate = it; birthDateVisible = false })
 }
 
 @Composable
@@ -235,10 +240,7 @@ private fun ProfileEditScreen(
                         if (message != null) QuimiaToast(message = message, type = QuimiaToastType.Error, onDismiss = onMessageDismiss)
                         QuimiaInput(value = name, onValueChange = { onNameChange(it.take(80)) }, label = "Nome",
                             trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = { onNameChange("") })
-                        QuimiaInput(value = birthDate, onValueChange = { onBirthDateChange(formatProfileBirthDate(it)) },
-                            label = "Data de nascimento", placeholder = "DD/MM", showClearButton = false,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            error = if (birthDate.length == 5) profileBirthDateError(birthDate) else null)
+                        BirthDateField(birthDate, onBirthDateChange, error = profileBirthDateError(birthDate))
                         QuimiaInput(value = email, onValueChange = { onEmailChange(it.take(254)) }, label = "E-mail",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = { onEmailChange("") })

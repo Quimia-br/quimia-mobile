@@ -58,7 +58,7 @@ private fun ProfileDyslexicPreview() = ProfileAccessibilityPreview(ProfilePrefer
 private fun ProfileEditPreview() {
     QuimiaTheme {
         ProfileScreen("Gabriela Benfica", "gabrielabenfica@gmail.com.br", ProfilePreferences(), {}, {}, {}, {},
-            painterResource(R.drawable.profile_avatar_figma), initialEditVisible = true, birthDate = "20/04")
+            painterResource(R.drawable.profile_avatar_figma), initialEditVisible = true, birthDate = "20/04/2010")
     }
 }
 
@@ -69,7 +69,7 @@ private fun ProfileEditPreview() {
 private fun ProfilePhotoPreview() {
     QuimiaTheme {
         ProfileScreen("Gabriela Benfica", "gabrielabenfica@gmail.com.br", ProfilePreferences(), {}, {}, {}, {},
-            painterResource(R.drawable.profile_avatar_figma), birthDate = "20/04", initialPhotoVisible = true)
+            painterResource(R.drawable.profile_avatar_figma), birthDate = "20/04/2010", initialPhotoVisible = true)
     }
 }
 
@@ -80,6 +80,26 @@ private fun ProfilePhotoPreview() {
 @Preview(name = "Editar · texto ampliado", group = "Acessibilidade", widthDp = 320, heightDp = 720, fontScale = 1.4f)
 @Composable
 private fun ProfileEditDevicesPreview() = ProfileEditPreview()
+
+@QuimiaScreenPreviews
+@Preview(name = "Figma · Selecionar nascimento", group = "Perfil", widthDp = 360, heightDp = 800, showSystemUi = true)
+@Composable
+private fun ProfileBirthDateEmptyPreview() {
+    QuimiaTheme(false) {
+        ProfileScreen("Fernando Pessoa", "gabrielabenfica@gmail.com.br", ProfilePreferences(), {}, {}, {}, {},
+            painterResource(R.drawable.profile_avatar_figma), initialBirthDateVisible = true)
+    }
+}
+
+@QuimiaScreenPreviews
+@Preview(name = "Figma · Nascimento selecionado", group = "Perfil", widthDp = 360, heightDp = 800, showSystemUi = true)
+@Composable
+private fun ProfileBirthDateSelectedPreview() {
+    QuimiaTheme(false) {
+        ProfileScreen("Fernando Pessoa", "gabrielabenfica@gmail.com.br", ProfilePreferences(), {}, {}, {}, {},
+            painterResource(R.drawable.profile_avatar_figma), birthDate = "15/10/2026", initialBirthDateVisible = true)
+    }
+}
 
 @Composable
 private fun ProfileAccessibilityPreview(preferences: ProfilePreferences) {
