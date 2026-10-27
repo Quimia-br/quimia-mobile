@@ -15,6 +15,7 @@ data class CatalogProduct(
     val photoUrl: String? = null,
     val brandLogoUrl: String? = null,
     val remote: Boolean = false,
+    val brandName: String? = null,
 )
 
 private val mrMusculo = CatalogProduct(

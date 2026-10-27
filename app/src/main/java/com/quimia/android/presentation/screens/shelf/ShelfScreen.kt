@@ -42,6 +42,8 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Settings2
 import com.composables.icons.lucide.SoapDispenserDroplet
 import com.composables.icons.lucide.X
+import com.quimia.android.presentation.screens.catalog.CatalogImage
+import com.quimia.android.presentation.screens.catalog.CatalogDescriptionCard
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
 import com.quimia.android.R
 import chip.QuimiaChip
@@ -71,7 +73,7 @@ internal val ShelfBodyStyle: androidx.compose.ui.text.TextStyle
     @Composable get() = QuimiaTextStyles.medium15
 
 @Composable
-fun ShelfScreen(
+internal fun ShelfScreen(
     savedIds: List<String>,
     onSavedIdsChange: (List<String>) -> Unit,
     onMenuItemSelected: (Int) -> Unit = {},
@@ -87,11 +89,29 @@ fun ShelfScreen(
     initialFavoriteSubstanceIds: List<String> = emptyList(),
     rooms: List<QuimiaRoom> = emptyList(),
     onOpenRoom: (String) -> Unit = {},
+    apiProducts: List<CatalogProduct>? = null,
+    apiSubstances: List<ShelfSubstance>? = null,
+    initialQuery: String = "",
+    onQueryChange: (String) -> Unit = {},
+    onTabChange: (Boolean) -> Unit = {},
+    onSortChange: (ShelfSort?) -> Unit = {},
+    onUnavailable: (String) -> Unit = {},
+    onApiActions: ((CatalogProduct) -> Unit)? = null,
+    onApiRoom: ((String) -> Unit)? = null,
+    onApiExpand: (String) -> Unit = {},
+    onSubstanceMix: ((String) -> Unit)? = null,
+    onSubstanceMixtures: ((String) -> Unit)? = null,
+    showEmpty: Boolean = true,
+    statusContent: (@Composable () -> Unit)? = null,
+    footerContent: (@Composable () -> Unit)? = null,
+    protectionContent: (@Composable (String) -> Unit)? = null,
+    externalOverlay: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     var tab by rememberSaveable { mutableStateOf(if (initialSubstancesTab) ShelfTab.Substances else ShelfTab.Products) }
-    var query by rememberSaveable { mutableStateOf("") }
-    val voiceInput = rememberVoiceInput { query = it }
+    var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
+    fun changeQuery(value: String) { query = value.take(100); onQueryChange(query) }
+    val voiceInput = rememberVoiceInput { changeQuery(it) }
     var sort by rememberSaveable { mutableStateOf<ShelfSort?>(ShelfSort.Alphabetical) }
     var filtersVisible by rememberSaveable { mutableStateOf(initialFiltersVisible) }
     var favoriteSubstanceIds by rememberSaveable { mutableStateOf(initialFavoriteSubstanceIds) }
@@ -106,10 +126,10 @@ fun ShelfScreen(
         if (successVisible) { delay(4_000); successVisible = false }
     }
 
-    val products = remember(savedIds, query, sort, favoriteIds) {
-        filterShelfProducts(sampleCatalogProducts, savedIds, favoriteIds, query, sort)
+    val products = remember(apiProducts, savedIds, query, sort, favoriteIds) {
+        apiProducts ?: filterShelfProducts(sampleCatalogProducts, savedIds, favoriteIds, query, sort)
     }
-    val substances = remember(query, sort, favoriteSubstanceIds) {
+    val substances = apiSubstances ?: remember(query, sort, favoriteSubstanceIds) {
         val filtered = sampleShelfSubstances.filter {
             it.name.contains(query.trim(), true) && (sort != ShelfSort.Favorites || it.id in favoriteSubstanceIds)
         }
@@ -119,7 +139,7 @@ fun ShelfScreen(
             else -> filtered
         }
     }
-    val overlayVisible = actionId != null || detailId != null || removeId != null || roomId != null
+    val overlayVisible = externalOverlay || actionId != null || detailId != null || removeId != null || roomId != null
 
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         Box(Modifier.fillMaxWidth().height(276.dp).background(
@@ -153,7 +173,7 @@ fun ShelfScreen(
                             iconLeftVector = if (item == ShelfTab.Products) SoapDispenserDroplet else null,
                             iconLeft = if (item == ShelfTab.Substances) R.drawable.figma_bubbles else null,
                             containerColor = if (tab == item) tokens.surfaceBase else Color.Transparent,
-                            textColor = tokens.foregroundPrimary, onClick = { tab = item },
+                            textColor = tokens.foregroundPrimary, onClick = { tab = item; onTabChange(item == ShelfTab.Substances) },
                         )
                     }
                 }
@@ -164,7 +184,7 @@ fun ShelfScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     QuimiaSearchBar(
-                        value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(58.dp),
+                        value = query, onValueChange = { changeQuery(it) }, modifier = Modifier.weight(1f).height(58.dp),
                         placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz",
                         onClick = voiceInput,
                         searchIconSize = 24.dp, horizontalPadding = 16.dp, verticalPadding = 12.dp,
@@ -188,20 +208,23 @@ fun ShelfScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         ShelfSort.entries.take(3).forEach { item ->
                             ShelfFilterChip(item, sort == item, Modifier.weight(if (item == ShelfSort.Alphabetical) 1.37f else 1f)) {
-                                sort = if (sort == item) null else item
+                                if (apiProducts != null && item != ShelfSort.Alphabetical) onUnavailable("Esta ordenação ainda não está disponível.")
+                                else { sort = if (sort == item) null else item; onSortChange(sort) }
                             }
                         }
                     }
                     ShelfFilterChip(ShelfSort.Oldest, sort == ShelfSort.Oldest, Modifier.width(97.dp)) {
-                        sort = if (sort == ShelfSort.Oldest) null else ShelfSort.Oldest
+                        if (apiProducts != null) onUnavailable("A ordenação por data de salvamento ainda não está disponível.")
+                        else { sort = if (sort == ShelfSort.Oldest) null else ShelfSort.Oldest; onSortChange(sort) }
                     }
                 }
             }
-            if ((tab == ShelfTab.Products && products.isEmpty()) || (tab == ShelfTab.Substances && substances.isEmpty())) item {
+            item { statusContent?.invoke() }
+            if (showEmpty && ((tab == ShelfTab.Products && products.isEmpty()) || (tab == ShelfTab.Substances && substances.isEmpty()))) item {
                 QuimiaEmptyState(
                     modifier = Modifier.padding(top = 24.dp), fillAvailableSpace = false,
-                    title = if (tab == ShelfTab.Substances) "Nenhuma substância na estante" else "Nenhum produto encontrado",
-                    description = if (tab == ShelfTab.Substances) "Suas substâncias salvas aparecerão aqui."
+                    title = if (tab == ShelfTab.Substances) "Nenhuma substância informada" else "Nenhum produto encontrado",
+                    description = if (tab == ShelfTab.Substances) "As substâncias dependem da composição cadastrada dos produtos. Experimente outra pesquisa ou confira as informações disponíveis."
                         else if (savedIds.isEmpty()) "Guarde produtos no Catálogo para montar sua estante." else "Experimente outra pesquisa ou filtro.",
                     titleTextStyle = Typography.titleMedium, descriptionTextStyle = Typography.bodySmall,
                 )
@@ -212,25 +235,33 @@ fun ShelfScreen(
                     expanded = substance.id in expandedSubstanceIds,
                     favorite = substance.id in favoriteSubstanceIds,
                     onExpand = { expandedSubstanceIds = expandedSubstanceIds.toggle(substance.id) },
-                    onFavorite = { favoriteSubstanceIds = favoriteSubstanceIds.toggle(substance.id) },
-                    onRoom = { roomId = substance.id },
-                    onMix = { onMixProduct(substance.id) },
-                    onMixtures = { onViewMixtures(substance.id) },
+                    onFavorite = { if (apiSubstances != null) onUnavailable("Favoritos indisponíveis no momento.") else favoriteSubstanceIds = favoriteSubstanceIds.toggle(substance.id) },
+                    onRoom = { if (apiSubstances != null) onUnavailable("Consulte o cômodo nos produtos que contêm esta substância.") else roomId = substance.id },
+                    onMix = { if (onSubstanceMix != null) onSubstanceMix(substance.id) else onMixProduct(substance.id) },
+                    onMixtures = { if (onSubstanceMixtures != null) onSubstanceMixtures(substance.id) else onViewMixtures(substance.id) },
                 )
             } else items(products, key = { it.id }) { product ->
                 ShelfProductCard(
                     product, expanded = product.id in expandedIds, favorite = product.id in favoriteIds,
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = if (product.id == products.first().id) 24.dp else 16.dp),
-                    onExpand = { expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id },
-                    onFavorite = { onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
-                    onActions = { actionId = product.id }, onRoom = {
+                    onExpand = {
+                        if (product.id !in expandedIds) onApiExpand(product.id)
+                        expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id
+                    },
+                    onFavorite = { if (apiProducts != null) onUnavailable("Favoritos indisponíveis no momento.")
+                        else onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
+                    onActions = { if (onApiActions != null) onApiActions(product) else actionId = product.id }, onRoom = {
+                        if (onApiRoom != null) onApiRoom(product.id) else {
                         val linkedRooms = roomsForProduct(rooms, product.id)
                         if (linkedRooms.size == 1) onOpenRoom(linkedRooms.single().id)
                         else roomId = product.id
+                        }
                     },
                     onMix = { onMixProduct(product.id) },
+                    protectionContent = protectionContent?.let { { it(product.id) } },
                 )
             }
+            item { footerContent?.invoke() }
         }
         if (!overlayVisible) {
             QuimiaMenuBarBackdrop(Modifier.align(Alignment.BottomCenter))
@@ -291,6 +322,7 @@ private fun ShelfFilterChip(item: ShelfSort, selected: Boolean, modifier: Modifi
 private fun ShelfProductCard(
     product: CatalogProduct, expanded: Boolean, favorite: Boolean, modifier: Modifier,
     onExpand: () -> Unit, onFavorite: () -> Unit, onActions: () -> Unit, onRoom: () -> Unit, onMix: () -> Unit,
+    protectionContent: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
     QuimiaCard(
@@ -299,7 +331,7 @@ private fun ShelfProductCard(
         modifier = modifier, contentPadding = 24.dp, sectionSpacing = 0.dp, endIcon = null,
     ) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
-            QuimiaImage(
+            if (product.remote) CatalogImage(product, modifier = Modifier.size(45.dp)) else QuimiaImage(
                 painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes), contentDescription = product.name,
                 modifier = Modifier.size(45.dp),
                 backgroundColor = tokens.surfaceBase,
@@ -311,7 +343,7 @@ private fun ShelfProductCard(
                     style = ShelfBodyStyle, color = tokens.foregroundPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    when { product.id.startsWith("squeeze") -> "Mr Músculos"; product.id == "veja" -> "Veja"; else -> "Omo" },
+                    when { product.remote -> product.brandName ?: "Marca não informada"; product.id.startsWith("squeeze") -> "Mr Músculos"; product.id == "veja" -> "Veja"; else -> "Omo" },
                     style = ShelfBodyStyle, color = tokens.foregroundSubtle,
                 )
             }
@@ -324,9 +356,8 @@ private fun ShelfProductCard(
         }
         if (expanded) {
             Spacer(Modifier.height(32.dp))
-            QuimiaListItem(
-                title = "Como se proteger?", subtitle = "Description",
-            )
+            if (protectionContent != null) protectionContent()
+            else QuimiaListItem(title = "Como se proteger?", subtitle = "Description")
         }
         Spacer(Modifier.height(32.dp))
         ShelfCardActions(favorite, false, onFavorite, onActions, onRoom, onMix)
@@ -357,7 +388,13 @@ private fun ShelfSubstanceCard(
         }
         if (expanded) {
             Spacer(Modifier.height(32.dp))
-            QuimiaListItem(title = "Descrição da substância")
+            CatalogDescriptionCard(substance.description)
+            substance.cas?.takeIf { it.isNotBlank() }?.let { Text("CAS: $it", style = ShelfBodyStyle, color = tokens.textSecondary) }
+            if (substance.classes.isNotEmpty()) Text(substance.classes.joinToString(", "), style = ShelfBodyStyle, color = tokens.textSecondary)
+            if (substance.products.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text("Presente em: ${substance.products.joinToString(", ")}", style = ShelfBodyStyle, color = tokens.textPrimary)
+            }
         }
         Spacer(Modifier.height(32.dp))
         ShelfCardActions(favorite, true, onFavorite, onMixtures, onRoom, onMix)
