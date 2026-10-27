@@ -27,6 +27,7 @@ import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
 import com.quimia.android.presentation.screens.shelf.ShelfActionsPanel
 import com.quimia.android.presentation.screens.shelf.ShelfProductInformation
 import header.QuimiaSearchBar
+import com.quimia.android.presentation.components.rememberVoiceInput
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.CancellationException
 import menuBar.*
@@ -138,6 +139,7 @@ private fun RoomList(
 ) {
     val tokens = quimiaColorTokens()
     var query by rememberSaveable { mutableStateOf("") }
+    val voiceInput = rememberVoiceInput { query = it }
     var filtersVisible by rememberSaveable { mutableStateOf(false) }
     var sort by rememberSaveable { mutableStateOf(RoomSort.Oldest) }
     val visibleRooms = remember(rooms, query, sort) { filterRooms(rooms, query, sort) }
@@ -163,6 +165,7 @@ private fun RoomList(
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 QuimiaSearchBar(value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(58.dp),
                     placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz", searchIconSize = 24.dp,
+                    onClick = voiceInput,
                     horizontalPadding = 16.dp, verticalPadding = 12.dp, spacedBy = 10.dp, textStyle = QuimiaTextStyles.medium16)
                 QuimiaIconButton(icon = Lucide.Settings2, containerColor = if (filtersVisible) tokens.secondaryPressed else tokens.surfaceBase,
                     contentDescription = "Mostrar ou ocultar filtros", onClick = { filtersVisible = !filtersVisible })

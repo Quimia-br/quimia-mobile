@@ -72,6 +72,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Mic
 import com.composables.icons.lucide.X
 import header.QuimiaSearchBar
+import com.quimia.android.presentation.components.rememberVoiceInput
 import image.QuimiaImage
 import menuBar.QuimiaMenuBar
 import menuBar.QuimiaMenuBarBackdrop
@@ -106,6 +107,7 @@ fun CatalogScreen(
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable { mutableStateOf("") }
+    val voiceInput = rememberVoiceInput { query = it }
     var bannerVisible by rememberSaveable { mutableStateOf(initialBannerVisible) }
     var showLabelScanner by rememberSaveable { mutableStateOf(false) }
     var savedIds by remember(initialSavedProductIds) { mutableStateOf(initialSavedProductIds.toSet()) }
@@ -173,7 +175,8 @@ fun CatalogScreen(
             ) {
                 QuimiaSearchBar(
                     value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(60.dp),
-                    placeholder = "Pesquisar",icon = Lucide.Mic,
+                    placeholder = "Pesquisar", icon = Lucide.Mic,
+                    iconDescription = "Pesquisar por voz", onClick = voiceInput,
                     horizontalPadding = 16.dp, verticalPadding = 12.dp,
                     spacedBy = 12.dp, textStyle = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
                     searchIconSize = 22.dp,

@@ -23,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
@@ -115,8 +116,9 @@ fun QuimiaButton(
 
             Text(
                 text = text,
+                style = resolvedTextStyle,
                 modifier = if (fillTextWidth) Modifier.weight(1f) else Modifier,
-                style = resolvedTextStyle
+                textAlign = if (isCentered || centerContent) TextAlign.Center else TextAlign.Start,
             )
             iconRightVector?.let {
                Icon(

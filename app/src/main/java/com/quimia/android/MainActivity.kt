@@ -47,6 +47,13 @@ import com.quimia.android.presentation.screens.profile.*
 import com.quimia.android.utils.AnalyticsLogger
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import theme.QuimiaTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.quimia.android.presentation.screens.kemi.KemiController
+import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
+import com.quimia.android.presentation.screens.kemi.KemiScreen
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.quimia.android.presentation.screens.auth.AuthDestination
 
@@ -120,7 +127,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
     var referenceAddress by rememberSaveable(sessionUid) { mutableStateOf("Defina seu endereço de referência") }
     var referenceAddressFields by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
-    var showAiNotice by rememberSaveable { mutableStateOf(false) }
+    var showKemi by rememberSaveable(sessionUid) { mutableStateOf(false) }
+    val kemiController = rememberSaveable(sessionUid, saver = KemiControllerSaver) { KemiController() }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
         if (index in 0..4) selectedMainTab = index
@@ -129,6 +137,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
 
     val currentScreen = when {
+        authState is AuthResult.Success && showKemi -> "kemi"
         authState is AuthResult.Success && showProfile -> "profile"
         authState is AuthResult.Success -> when (selectedMainTab) { 1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; 4 -> "rooms"; else -> "home" }
         else -> authDestination.screenName
@@ -137,7 +146,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && (showProfile || selectedMainTab in 2..4)) {
+    BackHandler(enabled = authState is AuthResult.Success && !showKemi && (showProfile || selectedMainTab in 2..4)) {
         if (showProfile) showProfile = false else selectedMainTab = 0
     }
 
@@ -147,84 +156,95 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
 
     when (authState) {
         is AuthResult.Success -> {
-            if (showProfile) ProfileScreen(
-                displayName = displayName, email = profileEmail, preferences = preferences, birthDate = birthDate,
-                onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
-                onDisplayNameChange = { displayName = it; profileStore.saveDisplayName(it) },
-                onPhotoUriChange = { photoUri = it; profileStore.savePhotoUri(it) },
-                onDetailsChange = { details ->
-                    profileStore.saveDetails(details)
-                    displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
-                },
-                onLogout = {
-                    showProfile = false; selectedMainTab = 0
-                    navigateAuth(AuthDestination.Welcome)
-                    AuthDestination.entries.forEach { authScreens.removeState(it.name) }
-                    recoveryEmail = ""; authNotice = null
-                    authViewModel.logout()
-                },
-            ) else when (selectedMainTab) {
-                1 -> CatalogScreen(
-                    onMenuItemSelected = onMainTabSelected,
-                    onAiClick = { showAiNotice = true },
-                    initialSavedProductIds = savedProductIds,
-                    onSavedProductIdsChange = { savedProductIds = it },
-                )
-                2 -> ShelfScreen(
-                    savedIds = savedProductIds,
-                    onSavedIdsChange = { savedProductIds = it },
-                    favoriteIds = favoriteProductIds,
-                    onFavoriteIdsChange = { favoriteProductIds = it },
-                    onMenuItemSelected = onMainTabSelected,
-                    onAddProduct = { selectedMainTab = 1 },
-                    onAiClick = { showAiNotice = true },
-                    onMixProduct = { unavailableTab = "Misturas" },
-                    onViewMixtures = { unavailableTab = "Misturas" },
-                    onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
-                    rooms = rooms,
-                    onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
-                )
-                4 -> RoomsScreen(
-                    rooms = rooms, onRoomsChange = { rooms = it }, savedProductIds = savedProductIds,
-                    onMenuItemSelected = onMainTabSelected, onAiClick = { showAiNotice = true },
-                    onOpenCatalog = { selectedMainTab = 1 }, initialProductId = roomDraftProductId,
-                    onInitialProductConsumed = { roomDraftProductId = null },
-                    initialRoomId = roomToOpenId,
-                    onInitialRoomConsumed = { roomToOpenId = null },
-                )
-                3 -> ProximityScreen(
-                    onMenuItemSelected = onMainTabSelected,
-                    initialSavedPointIds = savedPointIds,
-                    onSavedPointIdsChange = { savedPointIds = it },
-                    initialAddress = referenceAddress,
-                    onAddressChange = { referenceAddress = it },
-                    initialAddressFields = referenceAddressFields,
-                    onAddressFieldsChange = { referenceAddressFields = it },
-                )
-                else -> HomeScreen(
-                    avatarInitials = profileInitials(displayName), avatarPhoto = photo,
-                    onAvatarClick = { showProfile = true },
-                    onMenuItemSelected = onMainTabSelected,
-                    onFindDropOffClick = { selectedMainTab = 3 },
-                    onShelfClick = { selectedMainTab = 2 },
-                    onAiClick = { showAiNotice = true },
-                )
-            }
-            if (showAiNotice) {
-                AlertDialog(
-                    onDismissRequest = { showAiNotice = false },
-                    title = { Text("Assistente de IA") },
-                    text = { Text("O acesso ao assistente está preparado, mas ainda não há um serviço de IA conectado neste app.") },
-                    confirmButton = { TextButton(onClick = { showAiNotice = false }) { Text("Entendi") } },
-                )
-            }
-            unavailableTab?.let { name ->
-                AlertDialog(
-                    onDismissRequest = { unavailableTab = null },
-                    title = { Text(name) },
-                    text = { Text("Esta tela ainda não está disponível.") },
-                    confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
-                )
+            Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().then(if (showKemi) Modifier.clearAndSetSemantics { } else Modifier)) {
+                    if (showProfile) ProfileScreen(
+                        displayName = displayName, email = profileEmail, preferences = preferences, birthDate = birthDate,
+                        onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
+                        onDisplayNameChange = { displayName = it; profileStore.saveDisplayName(it) },
+                        onPhotoUriChange = { photoUri = it; profileStore.savePhotoUri(it) },
+                        onDetailsChange = { details ->
+                            profileStore.saveDetails(details)
+                            displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
+                        },
+                        onLogout = {
+                            showProfile = false; selectedMainTab = 0
+                            navigateAuth(AuthDestination.Welcome)
+                            AuthDestination.entries.forEach { authScreens.removeState(it.name) }
+                            recoveryEmail = ""; authNotice = null
+                            authViewModel.logout()
+                        },
+                    ) else when (selectedMainTab) {
+                        1 -> CatalogScreen(
+                            onMenuItemSelected = onMainTabSelected,
+                            onAiClick = { showKemi = true },
+                            initialSavedProductIds = savedProductIds,
+                            onSavedProductIdsChange = { savedProductIds = it },
+                        )
+                        2 -> ShelfScreen(
+                            savedIds = savedProductIds,
+                            onSavedIdsChange = { savedProductIds = it },
+                            favoriteIds = favoriteProductIds,
+                            onFavoriteIdsChange = { favoriteProductIds = it },
+                            onMenuItemSelected = onMainTabSelected,
+                            onAddProduct = { selectedMainTab = 1 },
+                            onAiClick = { showKemi = true },
+                            onMixProduct = { unavailableTab = "Misturas" },
+                            onViewMixtures = { unavailableTab = "Misturas" },
+                            onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
+                            rooms = rooms,
+                            onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
+                        )
+                        4 -> RoomsScreen(
+                            rooms = rooms, onRoomsChange = { rooms = it }, savedProductIds = savedProductIds,
+                            onMenuItemSelected = onMainTabSelected, onAiClick = { showKemi = true },
+                            onOpenCatalog = { selectedMainTab = 1 }, initialProductId = roomDraftProductId,
+                            onInitialProductConsumed = { roomDraftProductId = null },
+                            initialRoomId = roomToOpenId,
+                            onInitialRoomConsumed = { roomToOpenId = null },
+                        )
+                        3 -> ProximityScreen(
+                            onMenuItemSelected = onMainTabSelected,
+                            initialSavedPointIds = savedPointIds,
+                            onSavedPointIdsChange = { savedPointIds = it },
+                            initialAddress = referenceAddress,
+                            onAddressChange = { referenceAddress = it },
+                            initialAddressFields = referenceAddressFields,
+                            onAddressFieldsChange = { referenceAddressFields = it },
+                        )
+                        else -> HomeScreen(
+                            avatarInitials = profileInitials(displayName), avatarPhoto = photo,
+                            onAvatarClick = { showProfile = true },
+                            onMenuItemSelected = onMainTabSelected,
+                            onFindDropOffClick = { selectedMainTab = 3 },
+                            onShelfClick = { selectedMainTab = 2 },
+                            onAiClick = { showKemi = true },
+                        )
+                    }
+                }
+                if (showKemi) {
+                    KemiScreen(
+                        controller = kemiController,
+                        displayName = displayName.takeUnless { it == "Seu nome" }?.substringBefore(' '),
+                        onClose = { showKemi = false },
+                        onHome = { showKemi = false; selectedMainTab = 0 },
+                        onSignInAgain = {
+                            showKemi = false; showProfile = false; selectedMainTab = 0
+                            navigateAuth(AuthDestination.Login)
+                            AuthDestination.entries.forEach { authScreens.removeState(it.name) }
+                            recoveryEmail = ""; authNotice = null
+                            authViewModel.logout()
+                        },
+                    )
+                }
+                unavailableTab?.let { name ->
+                    AlertDialog(
+                        onDismissRequest = { unavailableTab = null },
+                        title = { Text(name) },
+                        text = { Text("Esta tela ainda não está disponível.") },
+                        confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
+                    )
+                }
             }
         }
         else -> {
