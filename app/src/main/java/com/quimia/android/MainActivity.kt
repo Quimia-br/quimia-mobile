@@ -39,7 +39,7 @@ import com.quimia.android.presentation.screens.auth.password.LoginPassSuccesScre
 import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeScreen
-import com.quimia.android.presentation.screens.catalog.CatalogScreen
+import com.quimia.android.presentation.screens.catalog.CatalogRoute
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
@@ -233,7 +233,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && !showKemi && !showMixtures && (showProfile || selectedMainTab in 2..4)) {
+    BackHandler(enabled = authState is AuthResult.Success && !showKemi && !showMixtures && (showProfile || selectedMainTab in 1..4)) {
         if (showProfile) showProfile = false else selectedMainTab = 0
     }
 
@@ -275,11 +275,15 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             authViewModel.logout()
                         },
                     ) else when (selectedMainTab) {
-                        1 -> CatalogScreen(
+                        1 -> CatalogRoute(
+                            userId = sessionUid.orEmpty(),
                             onMenuItemSelected = onMainTabSelected,
                             onAiClick = { showKemi = true },
-                            initialSavedProductIds = savedProductIds,
-                            onSavedProductIdsChange = { savedProductIds = it },
+                            onSessionExpired = {
+                                selectedMainTab = 0; showProfile = false; showMixtures = false
+                                navigateAuth(AuthDestination.Login); authViewModel.logout()
+                                authNotice = "Sua sessão expirou. Entre novamente para continuar."
+                            },
                         )
                         2 -> ShelfScreen(
                             savedIds = savedProductIds,

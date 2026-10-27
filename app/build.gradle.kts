@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(project(":designSystem"))
     implementation(libs.coil.compose)
+    implementation("com.google.zxing:core:3.5.4")
     implementation(libs.play.services.maps)
     
     implementation(libs.retrofit)
