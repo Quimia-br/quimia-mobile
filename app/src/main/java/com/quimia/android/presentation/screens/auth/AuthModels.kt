@@ -22,6 +22,15 @@ enum class AuthDestination(val screenName: String) {
 }
 
 internal fun authEmailError(value: String): String? = profileEmailError(value.trim())
+internal fun authLoginInputError(email: String, password: String): String? = when {
+    authEmailError(email) != null || email.trim().length > 255 -> "Informe um e-mail válido."
+    else -> authLoginPasswordError(password)
+}
+internal fun authLoginPasswordError(password: String): String? = when {
+    password.isBlank() -> "Informe sua senha."
+    password.length > 72 -> "A senha pode ter no máximo 72 caracteres."
+    else -> null
+}
 internal fun authNameError(value: String): String? = profileNameError(value)
 internal fun authBirthDateError(value: String): String? =
     if (value.isBlank()) "Informe sua data de nascimento." else profileBirthDateError(value)

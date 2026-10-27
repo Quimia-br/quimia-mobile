@@ -12,6 +12,13 @@ import kotlinx.serialization.json.Json
 internal class GoogleOnboardingStore(private val context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("quimia_google_onboarding", Context.MODE_PRIVATE)
     fun completed(profile: GoogleOnboarding): Boolean = profile.valid && preferences.getBoolean(profileStorageScope(profile.uid, profile.email) + ".completed", false)
+    fun pending(uid: String, email: String): Boolean {
+        val key = profileStorageScope(uid, email) + ".completed"
+        return preferences.contains(key) && !preferences.getBoolean(key, false)
+    }
+    fun clearPending(uid: String, email: String) {
+        if (pending(uid, email)) preferences.edit().remove(profileStorageScope(uid, email) + ".completed").apply()
+    }
     fun markPending(uid: String, email: String) {
         preferences.edit().putBoolean(profileStorageScope(uid, email) + ".completed", false).apply()
     }

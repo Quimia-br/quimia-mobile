@@ -113,8 +113,10 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val googleDraft by authViewModel.googleOnboarding.collectAsStateWithLifecycle()
     val authBusy by authViewModel.busy.collectAsStateWithLifecycle()
+    val authBusyLabel by authViewModel.busyLabel.collectAsStateWithLifecycle()
+    val sessionProblem by authViewModel.sessionProblem.collectAsStateWithLifecycle()
     val authMessage by authViewModel.message.collectAsStateWithLifecycle()
-    var choosingGoogle by rememberSaveable { mutableStateOf(false) }
+    var choosingGoogle by remember { mutableStateOf(false) }
     var authRouteName by rememberSaveable { mutableStateOf(AuthDestination.Welcome.name) }
     val authDestination = AuthDestination.valueOf(authRouteName)
     val authScreens = rememberSaveableStateHolder()
@@ -132,11 +134,15 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val google = remember(context) { GoogleSignInHelper(context) }
     val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         choosingGoogle = false
-        if (result.resultCode == Activity.RESULT_OK) {
+        if (result.resultCode == Activity.RESULT_OK || result.data != null) {
             try {
                 val token = google.accountFromResult(result.data)?.idToken
                     ?: error("Não foi possível confirmar sua conta Google. Tente novamente.")
                 authViewModel.loginWithGoogle(token)
+            } catch (error: com.google.android.gms.common.api.ApiException) {
+                if (error.statusCode != com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
+                    authNotice = "Não foi possível entrar com Google. Tente novamente. Código: ${error.statusCode}."
+                }
             } catch (error: Exception) { authNotice = error.message ?: "Não foi possível entrar com Google. Tente novamente." }
         }
     }
@@ -158,11 +164,11 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
     val profileStore = remember(sessionUid, sessionEmail) { LocalProfileStore(context, sessionUid.orEmpty(), sessionEmail) }
     var displayName by rememberSaveable(sessionUid, sessionEmail) {
-        mutableStateOf(profileStore.displayName() ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
+        mutableStateOf(profileStore.displayName() ?: authViewModel.accountName ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
     }
     var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri() ?: authViewModel.providerPhotoUrl) }
     var profileEmail by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.email() ?: sessionEmail) }
-    var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.birthDate()) }
+    var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.birthDate().ifBlank { authViewModel.accountBirthDate }) }
     val photoPainter = rememberAsyncImagePainter(photoUri)
     val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
     var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
@@ -220,10 +226,19 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
 
     BackHandler(enabled = authState !is AuthResult.Success && authDestination != AuthDestination.Welcome) {
-        if (!authBusy) when (authDestination) {
+        if (!authBusy && !choosingGoogle) when (authDestination) {
             AuthDestination.GoogleDetails -> { authViewModel.cancelGoogle(); navigateAuth(AuthDestination.Login) }
             AuthDestination.GoogleAddress -> authViewModel.backGoogle()
             else -> navigateAuth(authDestination.back())
+        }
+    }
+
+    LaunchedEffect(sessionUid) {
+        if (sessionUid != null) {
+            selectedMainTab = 0
+            AuthDestination.entries.forEach { authScreens.removeState(it.name) }
+            authScreens.removeState(AuthDestination.GoogleDetails.name + sessionUid)
+            authScreens.removeState(AuthDestination.GoogleAddress.name + sessionUid)
         }
     }
 
@@ -387,14 +402,20 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
             }
         }
     }
-    if (authBusy) androidx.compose.material3.AlertDialog(
+    if (authBusy || choosingGoogle) androidx.compose.material3.AlertDialog(
         onDismissRequest = {}, confirmButton = {},
         properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         text = { androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
             androidx.compose.material3.CircularProgressIndicator(Modifier.size(24.dp))
-            Text(if (googleDraft == null) "Entrando com Google…" else "Salvando seus dados…")
+            Text(if (choosingGoogle) "Abrindo acesso Google…" else authBusyLabel)
         } },
+    )
+    if (!authBusy && sessionProblem != null) AlertDialog(
+        onDismissRequest = {}, title = { Text("Não foi possível conferir sua sessão") },
+        text = { Text(sessionProblem.orEmpty()) },
+        confirmButton = { TextButton(onClick = authViewModel::retrySession) { Text("Tentar novamente") } },
+        dismissButton = { TextButton(onClick = { navigateAuth(AuthDestination.Login); authViewModel.logout() }) { Text("Ir para login") } },
     )
     authNotice?.let { notice ->
         AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
