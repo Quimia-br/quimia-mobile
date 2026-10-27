@@ -10,11 +10,28 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import com.quimia.android.data.address.*
 import input.QuimiaInput
 import kotlinx.coroutines.ensureActive
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+
+internal object PostalCodeVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val hasSeparator = text.length > 5
+        val formatted = if (hasSeparator) text.text.take(5) + "-" + text.text.drop(5) else text.text
+        return TransformedText(AnnotatedString(formatted), object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int =
+                if (hasSeparator && offset > 5) offset + 1 else offset
+            override fun transformedToOriginal(offset: Int): Int =
+                if (hasSeparator && offset > 5) offset - 1 else offset
+        })
+    }
+}
 
 internal data class PostalLookupState(val postalCode: String, val loading: Boolean = false,
     val address: PostalAddress? = null, val error: String? = null) {

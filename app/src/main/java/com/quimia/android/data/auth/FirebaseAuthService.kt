@@ -70,6 +70,8 @@ class FirebaseAuthService {
         } catch (e: IllegalArgumentException) {
             AnalyticsLogger.logError("FIREBASE_AUTH", e, "IllegalArgumentException: ${e.message}")
             AuthResult.Error(e.message ?: "Token do Google inválido")
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             AnalyticsLogger.logError("FIREBASE_AUTH", e, "Generic Exception: ${e.message}")
             AuthResult.Error(e.message ?: "Erro ao fazer login com Google")
@@ -77,6 +79,9 @@ class FirebaseAuthService {
     }
 
     fun isLoggedIn(): Boolean = auth?.currentUser != null
+
+    suspend fun backendIdToken(): String = auth?.currentUser?.getIdToken(true)?.await()?.token
+        ?.takeIf { it.isNotBlank() } ?: error("Não foi possível confirmar a conta Google. Entre novamente.")
 
     fun getCurrentUser() = auth?.currentUser
 

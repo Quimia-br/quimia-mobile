@@ -5,7 +5,7 @@ data class GoogleOnboarding(
     val photoUrl: String? = null, val addressStep: Boolean = false,
 ) {
     val valid: Boolean get() = uid.isNotBlank() && authEmailError(email) == null &&
-        authNameError(name) == null && authBirthDateError(birthDate) == null
+        authNameError(name) == null && authRegistrationBirthDateError(birthDate) == null
     val destination: AuthDestination get() = if (addressStep) AuthDestination.GoogleAddress else AuthDestination.GoogleDetails
     fun continueToAddress(): GoogleOnboarding? = takeIf { valid }?.copy(name = name.trim(), addressStep = true)
     fun backToDetails() = copy(addressStep = false)

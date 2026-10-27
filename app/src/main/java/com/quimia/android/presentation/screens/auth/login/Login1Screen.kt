@@ -29,9 +29,9 @@ fun Login1Screen(
     var password by rememberSaveable { mutableStateOf("") }
     val emailFocus = remember { FocusRequester() }
     val emailError = authEmailError(email)
-    val passwordError = authPasswordError(password)
+    val passwordError = authLoginPasswordError(password)
     AuthScreenLayout(modifier, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footerHorizontalPadding = 35.5.dp, footer = {
-        AuthPrimaryButton("Continuar", { onContinue(email.trim(), password) }, enabled = emailError == null && passwordError == null)
+        AuthPrimaryButton("Continuar", { onContinue(email.trim(), password) }, enabled = authLoginInputError(email, password) == null)
         Spacer(Modifier.height(8.dp))
         AuthFooterLink("Não tem conta no Quimia? ", "Crie já", onCreateAccount)
     }) {

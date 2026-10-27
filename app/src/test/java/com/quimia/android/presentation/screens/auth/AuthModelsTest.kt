@@ -31,10 +31,13 @@ class AuthModelsTest {
     @Test fun passwordConfirmationCannotProceedWithBlankShortOrDifferentPasswords() {
         assertNotNull(authPasswordError(""))
         assertNotNull(authPasswordError("12345"))
-        assertNull(authPasswordError("123456"))
-        assertNotNull(authPasswordConfirmationError("123456", "654321"))
+        assertNotNull(authPasswordError("123456"))
+        assertNotNull(authPasswordError("1234567"))
+        assertNotNull(authPasswordError("12345678"))
+        assertNull(authPasswordError("NovaSenha42!"))
+        assertNotNull(authPasswordConfirmationError("NovaSenha42!", "OutraSenha42!"))
         assertNotNull(authPasswordConfirmationError("", ""))
-        assertNull(authPasswordConfirmationError("123456", "123456"))
+        assertNull(authPasswordConfirmationError("NovaSenha42!", "NovaSenha42!"))
     }
     @Test fun addressSelectorContainsAllTwentySevenBrazilianStates() {
         assertEquals(27, BrazilianStates.size)

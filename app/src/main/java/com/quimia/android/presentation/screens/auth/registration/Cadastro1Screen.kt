@@ -16,16 +16,17 @@ import theme.QuimiaTheme
 import title.QuimiaMainTitle
 
 @Composable
-fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, onLogin: () -> Unit = {}, onGoogleClick: () -> Unit = {}) {
+fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, onLogin: () -> Unit = {}, onGoogleClick: () -> Unit = {},
+    onDetailsContinue: ((RegistrationDetails) -> Unit)? = null) {
     var name by rememberSaveable { mutableStateOf("") }
     var birthDate by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     val emailFocus = remember { FocusRequester() }
-    val valid = authNameError(name) == null && authBirthDateError(birthDate) == null &&
-        authEmailError(email) == null && authPasswordError(password) == null
+    val details = RegistrationDetails(name, birthDate, email, password)
+    val valid = authRegistrationError(details) == null
     AuthScreenLayout(modifier, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footerHorizontalPadding = 35.5.dp, footer = {
-        AuthPrimaryButton("Continuar", onContinue, enabled = valid)
+        AuthPrimaryButton("Continuar", { onDetailsContinue?.invoke(details) ?: onContinue() }, enabled = valid)
         Spacer(Modifier.height(8.dp))
         AuthFooterLink("Já tem cadastro? ", "Faça login aqui", onLogin)
     }) {
@@ -34,11 +35,11 @@ fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, 
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             QuimiaInput(name, { name = it.take(80) }, label = "Nome", placeholder = "Daniel Filho",
                 error = authNameError(name).takeIf { name.isNotEmpty() })
-            BirthDateField(birthDate, { birthDate = it }, error = authBirthDateError(birthDate).takeIf { birthDate.isNotEmpty() })
+            BirthDateField(birthDate, { birthDate = it }, error = authRegistrationBirthDateError(birthDate).takeIf { birthDate.isNotEmpty() })
             QuimiaInput(email, { email = it }, label = "E-mail", placeholder = "exemplo@quimia.com",
                 modifier = Modifier.focusRequester(emailFocus), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 error = authEmailError(email).takeIf { email.isNotEmpty() })
-            AuthPasswordInput(password, { password = it }, "Crie uma senha", authPasswordError(password).takeIf { password.isNotEmpty() })
+            AuthPasswordInput(password, { password = it }, "Crie uma senha", authNewPasswordError(password).takeIf { password.isNotEmpty() })
         }
         Spacer(Modifier.height(58.dp))
         AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
