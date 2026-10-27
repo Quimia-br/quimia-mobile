@@ -36,6 +36,7 @@ import shapeIcon.QuimiaShapeIconTheme
 import theme.QuimiaTheme
 import theme.RadiusFull
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
 
 enum class QuimiaToastType { Info, Success, Warning, Error }
 
@@ -76,6 +77,7 @@ fun QuimiaToast(
         shape = RoundedCornerShape(RadiusFull.dp),
         color = containerColor ?: tokens.surfaceBase,
         contentColor = tokens.textPrimary,
+        border = quimiaContrastBorder(),
     ) {
         Row(
             modifier = Modifier

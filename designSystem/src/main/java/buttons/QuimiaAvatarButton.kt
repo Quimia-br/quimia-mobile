@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +25,7 @@ import theme.PaddingSmall
 import theme.QuimiaTheme
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 
 @Composable
 fun QuimiaAvatarButton(
@@ -38,7 +40,7 @@ fun QuimiaAvatarButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(size)
+        modifier = modifier.size(size).quimiaContrastOutline(CircleShape)
     ) {
         QuimiaAvatar(
             size = size,

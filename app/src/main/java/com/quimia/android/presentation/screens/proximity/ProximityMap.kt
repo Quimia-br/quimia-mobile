@@ -46,6 +46,7 @@ import com.quimia.android.BuildConfig
 import kotlinx.coroutines.delay
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
 import toast.QuimiaToast
 import toast.QuimiaToastType
 import kotlin.math.roundToInt
@@ -178,7 +179,8 @@ private fun NearbyGoogleMap(
         QuimiaIconButton(modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 24.dp),
             icon = Lucide.Target, containerColor = if (location.location != null) tokens.primary else tokens.surfaceBase,
             contentDescription = "Centralizar na minha localização", onClick = locate)
-        if (loading) Row(Modifier.align(Alignment.Center).background(tokens.surfaceBase, RoundedCornerShape(24.dp)).padding(16.dp),
+        if (loading) Row(Modifier.align(Alignment.Center).background(tokens.surfaceBase, RoundedCornerShape(24.dp))
+            .quimiaContrastOutline(RoundedCornerShape(24.dp)).padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(Modifier.size(22.dp), color = tokens.primary, strokeWidth = 2.dp)
             Text("Carregando mapa…", style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
@@ -210,7 +212,8 @@ private fun NearbyGoogleMap(
 private fun NearbyMapNotice(message: String, onRetry: (() -> Unit)? = null) {
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(Modifier.padding(24.dp).background(tokens.surfaceBase, RoundedCornerShape(24.dp)).padding(20.dp),
+        Column(Modifier.padding(24.dp).background(tokens.surfaceBase, RoundedCornerShape(24.dp))
+            .quimiaContrastOutline(RoundedCornerShape(24.dp)).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(message, style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
             if (onRetry != null) QuimiaButton(modifier = Modifier.fillMaxWidth().height(43.dp), text = "Tentar novamente",

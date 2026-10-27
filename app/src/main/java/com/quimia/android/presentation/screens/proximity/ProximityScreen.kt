@@ -35,6 +35,7 @@ import title.QuimiaSectionTitle
 import theme.QuimiaTheme
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import theme.quimiaContrastBorder
 import toast.QuimiaToast
 import toast.QuimiaToastType
 import kotlinx.coroutines.delay
@@ -131,6 +132,7 @@ fun ProximityScreen(
                 .pointerInput(Unit) { detectVerticalDragGestures { change, amount -> change.consume(); if (amount < -8f) savedVisible = true } }
                 .clickable(onClickLabel = "Abrir pontos salvos") { savedVisible = true },
             shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp), color = tokens.secondary,
+            border = quimiaContrastBorder(),
         ) {
             Box(contentAlignment = Alignment.TopCenter) {
                 Box(Modifier.padding(top = 44.dp).width(90.dp).height(3.dp).background(tokens.white, CircleShape))
@@ -157,7 +159,7 @@ fun ProximityScreen(
 @Composable
 internal fun NearbyPointCard(point: NearbyPoint, saved: Boolean, modifier: Modifier = Modifier, onSave: () -> Unit) {
     val tokens = quimiaColorTokens()
-    Surface(modifier = modifier, shape = RoundedCornerShape(32.dp), color = tokens.surfaceBackground) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(32.dp), color = tokens.surfaceBackground, border = quimiaContrastBorder()) {
         Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             QuimiaListItem(title = point.name, subtitle = point.address, contentPadding = PaddingValues(0.dp), titleMaxLines = 1, subtitleMaxLines = 1,
                 containerColor = Color.Transparent, cornerRadius = 0.dp,

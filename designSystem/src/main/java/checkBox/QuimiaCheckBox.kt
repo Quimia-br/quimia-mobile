@@ -24,6 +24,7 @@ import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import theme.QuimiaTheme
 import theme.quimiaColorTokens
+import theme.quimiaHighContrastEnabled
 
 @Composable
 fun QuimiaCheckBox(
@@ -58,9 +59,9 @@ fun QuimiaCheckBox(
                 shape = shape,
             )
             .then(
-                if (!checked) Modifier.border(
-                    width = 1.5.dp,
-                    color = if (enabled) tokens.borderPrimary else tokens.foregroundDisabled,
+                if (!checked || quimiaHighContrastEnabled()) Modifier.border(
+                    width = if (quimiaHighContrastEnabled()) 3.dp else 1.5.dp,
+                    color = if (quimiaHighContrastEnabled()) tokens.borderFocus else if (enabled) tokens.borderPrimary else tokens.foregroundDisabled,
                     shape = shape,
                 ) else Modifier,
             ),

@@ -33,6 +33,7 @@ import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.RadiusLarge
 import theme.quimiaColorTokens
+import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
 
 enum class QuimiaCardLayout {
@@ -69,6 +70,9 @@ fun QuimiaCard(
     onEndIconClick: () -> Unit = {},
     containerColor: Color? = null,
     headerContent: (@Composable () -> Unit)? = null,
+    contrastOutline: Boolean = true,
+    outlineColor: Color? = null,
+    outlineWidth: Dp = 3.dp,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
@@ -79,7 +83,7 @@ fun QuimiaCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
             .background(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
-            .then(if (outline) Modifier.border(3.dp, tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
+            .then(if (outline || (contrastOutline && quimiaHighContrastEnabled())) Modifier.border(outlineWidth, outlineColor ?: tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
             .padding(paddingValues ?: PaddingValues(contentPadding)),
         verticalArrangement = if (layout == QuimiaCardLayout.Default) Arrangement.SpaceBetween else Arrangement.Top,
     ) {
