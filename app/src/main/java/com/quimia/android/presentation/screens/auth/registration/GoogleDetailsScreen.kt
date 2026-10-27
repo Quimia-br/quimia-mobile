@@ -36,7 +36,7 @@ fun GoogleDetailsScreen(profile: GoogleOnboarding, onChange: (String, String) ->
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             QuimiaInput(profile.name, { onChange(it.take(80), profile.birthDate) }, label = "Nome", placeholder = "Seu nome",
                 error = authNameError(profile.name).takeIf { profile.name.isNotEmpty() })
-            BirthDateField(profile.birthDate, { onChange(profile.name, it) }, error = authBirthDateError(profile.birthDate).takeIf { profile.birthDate.isNotEmpty() })
+            BirthDateField(profile.birthDate, { onChange(profile.name, it) }, error = authRegistrationBirthDateError(profile.birthDate).takeIf { profile.birthDate.isNotEmpty() })
         }
     }
 }

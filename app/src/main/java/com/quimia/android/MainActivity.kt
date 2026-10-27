@@ -115,17 +115,17 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val authBusy by authViewModel.busy.collectAsStateWithLifecycle()
     val authBusyLabel by authViewModel.busyLabel.collectAsStateWithLifecycle()
     val sessionProblem by authViewModel.sessionProblem.collectAsStateWithLifecycle()
+    val nextAuthDestination by authViewModel.nextDestination.collectAsStateWithLifecycle()
+    val recoveryEmail by authViewModel.recoveryEmail.collectAsStateWithLifecycle()
+    val recoveryCodeError by authViewModel.recoveryCodeError.collectAsStateWithLifecycle()
+    val recoveryRevision by authViewModel.recoveryRevision.collectAsStateWithLifecycle()
     val authMessage by authViewModel.message.collectAsStateWithLifecycle()
     var choosingGoogle by remember { mutableStateOf(false) }
     var authRouteName by rememberSaveable { mutableStateOf(AuthDestination.Welcome.name) }
     val authDestination = AuthDestination.valueOf(authRouteName)
     val authScreens = rememberSaveableStateHolder()
-    var recoveryEmail by rememberSaveable { mutableStateOf("") }
     var authNotice by rememberSaveable { mutableStateOf<String?>(null) }
     fun navigateAuth(destination: AuthDestination) { authRouteName = destination.name }
-    val registrationUnavailable = {
-        authNotice = "O cadastro ainda é visual nesta branch. Nenhuma conta ou endereço foi enviado. A integração de autenticação permanece separada."
-    }
     var selectedMainTab by rememberSaveable { mutableStateOf(0) }
     val sessionUid = (authState as? AuthResult.Success)?.uid
     val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
@@ -158,6 +158,18 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
     LaunchedEffect(googleDraft?.uid, googleDraft?.addressStep) {
         googleDraft?.let { navigateAuth(it.destination) }
+    }
+    LaunchedEffect(nextAuthDestination) {
+        nextAuthDestination?.let { navigateAuth(it); authViewModel.nextDestination.value = null }
+    }
+    LaunchedEffect(authDestination, authBusy, googleDraft?.uid, nextAuthDestination) {
+        if (!authBusy && nextAuthDestination == null && authState !is AuthResult.Success) when {
+            authDestination == AuthDestination.Address && !authViewModel.hasRegistration -> navigateAuth(AuthDestination.Registration)
+            authDestination == AuthDestination.RecoveryCode && !authViewModel.hasRecoveryChallenge -> navigateAuth(AuthDestination.RecoveryEmail)
+            authDestination == AuthDestination.NewPassword && !authViewModel.hasRecoveryGrant -> navigateAuth(AuthDestination.RecoveryEmail)
+            authDestination in listOf(AuthDestination.GoogleDetails, AuthDestination.GoogleAddress) && googleDraft == null -> navigateAuth(AuthDestination.Login)
+            else -> Unit
+        }
     }
     LaunchedEffect(authMessage) {
         authMessage?.let { authNotice = it; authViewModel.message.value = null }
@@ -259,7 +271,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             showProfile = false; showMixtures = false; selectedMainTab = 0
                             navigateAuth(AuthDestination.Welcome)
                             AuthDestination.entries.forEach { authScreens.removeState(it.name) }
-                            recoveryEmail = ""; authNotice = null
+                            authNotice = null
                             authViewModel.logout()
                         },
                     ) else when (selectedMainTab) {
@@ -337,7 +349,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             showKemi = false; showProfile = false; selectedMainTab = 0
                             navigateAuth(AuthDestination.Login)
                             AuthDestination.entries.forEach { authScreens.removeState(it.name) }
-                            recoveryEmail = ""; authNotice = null
+                            authNotice = null
                             authViewModel.logout()
                         },
                     )
@@ -363,13 +375,14 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         onGoogleClick = onGoogle,
                     )
                     AuthDestination.Registration -> Cadastro1Screen(
-                        onContinue = { navigateAuth(AuthDestination.Address) },
+                        onDetailsContinue = authViewModel::prepareRegistration,
                         onLogin = { navigateAuth(AuthDestination.Login) },
                         onGoogleClick = onGoogle,
                     )
                     AuthDestination.Address -> Cadastro2Screen(
                         onBack = { navigateAuth(AuthDestination.Registration) },
-                        onSkip = registrationUnavailable, onEnter = registrationUnavailable,
+                        onSkip = { authViewModel.finishRegistration() },
+                        onAddressContinue = { authViewModel.finishRegistration(it) },
                     )
                     AuthDestination.GoogleDetails -> googleDraft?.let { draft -> GoogleDetailsScreen(
                         profile = draft, onChange = authViewModel::editGoogle, onContinue = authViewModel::continueGoogle,
@@ -381,21 +394,19 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                     )
                     AuthDestination.RecoveryEmail -> LoginPass1Screen(
                         onBack = { navigateAuth(AuthDestination.Login) },
-                        onEmailContinue = { email ->
-                            recoveryEmail = email
-                            navigateAuth(AuthDestination.RecoveryCode)
-                            authNotice = "Recuperação em demonstração nesta branch: nenhum e-mail foi enviado. O envio e a validação do código dependem da integração de autenticação."
-                        },
+                        onEmailContinue = authViewModel::forgotPassword,
                     )
                     AuthDestination.RecoveryCode -> LoginPassCodeScreen(
                         email = recoveryEmail,
                         onBack = { navigateAuth(AuthDestination.RecoveryEmail) },
-                        onResend = { authNotice = "O reenvio de códigos ainda não está conectado nesta branch." },
-                        onConfirm = { navigateAuth(AuthDestination.NewPassword) },
+                        onResend = authViewModel::resendRecoveryCode,
+                        onConfirm = authViewModel::verifyRecoveryCode,
+                        error = recoveryCodeError, onCodeChange = authViewModel::clearRecoveryCodeError,
+                        resendRevision = recoveryRevision,
                     )
                     AuthDestination.NewPassword -> LoginPass2Screen(
                         onBack = { navigateAuth(AuthDestination.RecoveryCode) },
-                        onConfirm = { authNotice = "Nenhuma senha foi alterada. A redefinição ainda depende da integração de autenticação, mantida fora desta branch." },
+                        onPasswordConfirm = authViewModel::resetPassword,
                     )
                     AuthDestination.RecoverySuccess -> LoginPassSuccesScreen(onStart = { navigateAuth(AuthDestination.Login) })
                 }

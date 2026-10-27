@@ -10,13 +10,14 @@ import theme.QuimiaTheme
 import title.QuimiaMainTitle
 
 @Composable
-fun LoginPass2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onConfirm: () -> Unit = {}) {
+fun LoginPass2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onConfirm: () -> Unit = {},
+    onPasswordConfirm: ((String) -> Unit)? = null) {
     var password by rememberSaveable { mutableStateOf("") }
     var confirmation by rememberSaveable { mutableStateOf("") }
-    val passwordError = authPasswordError(password)
-    val confirmationError = authPasswordConfirmationError(password, confirmation)
+    val passwordError = authNewPasswordError(password)
+    val confirmationError = if (password != confirmation) "As senhas precisam ser iguais." else authNewPasswordError(confirmation)
     AuthScreenLayout(modifier, onBack = onBack, bodyVerticalPadding = 0.dp, bottomPadding = 24.dp, footer = {
-        AuthPrimaryButton("Confirmar", onConfirm, enabled = passwordError == null && confirmationError == null)
+        AuthPrimaryButton("Confirmar", { onPasswordConfirm?.invoke(password) ?: onConfirm() }, enabled = passwordError == null && confirmationError == null)
     }) {
         QuimiaMainTitle(title = "Redefina sua senha")
         Spacer(Modifier.height(34.dp))

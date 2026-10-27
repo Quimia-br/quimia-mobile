@@ -36,7 +36,7 @@ fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSk
                     onAddressContinue(NearbyAddress(it.postalCode, it.state, it.city, it.district, it.street, number.trim(), complement.trim()))
                 }
             }, modifier = Modifier.weight(1f),
-                enabled = lookup.state.ready && number.isNotBlank())
+                enabled = lookup.state.ready && number.toIntOrNull()?.let { it > 0 } == true && complement.length <= 255)
         }
     }) {
         QuimiaMainTitle(title = "Cadastre seu endereço\nabaixo")
@@ -50,9 +50,11 @@ fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSk
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 Box(Modifier.weight(1.9f)) { PostalReadOnlyInput(address?.district.orEmpty(), "Bairro") }
                 Box(Modifier.weight(1f)) { QuimiaInput(number, { number = it }, label = "Nº", placeholder = "100", showClearButton = false,
+                    error = "Informe um número inteiro maior que zero.".takeIf { number.isNotEmpty() && number.toIntOrNull()?.let { it > 0 } != true },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)) }
             }
-            QuimiaInput(complement, { complement = it }, label = "Complemento", placeholder = "Apto 1234")
+            QuimiaInput(complement, { complement = it }, label = "Complemento", placeholder = "Apto 1234",
+                error = "Use no máximo 255 caracteres.".takeIf { complement.length > 255 })
         }
     }
 }

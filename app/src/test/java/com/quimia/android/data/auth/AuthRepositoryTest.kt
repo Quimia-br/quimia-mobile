@@ -69,6 +69,39 @@ class AuthRepositoryTest {
         assertEquals("u1", (repository.session.value as SessionState.Authenticated).profile.id)
     }
 
+    @Test fun `Google completion persists profile and address through authenticated API routes`() = runBlocking {
+        response(session()); response(profile)
+        repository.loginWithFirebaseToken("firebase-id-token")
+        response(profile.dropLast(1) + ",\"dataNasc\":\"2000-04-20\"}")
+        response("""{"cep":"01001-000","estado":"SP","bairro":"Sé","rua":"Praça da Sé","numero":100,"complemento":null}""")
+        repository.completeInitialProfile("Ana", "2000-04-20")
+        repository.saveInitialAddress(AuthAddress("01001000", "SP", "Sé", "Praça da Sé", 100))
+        server.takeRequest(); server.takeRequest()
+        val update = server.takeRequest()
+        assertEquals("PATCH", update.method)
+        assertEquals("/api/v1/usuarios/me", update.path)
+        assertEquals("Bearer a1", update.getHeader("Authorization"))
+        assertEquals("""{"nome":"Ana","dataNasc":"2000-04-20"}""", update.body.readUtf8())
+        val address = server.takeRequest()
+        assertEquals("PUT", address.method)
+        assertEquals("/api/v1/usuarios/me/localizacao", address.path)
+        assertEquals("Bearer a1", address.getHeader("Authorization"))
+    }
+
+    @Test fun `unconfirmed profile changes cannot complete onboarding`() = runBlocking {
+        response(session()); response(profile)
+        repository.loginWithFirebaseToken("firebase-id-token")
+        response(profile)
+        assertTrue(runCatching { repository.completeInitialProfile("Ana", "2000-04-20") }.isFailure)
+    }
+
+    @Test fun `different address returned by the backend is an error instead of a fabricated save`() = runBlocking {
+        response(session()); response(profile)
+        repository.loginWithFirebaseToken("firebase-id-token")
+        response("""{"cep":"01001-000","estado":"SP","bairro":"Sé","rua":"Praça da Sé","numero":200}""")
+        assertTrue(runCatching { repository.saveInitialAddress(AuthAddress("01001000", "SP", "Sé", "Praça da Sé", 100)) }.isFailure)
+    }
+
     @Test fun `rejected Google exchange cannot authenticate with Firebase alone`() = runBlocking {
         response("""{"detail":"firebase_disabled"}""", 503)
         val error = runCatching { repository.loginWithFirebaseToken("firebase-id-token") }.exceptionOrNull() as Exception

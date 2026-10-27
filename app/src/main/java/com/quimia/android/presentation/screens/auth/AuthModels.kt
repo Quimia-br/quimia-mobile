@@ -3,6 +3,35 @@ package com.quimia.android.presentation.screens.auth
 import com.quimia.android.presentation.screens.profile.profileBirthDateError
 import com.quimia.android.presentation.screens.profile.profileEmailError
 import com.quimia.android.presentation.screens.profile.profileNameError
+import com.quimia.android.presentation.components.BirthDate
+
+class RegistrationDetails(val name: String, val birthDate: String, val email: String, val password: String) {
+    override fun toString(): String = "RegistrationDetails([REDACTED])"
+}
+
+internal fun authNewPasswordError(value: String): String? = when {
+    value.length < 8 -> "Use pelo menos 8 caracteres, com letra e número."
+    value.toByteArray(Charsets.UTF_8).size > 72 -> "A senha pode ter no máximo 72 bytes. Use uma senha menor."
+    !value.any(Char::isLetter) || !value.any(Char::isDigit) -> "A senha precisa ter letra e número."
+    else -> null
+}
+
+internal fun authRegistrationBirthDateError(value: String, today: BirthDate = BirthDate.today()): String? {
+    authBirthDateError(value)?.let { return it }
+    val date = BirthDate.parse(value) ?: return "Informe uma data de nascimento válida."
+    val beforeBirthday = today.month < date.month || (today.month == date.month && today.day < date.day)
+    val age = today.year - date.year - if (beforeBirthday) 1 else 0
+    return if (age < 18) "O cadastro exige idade mínima de 18 anos." else null
+}
+
+internal fun authRegistrationError(value: RegistrationDetails): String? = authNameError(value.name)
+    ?: authRegistrationBirthDateError(value.birthDate) ?: authLoginInputError(value.email, value.password)
+    ?: authNewPasswordError(value.password)
+
+internal fun authApiBirthDate(value: String): String {
+    val date = BirthDate.parse(value) ?: throw IllegalArgumentException("Data de nascimento inválida.")
+    return "%04d-%02d-%02d".format(java.util.Locale.ROOT, date.year, date.month, date.day)
+}
 
 enum class AuthDestination(val screenName: String) {
     Welcome("login_welcome"), Login("login"), Registration("registration"),

@@ -5,8 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.quimia.android.data.auth.*
 import com.quimia.android.domain.auth.AuthResult
-import com.quimia.android.presentation.screens.auth.GoogleOnboarding
-import com.quimia.android.presentation.screens.auth.authLoginInputError
+import com.quimia.android.presentation.screens.auth.*
 import com.quimia.android.presentation.screens.profile.LocalProfileStore
 import com.quimia.android.presentation.screens.proximity.NearbyAddress
 import kotlinx.coroutines.*
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AuthRepositoryProvider.get(application)
+    private val initial = InitialAuthFlow(repository)
     private val firebase = FirebaseAuthService()
     private val onboardingStore = GoogleOnboardingStore(application)
     private val _googleOnboarding = MutableStateFlow<GoogleOnboarding?>(null)
@@ -23,6 +23,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     val busyLabel = MutableStateFlow("")
     val message = MutableStateFlow<String?>(null)
     val sessionProblem = MutableStateFlow<String?>(null)
+    val nextDestination = MutableStateFlow<AuthDestination?>(null)
+    val recoveryEmail = MutableStateFlow("")
+    val recoveryCodeError = MutableStateFlow<String?>(null)
+    val recoveryRevision = MutableStateFlow(0)
+    val hasRegistration get() = initial.hasRegistration
+    val hasRecoveryChallenge get() = initial.hasChallenge
+    val hasRecoveryGrant get() = initial.hasGrant
     private val _authState = MutableStateFlow<AuthResult>(AuthResult.Loading)
     val authState: StateFlow<AuthResult> = _authState
     private var currentProfile: UserProfile? = null
@@ -33,17 +40,52 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     init { retrySession() }
 
-    private fun request(label: String, block: suspend () -> Unit) {
+    private fun request(label: String, onError: (Exception) -> Unit = { message.value = authErrorMessage(it) }, block: suspend () -> Unit) {
         if (busy.value) return
         busyLabel.value = label
         busy.value = true
         viewModelScope.launch {
             try { block() }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { message.value = authErrorMessage(error) }
+            catch (error: Exception) { onError(error) }
             finally { busy.value = false }
         }
     }
+
+    fun prepareRegistration(details: RegistrationDetails) {
+        if (busy.value) return
+        try { initial.prepareRegistration(details); nextDestination.value = AuthDestination.Address }
+        catch (error: Exception) { message.value = authErrorMessage(error) }
+    }
+    fun finishRegistration(address: NearbyAddress? = null) = request("Criando sua conta…") {
+        val apiAddress = address?.let(::initialApiAddress)
+        firebase.logout()
+        val profile = initial.finishRegistration(apiAddress)
+        currentProfile = profile
+        if (address != null) withContext(Dispatchers.IO) { onboardingStore.cacheAddress(profile.id, profile.email, address) }
+        unlock(profile)
+    }
+    fun forgotPassword(email: String) = request("Solicitando código de recuperação…") {
+        initial.requestCode(email)
+        recoveryEmail.value = initial.recoveryEmail
+        recoveryCodeError.value = null
+        recoveryRevision.value++
+        nextDestination.value = AuthDestination.RecoveryCode
+    }
+    fun resendRecoveryCode() { forgotPassword(recoveryEmail.value) }
+    fun verifyRecoveryCode(code: String) = request("Conferindo o código…", onError = {
+        if (initial.hasChallenge) recoveryCodeError.value = authErrorMessage(it)
+        else { message.value = authErrorMessage(it); nextDestination.value = AuthDestination.RecoveryEmail }
+    }) {
+        initial.verifyCode(code)
+        recoveryCodeError.value = null
+        nextDestination.value = AuthDestination.NewPassword
+    }
+    fun resetPassword(password: String) = request("Alterando sua senha…") {
+        initial.resetPassword(password)
+        nextDestination.value = AuthDestination.RecoverySuccess
+    }
+    fun clearRecoveryCodeError() { recoveryCodeError.value = null }
 
     fun retrySession() = request("Conferindo sua sessão…") {
         sessionProblem.value = null
@@ -103,6 +145,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         ?: throw AuthFailure("A API não confirmou sua sessão. Entre novamente.")
 
     private fun unlock(profile: UserProfile) {
+        initial.clear()
         currentProfile = profile
         sessionProblem.value = null
         _authState.value = AuthResult.Success(profile.id, profile.email)
@@ -125,12 +168,16 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun finishGoogle(address: NearbyAddress? = null) {
         val draft = _googleOnboarding.value ?: return
         if (!draft.valid || !draft.addressStep) return
-        request("Salvando seus dados neste aparelho…") {
+        request("Salvando seus dados na API…") {
             val profile = authenticatedProfile()
             check(profile.id == draft.uid) { "A conta mudou. Entre novamente." }
-            withContext(Dispatchers.IO) { onboardingStore.complete(draft, address) }
+            val apiAddress = address?.let(::initialApiAddress)
+            val updated = repository.completeInitialProfile(draft.name.trim(), authApiBirthDate(draft.birthDate))
+            if (apiAddress != null) repository.saveInitialAddress(apiAddress)
+            withContext(Dispatchers.IO) { onboardingStore.complete(draft.copy(name = updated.nome,
+                birthDate = displayBirthDate(updated.dataNasc)), address) }
             _googleOnboarding.value = null
-            unlock(profile)
+            unlock(updated)
         }
     }
     fun logout() = request("Saindo da sua conta…") {
@@ -139,6 +186,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             firebase.logout()
             _googleOnboarding.value = null
             currentProfile = null
+            initial.clear()
+            recoveryEmail.value = ""
+            recoveryCodeError.value = null
+            nextDestination.value = null
             sessionProblem.value = null
             _authState.value = AuthResult.Error("Não autenticado")
         }

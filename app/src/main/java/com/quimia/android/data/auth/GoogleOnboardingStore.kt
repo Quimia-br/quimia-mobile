@@ -32,6 +32,13 @@ internal class GoogleOnboardingStore(private val context: Context) {
             address.city, address.district, address.street, address.number, address.complement)))
         check(editor.commit()) { "Não foi possível salvar seus dados neste aparelho. Tente novamente." }
     }
+    fun cacheAddress(uid: String, email: String, address: NearbyAddress) {
+        val scope = profileStorageScope(uid, email)
+        check(preferences.edit().putString("$scope.address", Json.encodeToString(listOf(address.postalCode, address.state,
+            address.city, address.district, address.street, address.number, address.complement))).commit()) {
+            "A conta foi criada, mas não foi possível guardar o endereço neste aparelho. Entre novamente."
+        }
+    }
     fun addressFields(uid: String, email: String): List<String> = runCatching {
         Json.decodeFromString<List<String>>(preferences.getString(profileStorageScope(uid, email) + ".address", "[]").orEmpty()).takeIf { it.size == 7 }.orEmpty()
     }.getOrDefault(emptyList())
