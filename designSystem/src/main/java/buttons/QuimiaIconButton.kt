@@ -1,6 +1,7 @@
 package buttons
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -14,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.Lucide
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
+import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
 
 enum class QuimiaIconButtonSize(
@@ -49,15 +52,16 @@ fun QuimiaIconButton(
     iconSize: Dp? = null,
     contentDescription: String? = null,
     iconPainter: Painter? = null,
+    contrastOutline: Boolean = size != QuimiaIconButtonSize.Icon,
 ) {
     val tokens = quimiaColorTokens()
 
     val actualContainerColor = containerColor ?: tokens.primary
-    val actualIconColor = iconColor ?: tokens.textPrimary
+    val actualIconColor = iconColor ?: if (quimiaHighContrastEnabled() && actualContainerColor == tokens.primary) tokens.onPrimary else tokens.textPrimary
 
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(size.buttonSize),
+        modifier = modifier.size(size.buttonSize).quimiaContrastOutline(CircleShape, contrastOutline && quimiaHighContrastEnabled()),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,
             contentColor = actualIconColor

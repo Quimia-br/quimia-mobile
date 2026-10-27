@@ -69,11 +69,29 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun QuimiaTheme(
     darkTheme: Boolean = false,
+    highContrast: Boolean = false,
+    useDyslexicFont: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when {
+        highContrast -> DarkColorScheme.copy(
+            primary = HighContrastTokens.primary, onPrimary = HighContrastTokens.onPrimary,
+            secondary = HighContrastTokens.secondary, onSecondary = Color.White,
+            surface = HighContrastTokens.surfaceBase, onSurface = Color.White,
+            background = HighContrastTokens.surfaceBackground, onBackground = Color.White,
+            surfaceVariant = HighContrastTokens.secondary, onSurfaceVariant = Color.White,
+            outline = HighContrastTokens.borderFocus, outlineVariant = HighContrastTokens.borderPrimary,
+            error = HighContrastTokens.error, onError = Color.White,
+        )
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
 
-    CompositionLocalProvider(LocalQuimiaDarkTheme provides darkTheme) {
+    CompositionLocalProvider(
+        LocalQuimiaDarkTheme provides (darkTheme || highContrast),
+        LocalQuimiaHighContrast provides highContrast,
+        LocalQuimiaFontFamily provides if (useDyslexicFont) DyslexicFontFamily else AeonikFontFamily,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,

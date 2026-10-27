@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -20,6 +21,8 @@ import theme.PaddingSmall
 import theme.QuimiaTheme
 import theme.RadiusSmall
 import theme.quimiaColorTokens
+import theme.quimiaContrastOutline
+import theme.quimiaHighContrastEnabled
 
 val QuimiaFABSize = 72.dp
 
@@ -34,11 +37,11 @@ fun QuimiaFAB(
     val tokens = quimiaColorTokens()
 
     val actualContainerColor = containerColor ?: tokens.primary
-    val actualIconColor = iconColor ?: tokens.textPrimary
+    val actualIconColor = iconColor ?: if (quimiaHighContrastEnabled() && actualContainerColor == tokens.primary) tokens.onPrimary else tokens.textPrimary
 
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(QuimiaFABSize),
+        modifier = modifier.size(QuimiaFABSize).quimiaContrastOutline(CircleShape),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,
             contentColor = actualIconColor

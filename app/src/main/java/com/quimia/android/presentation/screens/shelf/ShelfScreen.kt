@@ -46,6 +46,8 @@ import com.quimia.android.presentation.screens.catalog.CatalogProduct
 import com.quimia.android.R
 import chip.QuimiaChip
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
+import com.quimia.android.presentation.screens.rooms.QuimiaRoom
+import com.quimia.android.presentation.screens.rooms.roomsForProduct
 import header.QuimiaSearchBar
 import image.QuimiaImage
 import listItem.QuimiaListItem
@@ -64,7 +66,8 @@ import kotlinx.coroutines.delay
 
 private enum class ShelfTab(val label: String) { Products("Produtos"), Substances("Substâncias") }
 internal val ShelfFavoriteColor = Color(0xFFFF93D7)
-internal val ShelfBodyStyle = QuimiaTextStyles.medium15
+internal val ShelfBodyStyle: androidx.compose.ui.text.TextStyle
+    @Composable get() = QuimiaTextStyles.medium15
 
 @Composable
 fun ShelfScreen(
@@ -81,6 +84,8 @@ fun ShelfScreen(
     initialSubstancesTab: Boolean = false,
     initialFiltersVisible: Boolean = false,
     initialFavoriteSubstanceIds: List<String> = emptyList(),
+    rooms: List<QuimiaRoom> = emptyList(),
+    onOpenRoom: (String) -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     var tab by rememberSaveable { mutableStateOf(if (initialSubstancesTab) ShelfTab.Substances else ShelfTab.Products) }
@@ -215,7 +220,11 @@ fun ShelfScreen(
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = if (product.id == products.first().id) 24.dp else 16.dp),
                     onExpand = { expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id },
                     onFavorite = { onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
-                    onActions = { actionId = product.id }, onRoom = { roomId = product.id },
+                    onActions = { actionId = product.id }, onRoom = {
+                        val linkedRooms = roomsForProduct(rooms, product.id)
+                        if (linkedRooms.size == 1) onOpenRoom(linkedRooms.single().id)
+                        else roomId = product.id
+                    },
                     onMix = { onMixProduct(product.id) },
                 )
             }
@@ -254,11 +263,20 @@ fun ShelfScreen(
             },
         )
     }
-    if (roomId != null) ShelfNoRoomConfirmation(onDismiss = { roomId = null }, onCreate = {
-        val productId = roomId
-        roomId = null
-        productId?.let(onCreateRoom)
-    })
+    roomId?.let { productId ->
+        val linkedRooms = if (tab == ShelfTab.Products) roomsForProduct(rooms, productId) else emptyList()
+        if (linkedRooms.isEmpty()) {
+            ShelfNoRoomConfirmation(onDismiss = { roomId = null }, onCreate = {
+                roomId = null
+                onCreateRoom(productId)
+            })
+        } else {
+            ShelfRoomsPanel(rooms = linkedRooms, onDismiss = { roomId = null }, onOpenRoom = {
+                roomId = null
+                onOpenRoom(it)
+            })
+        }
+    }
 }
 
 @Composable
