@@ -49,6 +49,7 @@ import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
 import com.quimia.android.presentation.screens.rooms.roomsForProduct
 import header.QuimiaSearchBar
+import com.quimia.android.presentation.components.rememberVoiceInput
 import image.QuimiaImage
 import listItem.QuimiaListItem
 import menuBar.QuimiaMenuBar
@@ -90,6 +91,7 @@ fun ShelfScreen(
     val tokens = quimiaColorTokens()
     var tab by rememberSaveable { mutableStateOf(if (initialSubstancesTab) ShelfTab.Substances else ShelfTab.Products) }
     var query by rememberSaveable { mutableStateOf("") }
+    val voiceInput = rememberVoiceInput { query = it }
     var sort by rememberSaveable { mutableStateOf<ShelfSort?>(ShelfSort.Alphabetical) }
     var filtersVisible by rememberSaveable { mutableStateOf(initialFiltersVisible) }
     var favoriteSubstanceIds by rememberSaveable { mutableStateOf(initialFavoriteSubstanceIds) }
@@ -164,6 +166,7 @@ fun ShelfScreen(
                     QuimiaSearchBar(
                         value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(58.dp),
                         placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz",
+                        onClick = voiceInput,
                         searchIconSize = 24.dp, horizontalPadding = 16.dp, verticalPadding = 12.dp,
                         spacedBy = 10.dp, textStyle = ShelfBodyStyle.copy(fontSize = 16.sp),
                     )

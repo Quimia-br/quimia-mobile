@@ -1,12 +1,6 @@
 package com.quimia.android.presentation.screens.kemi
 
-import android.app.Activity
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.speech.RecognizerIntent
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -27,6 +21,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import buttons.QuimiaButton
+import com.quimia.android.presentation.components.rememberVoiceInput
 import com.quimia.android.presentation.screens.errors.GenericErrorAction
 import com.quimia.android.presentation.screens.errors.GenericErrorKind
 import com.quimia.android.presentation.screens.errors.GenericErrorScreen
@@ -102,11 +97,8 @@ fun KemiScreen(
         }
     }
 
-    val voice = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) result.data
-            ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            ?.takeIf { it.isNotBlank() }?.let { draft = it }
-    }
+    val voice = rememberVoiceInput(prompt = "Dite sua mensagem para a Kemi",
+        onUnavailable = { voiceUnavailable = true }) { draft = it }
     DisposableEffect(controller) {
         onDispose { requestJob?.cancel(); controller.interruptPending() }
     }
@@ -171,15 +163,8 @@ fun KemiScreen(
                         iconSize = 0, espacamento = 0, modifier = Modifier.fillMaxWidth().height(43.dp),
                         onClick = { if (state.active != null) controller.resumeActive() else openNewChat() })
                 }
-            } else KemiComposer(draft, { draft = it }, ::send, onVoice = {
-                try {
-                    voice.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Dite sua mensagem para a Kemi")
-                    })
-                } catch (_: ActivityNotFoundException) { voiceUnavailable = true }
-            }, enabled = !state.pending, compact = keyboardVisible)
+            } else KemiComposer(draft, { draft = it }, ::send, onVoice = voice,
+                enabled = !state.pending, compact = keyboardVisible)
         }
         if (error == null && (copied > 0 || voiceUnavailable)) {
             QuimiaToast(message = if (voiceUnavailable) "Entrada por voz indisponível neste aparelho" else "Mensagem copiada",
