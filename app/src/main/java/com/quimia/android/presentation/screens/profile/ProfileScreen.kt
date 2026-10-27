@@ -50,6 +50,9 @@ import theme.quimiaContrastBorder
 import title.QuimiaMainTitle
 import toast.QuimiaToast
 import toast.QuimiaToastType
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import com.quimia.android.data.auth.authErrorMessage
 
 @Composable
 fun ProfileScreen(
@@ -59,8 +62,11 @@ fun ProfileScreen(
     onBack: () -> Unit, photo: Painter? = null, initialEditVisible: Boolean = false,
     birthDate: String = "", onDetailsChange: ((ProfileDetails) -> Unit)? = null,
     onLogout: () -> Unit = {}, initialPhotoVisible: Boolean = false, initialBirthDateVisible: Boolean = false,
+    saveRemote: (suspend (ProfileDetails) -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var saving by remember { mutableStateOf(false) }
     var editVisible by rememberSaveable { mutableStateOf(initialEditVisible || initialPhotoVisible || initialBirthDateVisible) }
     var birthDateVisible by rememberSaveable { mutableStateOf(initialBirthDateVisible) }
     var photoVisible by rememberSaveable { mutableStateOf(initialPhotoVisible) }
@@ -80,25 +86,40 @@ fun ProfileScreen(
         message = null; editVisible = true
     }
     val onPhoto = {
+        if (saveRemote != null) {
+            message = "A API ainda não oferece envio de fotos da galeria. Sua foto atual foi mantida."
+        } else {
         if (!editVisible) openEditor()
         message = null; photoVisible = true
+        }
     }
     BackHandler(enabled = editVisible || photoVisible) {
-        if (photoVisible) photoVisible = false else editVisible = false
+        if (!saving) { if (photoVisible) photoVisible = false else editVisible = false }
     }
     if (editVisible) ProfileEditScreen(
         name = draftName, email = draftEmail, birthDate = draftBirthDate, photo = photo,
         onNameChange = { draftName = it }, onEmailChange = { draftEmail = it },
         onBirthDateChange = { draftBirthDate = it }, onPhoto = onPhoto,
-        onBack = { editVisible = false }, message = message, onMessageDismiss = { message = null },
+        onBack = { if (!saving) editVisible = false }, saving = saving, remote = saveRemote != null, message = message, onMessageDismiss = { message = null },
         onSave = {
             val details = ProfileDetails(normalizedProfileName(draftName), draftBirthDate.trim(), draftEmail.trim())
-            if (onDetailsChange != null) onDetailsChange(details) else onDisplayNameChange(details.name)
-            editVisible = false
+            if (saveRemote == null) {
+                if (onDetailsChange != null) onDetailsChange(details) else onDisplayNameChange(details.name)
+                editVisible = false
+            } else if (!saving) scope.launch {
+                saving = true; message = null
+                try { saveRemote(details); editVisible = false }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { message = authErrorMessage(error) }
+                finally { saving = false }
+            }
         },
     ) else ProfilePreferencesScreen(displayName, email, preferences, onPreferencesChange, onBack,
         photo = photo, onEdit = ::openEditor, onPhoto = onPhoto, onLogout = onLogout)
 
+    if (!editVisible && message != null) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { message = null }, text = { Text(message.orEmpty()) },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = { message = null }) { Text("Entendi") } })
     if (photoVisible) ProfilePhotoSheet(displayName, photo, message,
         onDismiss = { photoVisible = false; message = null },
         onChoose = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
@@ -226,6 +247,7 @@ private fun ProfileEditScreen(
     name: String, email: String, birthDate: String, photo: Painter?,
     onNameChange: (String) -> Unit, onEmailChange: (String) -> Unit, onBirthDateChange: (String) -> Unit,
     onBack: () -> Unit, onPhoto: () -> Unit, onSave: () -> Unit, message: String?, onMessageDismiss: () -> Unit,
+    saving: Boolean = false, remote: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
@@ -238,18 +260,19 @@ private fun ProfileEditScreen(
                     ProfilePortrait(name, photo, onPhoto)
                     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         if (message != null) QuimiaToast(message = message, type = QuimiaToastType.Error, onDismiss = onMessageDismiss)
-                        QuimiaInput(value = name, onValueChange = { onNameChange(it.take(80)) }, label = "Nome",
+                        QuimiaInput(value = name, onValueChange = { onNameChange(it.take(80)) }, label = "Nome", enabled = !saving,
                             trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = { onNameChange("") })
-                        BirthDateField(birthDate, onBirthDateChange, error = profileBirthDateError(birthDate))
-                        QuimiaInput(value = email, onValueChange = { onEmailChange(it.take(254)) }, label = "E-mail",
+                        BirthDateField(birthDate, { if (!saving) onBirthDateChange(it) }, error = profileBirthDateError(birthDate))
+                        QuimiaInput(value = email, onValueChange = { onEmailChange(it.take(254)) }, label = "E-mail", enabled = !remote && !saving, showClearButton = !remote,
+                            description = if (remote) "A API ainda não permite alterar o e-mail." else null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = { onEmailChange("") })
+                            trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = if (remote) null else { { onEmailChange("") } })
                     }
                 }
             }
-            QuimiaButton(text = "Salvar", modifier = Modifier.fillMaxWidth().padding(horizontal = 19.dp, vertical = 24.dp).heightIn(min = 58.dp),
+            QuimiaButton(text = if (saving) "Salvando…" else "Salvar", modifier = Modifier.fillMaxWidth().padding(horizontal = 19.dp, vertical = 24.dp).heightIn(min = 58.dp),
                 iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16,
-                enabled = profileNameError(name) == null && profileEmailError(email) == null && profileBirthDateError(birthDate) == null,
+                enabled = !saving && profileNameError(name) == null && profileEmailError(email) == null && profileBirthDateError(birthDate) == null && (!remote || birthDate.isNotBlank()),
                 textColor = LightTokens.foregroundPrimary, onClick = onSave)
         }
     }

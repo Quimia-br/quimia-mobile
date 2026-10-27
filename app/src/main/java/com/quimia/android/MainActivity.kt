@@ -176,11 +176,11 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
     val profileStore = remember(sessionUid, sessionEmail) { LocalProfileStore(context, sessionUid.orEmpty(), sessionEmail) }
     var displayName by rememberSaveable(sessionUid, sessionEmail) {
-        mutableStateOf(profileStore.displayName() ?: authViewModel.accountName ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
+        mutableStateOf(authViewModel.accountName ?: sessionEmail.substringBefore('@').ifBlank { "Seu nome" })
     }
-    var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.photoUri() ?: authViewModel.providerPhotoUrl) }
-    var profileEmail by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.email() ?: sessionEmail) }
-    var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(profileStore.birthDate().ifBlank { authViewModel.accountBirthDate }) }
+    var photoUri by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(authViewModel.providerPhotoUrl) }
+    var profileEmail by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(sessionEmail) }
+    var birthDate by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(authViewModel.accountBirthDate) }
     val photoPainter = rememberAsyncImagePainter(photoUri)
     val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
     var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
@@ -258,21 +258,16 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         is AuthResult.Success -> {
             Box(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().then(if (showKemi || showMixtures) Modifier.clearAndSetSemantics { } else Modifier)) {
-                    if (showProfile) ProfileScreen(
-                        displayName = displayName, email = profileEmail, preferences = preferences, birthDate = birthDate,
-                        onPreferencesChange = onPreferencesChange, onBack = { showProfile = false }, photo = photo,
-                        onDisplayNameChange = { displayName = it; profileStore.saveDisplayName(it) },
-                        onPhotoUriChange = { photoUri = it; profileStore.savePhotoUri(it) },
-                        onDetailsChange = { details ->
-                            profileStore.saveDetails(details)
-                            displayName = details.name; profileEmail = details.email; birthDate = details.birthDate
+                    if (showProfile) ProfileRoute(
+                        userId = sessionUid.orEmpty(), preferences = preferences,
+                        onPreferencesChange = onPreferencesChange, onBack = { showProfile = false },
+                        onUpdated = { updated ->
+                            displayName = updated.nome; profileEmail = updated.email
+                            photoUri = updated.fotoUrl
                         },
                         onLogout = {
                             showProfile = false; showMixtures = false; selectedMainTab = 0
-                            navigateAuth(AuthDestination.Welcome)
-                            AuthDestination.entries.forEach { authScreens.removeState(it.name) }
-                            authNotice = null
-                            authViewModel.logout()
+                            navigateAuth(AuthDestination.Login); authViewModel.logout()
                         },
                     ) else when (selectedMainTab) {
                         1 -> CatalogScreen(

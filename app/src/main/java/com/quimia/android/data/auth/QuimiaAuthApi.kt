@@ -52,7 +52,8 @@ interface QuimiaAuthApi {
 
 object AuthApiFactory {
     val json = Json { ignoreUnknownKeys = true }
-    fun create(baseUrl: String): QuimiaAuthApi {
+    fun create(baseUrl: String): QuimiaAuthApi = create(baseUrl, QuimiaAuthApi::class.java)
+    fun <T> create(baseUrl: String, service: Class<T>): T {
         val client = OkHttpClient.Builder().retryOnConnectionFailure(false)
             .followRedirects(false).followSslRedirects(false)
             .addInterceptor { chain ->
@@ -66,7 +67,7 @@ object AuthApiFactory {
             .callTimeout(30, TimeUnit.SECONDS).build()
         return Retrofit.Builder().baseUrl(baseUrl).client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build().create(QuimiaAuthApi::class.java)
+            .build().create(service)
     }
     private class AuthAttempt(val sent: AtomicBoolean = AtomicBoolean(false))
 }

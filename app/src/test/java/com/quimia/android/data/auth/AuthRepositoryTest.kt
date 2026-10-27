@@ -88,6 +88,21 @@ class AuthRepositoryTest {
         assertEquals("Bearer a1", address.getHeader("Authorization"))
     }
 
+    @Test fun `profile edit rejects unconfirmed name and keeps authenticated identity`() = runBlocking {
+        response(session()); response(profile)
+        repository.login("ana@example.com", "password")
+        response(profile.dropLast(1) + ",\"dataNasc\":\"2000-04-20\"}")
+        assertTrue(runCatching { repository.completeInitialProfile("Outro nome", "2000-04-20") }.isFailure)
+        assertEquals("Ana", (repository.session.value as SessionState.Authenticated).profile.nome)
+    }
+
+    @Test fun `profile refresh cannot read a different account`() = runBlocking {
+        response(session()); response(profile)
+        repository.login("ana@example.com", "password")
+        assertTrue(runCatching { repository.reloadProfile("other-user") }.isFailure)
+        assertEquals(2, server.requestCount)
+    }
+
     @Test fun `unconfirmed profile changes cannot complete onboarding`() = runBlocking {
         response(session()); response(profile)
         repository.loginWithFirebaseToken("firebase-id-token")
