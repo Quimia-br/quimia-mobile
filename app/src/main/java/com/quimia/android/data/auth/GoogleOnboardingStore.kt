@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 
 internal class GoogleOnboardingStore(private val context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("quimia_google_onboarding", Context.MODE_PRIVATE)
-    fun completed(profile: GoogleOnboarding): Boolean = profile.valid && preferences.getBoolean(profileStorageScope(profile.uid, profile.email) + ".completed", false)
+    fun completed(uid: String, email: String): Boolean = preferences.getBoolean(profileStorageScope(uid, email) + ".completed", false)
     fun pending(uid: String, email: String): Boolean {
         val key = profileStorageScope(uid, email) + ".completed"
         return preferences.contains(key) && !preferences.getBoolean(key, false)
@@ -20,7 +20,14 @@ internal class GoogleOnboardingStore(private val context: Context) {
         if (pending(uid, email)) preferences.edit().remove(profileStorageScope(uid, email) + ".completed").apply()
     }
     fun markPending(uid: String, email: String) {
-        preferences.edit().putBoolean(profileStorageScope(uid, email) + ".completed", false).apply()
+        if (!completed(uid, email)) check(preferences.edit().putBoolean(profileStorageScope(uid, email) + ".completed", false).commit()) {
+            "Não foi possível guardar o progresso do cadastro neste aparelho. Tente novamente."
+        }
+    }
+    fun markCompleted(uid: String, email: String) {
+        check(preferences.edit().putBoolean(profileStorageScope(uid, email) + ".completed", true).commit()) {
+            "Não foi possível guardar a conclusão do cadastro neste aparelho. Tente novamente."
+        }
     }
     fun complete(profile: GoogleOnboarding, address: NearbyAddress?) {
         require(profile.valid && profile.addressStep)
