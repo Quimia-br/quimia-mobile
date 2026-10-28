@@ -12,20 +12,24 @@ import kotlinx.serialization.json.Json
 internal class GoogleOnboardingStore(private val context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("quimia_google_onboarding", Context.MODE_PRIVATE)
     fun completed(uid: String, email: String): Boolean = preferences.getBoolean(profileStorageScope(uid, email) + ".completed", false)
+    fun hasCheckpoint(uid: String, email: String): Boolean = preferences.getInt(profileStorageScope(uid, email) + ".flow_version", 0) >= 1
     fun pending(uid: String, email: String): Boolean {
         val key = profileStorageScope(uid, email) + ".completed"
         return preferences.contains(key) && !preferences.getBoolean(key, false)
     }
     fun clearPending(uid: String, email: String) {
-        if (pending(uid, email)) preferences.edit().remove(profileStorageScope(uid, email) + ".completed").apply()
+        if (pending(uid, email)) preferences.edit().remove(profileStorageScope(uid, email) + ".completed")
+            .remove(profileStorageScope(uid, email) + ".flow_version").apply()
     }
     fun markPending(uid: String, email: String) {
-        if (!completed(uid, email)) check(preferences.edit().putBoolean(profileStorageScope(uid, email) + ".completed", false).commit()) {
+        val scope = profileStorageScope(uid, email)
+        if (!completed(uid, email)) check(preferences.edit().putBoolean("$scope.completed", false).putInt("$scope.flow_version", 1).commit()) {
             "Não foi possível guardar o progresso do cadastro neste aparelho. Tente novamente."
         }
     }
     fun markCompleted(uid: String, email: String) {
-        check(preferences.edit().putBoolean(profileStorageScope(uid, email) + ".completed", true).commit()) {
+        val scope = profileStorageScope(uid, email)
+        check(preferences.edit().putBoolean("$scope.completed", true).remove("$scope.flow_version").commit()) {
             "Não foi possível guardar a conclusão do cadastro neste aparelho. Tente novamente."
         }
     }
@@ -34,7 +38,7 @@ internal class GoogleOnboardingStore(private val context: Context) {
         require(address == null || address.validationError() == null)
         LocalProfileStore(context, profile.uid, profile.email).saveDetails(ProfileDetails(profile.name, profile.birthDate, profile.email))
         val scope = profileStorageScope(profile.uid, profile.email)
-        val editor = preferences.edit().putBoolean("$scope.completed", true)
+        val editor = preferences.edit().putBoolean("$scope.completed", true).remove("$scope.flow_version")
         if (address != null) editor.putString("$scope.address", Json.encodeToString(listOf(address.postalCode, address.state,
             address.city, address.district, address.street, address.number, address.complement)))
         check(editor.commit()) { "Não foi possível salvar seus dados neste aparelho. Tente novamente." }

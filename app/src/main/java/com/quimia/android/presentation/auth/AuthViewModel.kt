@@ -142,7 +142,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun enterGoogle(profile: UserProfile) {
         currentProfile = profile
         val destination = googleEntryDestination(profile, onboardingStore.completed(profile.id, profile.email),
-            onboardingStore.pending(profile.id, profile.email))
+            onboardingStore.pending(profile.id, profile.email), onboardingStore.hasCheckpoint(profile.id, profile.email))
         if (destination == null) {
             withContext(Dispatchers.IO) { onboardingStore.markCompleted(profile.id, profile.email) }
             unlock(profile)
