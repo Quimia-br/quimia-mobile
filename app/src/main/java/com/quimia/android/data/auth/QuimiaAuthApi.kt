@@ -22,7 +22,8 @@ import java.io.IOException
 @Serializable class RegisterRequest(val nome: String, val email: String, val senha: String,
     val dataNasc: String, val localizacao: AuthAddress? = null)
 @Serializable data class AuthAddress(val cep: String, val estado: String, val bairro: String,
-    val rua: String?, val numero: Int, val complemento: String? = null)
+    val rua: String?, val numero: Int, val complemento: String? = null,
+    val latitude: Double? = null, val longitude: Double? = null)
 @Serializable class InitialProfileRequest(val nome: String, val dataNasc: String)
 @Serializable class RecoveryEmailRequest(val email: String)
 @Serializable class RecoveryCodeRequest(val email: String, val code: String, val challengeToken: String)

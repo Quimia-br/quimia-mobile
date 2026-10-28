@@ -12,6 +12,15 @@ import org.junit.Test
 import java.util.concurrent.TimeUnit
 
 class AuthRepositoryTest {
+    @Test fun `saved home coordinates must be confirmed allowing six decimal rounding`() = runBlocking {
+        response(session()); response(profile); repository.login("ana@example.com", "password")
+        val request = AuthAddress("01001000", "SP", "Sé", "Praça da Sé", 100, latitude = -23.5505199, longitude = -46.6333099)
+        response("""{"cep":"01001000","estado":"SP","bairro":"Sé","rua":"Praça da Sé","numero":100,"latitude":-23.550520,"longitude":-46.633310}""")
+        assertEquals(-23.550520, repository.saveInitialAddress(request).latitude!!, .000001)
+        response("""{"cep":"01001000","estado":"SP","bairro":"Sé","rua":"Praça da Sé","numero":100}""")
+        assertTrue(runCatching { repository.saveInitialAddress(request) }.isFailure)
+    }
+
     private lateinit var server: MockWebServer
     private lateinit var store: MemoryStore
     private lateinit var repository: AuthRepository
