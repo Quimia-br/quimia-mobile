@@ -15,6 +15,13 @@ class GoogleEntryPolicyTest {
     @Test fun registeredGoogleUserGoesHomeEvenOnAnotherDevice() {
         assertNull(googleEntryDestination(registered, false, false))
     }
+    @Test fun stalePendingMarkerFromOldVersionDoesNotRepeatCompletedDetailsOrAddress() {
+        assertNull(googleEntryDestination(registered, completed = false, pending = true, checkpointed = false))
+    }
+    @Test fun genuinelyIncompleteLegacyGoogleRegistrationStillCollectsDetails() {
+        assertEquals(AuthDestination.GoogleDetails,
+            googleEntryDestination(first, completed = false, pending = true, checkpointed = false))
+    }
     @Test fun emailAccountEnteringWithGoogleKeepsItsCompletedRegistration() {
         assertNull(googleEntryDestination(registered, true, false))
     }
