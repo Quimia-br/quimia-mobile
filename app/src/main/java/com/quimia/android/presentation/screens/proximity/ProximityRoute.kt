@@ -47,10 +47,15 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     val session by auth.session.collectAsState()
     val repository = remember(auth) { ProximityRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, ProximityApi::class.java), auth) }
     val scope = rememberCoroutineScope()
+    val homeResolver = remember(context) { HomeAddressResolver(context) }
+    var home by remember(userId) { mutableStateOf<NearbyCoordinate?>(null) }
+    var homeLoading by remember { mutableStateOf(false) }
+    var homeError by remember { mutableStateOf<String?>(null) }
+    var homeAttempt by remember { mutableIntStateOf(0) }
     val tokens = quimiaColorTokens()
     var type by rememberSaveable(userId) { mutableStateOf("descarte") }
     var registered by rememberSaveable(userId) { mutableStateOf(false) }
-    var expanded by rememberSaveable { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     var address by remember(userId) { mutableStateOf<AuthAddress?>(null) }
     var addressError by remember { mutableStateOf<String?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
@@ -88,6 +93,17 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         try { address = repository.address(userId); addressError = null }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { addressError = authErrorMessage(failure) }
+    }
+    LaunchedEffect(userId, address, addressError, homeAttempt) {
+        home = null; homeError = null
+        val current = address?.takeIf { addressError == null } ?: return@LaunchedEffect
+        homeLoading = true
+        try {
+            home = homeResolver.resolve(current)
+            if (home == null) homeError = "Não foi possível localizar sua casa com precisão. Confira o endereço cadastrado e tente novamente."
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { homeError = "Não foi possível localizar sua casa agora. Confira a conexão e tente novamente." }
+        finally { homeLoading = false }
     }
     LaunchedEffect(userId, type, registered) { load() }
     LaunchedEffect(userId) { loadAddress() }
@@ -128,7 +144,16 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         }
         Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp))) {
             // The API has no coordinates. Never place sample markers for real points.
-            ProximityMap(emptyList(), null, {}, bottomContentInset = 150.dp)
+            ProximityMap(emptyList(), null, {}, bottomContentInset = 150.dp,
+                homeCoordinate = home, homeLabel = address?.let { "${it.rua.orEmpty()}, ${it.numero} · ${it.bairro}" }.orEmpty(),
+                onHomeUnavailable = {
+                    when {
+                        addressError != null -> notice = addressError
+                        address == null -> editing = true
+                        homeLoading -> notice = "Localizando seu endereço cadastrado…"
+                        else -> { notice = homeError; homeAttempt++ }
+                    }
+                })
             Row(Modifier.align(Alignment.TopCenter).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("descarte" to "Descarte", "compra" to "Compra").forEach { (value, label) ->
                     QuimiaChip(label = label, selected = type == value, centerContent = true, modifier = Modifier.weight(1f), onClick = { type = value })
@@ -175,7 +200,14 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     }
     if (editing) NearbyAddressSheet(onDismiss = { editing = false }, onSave = { editing = false; if (registered) load() },
         initialAddress = address?.let { NearbyAddress(it.cep, it.estado, "", it.bairro, it.rua.orEmpty(), it.numero.toString(), it.complemento.orEmpty()) },
-        saveRemote = { value -> address = repository.saveAddress(userId, value.apiAddress()); addressError = null })
+        saveRemote = { value ->
+            val body = value.apiAddress()
+            val coordinate = try { homeResolver.resolve(body) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { null }
+            address = repository.saveAddress(userId, body.copy(latitude = coordinate?.latitude, longitude = coordinate?.longitude))
+            addressError = null
+        })
     notice?.let { text -> AlertDialog(onDismissRequest = { notice = null }, text = { Text(text) },
         confirmButton = { TextButton(onClick = { notice = null }) { Text("Entendi") } }) }
 }

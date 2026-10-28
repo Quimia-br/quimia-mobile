@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Outline
 import android.graphics.Paint
+import android.graphics.Path
 import android.location.Location
 import android.os.Bundle
 import android.view.View
@@ -32,6 +33,7 @@ import buttons.QuimiaButton
 import buttons.QuimiaIconButton
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Target
+import com.composables.icons.lucide.House
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -55,9 +57,10 @@ import kotlin.math.roundToInt
 internal fun ProximityMap(
     points: List<NearbyPoint>, selectedPointId: Int?, onPointClick: (Int) -> Unit,
     bottomContentInset: Dp = if (selectedPointId == null) 91.dp else 253.dp,
+    homeCoordinate: NearbyCoordinate? = null, homeLabel: String = "", onHomeUnavailable: () -> Unit = {},
 ) {
     if (LocalInspectionMode.current) {
-        ProximityMapPreview(points, selectedPointId, onPointClick)
+        ProximityMapPreview(points, selectedPointId, onPointClick, homeCoordinate)
         return
     }
     val context = LocalContext.current
@@ -78,7 +81,8 @@ internal fun ProximityMap(
     var savedMap by rememberSaveable { mutableStateOf<Bundle?>(null) }
     key(attempt) {
         NearbyGoogleMap(points, selectedPointId, onPointClick, bottomContentInset, savedMap,
-            onSaveState = { savedMap = it }, onRetry = { attempt++ })
+            onSaveState = { savedMap = it }, onRetry = { attempt++ }, homeCoordinate = homeCoordinate,
+            homeLabel = homeLabel, onHomeUnavailable = onHomeUnavailable)
     }
 }
 
@@ -86,6 +90,7 @@ internal fun ProximityMap(
 private fun NearbyGoogleMap(
     points: List<NearbyPoint>, selectedPointId: Int?, onPointClick: (Int) -> Unit,
     bottomContentInset: Dp, savedMap: Bundle?, onSaveState: (Bundle) -> Unit, onRetry: () -> Unit,
+    homeCoordinate: NearbyCoordinate?, homeLabel: String, onHomeUnavailable: () -> Unit,
 ) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
@@ -93,6 +98,8 @@ private fun NearbyGoogleMap(
     val density = context.resources.displayMetrics.density
     val (location, locate) = rememberNearbyLocation()
     val source = remember { NearbyGoogleLocationSource() }
+    var focus by remember { mutableStateOf(NearbyMapFocus.Initial) }
+    var cameraRevision by remember { mutableIntStateOf(0) }
     var map by remember { mutableStateOf<GoogleMap?>(null) }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
@@ -126,9 +133,15 @@ private fun NearbyGoogleMap(
             native.setLocationSource(source)
             native.setOnMapLoadedCallback { if (!disposed) { loading = false; failed = false } }
             native.setOnMarkerClickListener { marker ->
-                (marker.tag as? Int)?.let { latestClick(it) }
+                if (marker.tag == "home") {
+                    focus = NearbyMapFocus.Home; cameraRevision++; marker.showInfoWindow()
+                } else (marker.tag as? Int)?.let { focus = NearbyMapFocus.Point; latestClick(it) }
                 true
             }
+            native.setOnCameraMoveStartedListener { reason ->
+                if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) focus = NearbyMapFocus.Manual
+            }
+            if (savedMap != null) focus = NearbyMapFocus.Manual
             if (savedMap == null) native.moveCamera(CameraUpdateFactory.newLatLngZoom(
                 LatLng(nearbyDefaultCoordinate.latitude, nearbyDefaultCoordinate.longitude), 13.5f,
             ))
@@ -138,6 +151,7 @@ private fun NearbyGoogleMap(
             disposed = true
             map?.setOnMarkerClickListener(null)
             map?.setOnMapLoadedCallback(null)
+            map?.setOnCameraMoveStartedListener(null)
             map = null
         }
     }
@@ -158,11 +172,20 @@ private fun NearbyGoogleMap(
         }
         onDispose { markers.forEach { it.remove() } }
     }
+    DisposableEffect(map, homeCoordinate, homeLabel, primary, density) {
+        val marker = homeCoordinate?.takeIf { it.isValid() }?.let { home ->
+            map?.addMarker(MarkerOptions().position(LatLng(home.latitude, home.longitude))
+                .title("Minha casa").snippet(homeLabel).anchor(.5f, .95f).zIndex(5f)
+                .icon(BitmapDescriptorFactory.fromBitmap(nearbyHomeBitmap(primary, density))))?.apply { tag = "home" }
+        }
+        onDispose { marker?.remove() }
+    }
     LaunchedEffect(map, bottomContentInset) {
         map?.setPadding(0, (72 * density).roundToInt(), 0, (bottomContentInset.value * density).roundToInt())
     }
     LaunchedEffect(map, selectedPointId) {
         val point = points.firstOrNull { it.id == selectedPointId } ?: return@LaunchedEffect
+        focus = NearbyMapFocus.Point
         map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(point.coordinate.latitude, point.coordinate.longitude), 14.5f))
     }
     LaunchedEffect(map, location.location, location.revision) {
@@ -171,15 +194,35 @@ private fun NearbyGoogleMap(
             val fix = location.location?.takeIf { location.hasPermission() }
             source.update(fix)
             native.isMyLocationEnabled = fix != null
-            if (fix != null) native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(fix.latitude, fix.longitude),
-                nearbyLocationZoom(location.precise, if (fix.hasAccuracy()) fix.accuracy else 0f)))
+
         } catch (_: SecurityException) { source.update(null); location.denied(false) }
+    }
+    LaunchedEffect(map, homeCoordinate, location.location, location.revision, focus, cameraRevision) {
+        val native = map ?: return@LaunchedEffect
+        val fix = location.location?.takeIf { location.hasPermission() }
+        val target = nearbyCameraCoordinate(focus, homeCoordinate, fix?.let { NearbyCoordinate(it.latitude, it.longitude) })
+            ?: return@LaunchedEffect
+        val house = focus == NearbyMapFocus.Home || (focus == NearbyMapFocus.Initial && homeCoordinate != null)
+        val zoom = if (house) 16f else nearbyLocationZoom(location.precise, fix?.accuracy ?: 0f)
+        native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(target.latitude, target.longitude), zoom))
+        if (focus == NearbyMapFocus.Initial) focus = if (house) NearbyMapFocus.Home else NearbyMapFocus.User
     }
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
-        QuimiaIconButton(modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 24.dp),
-            icon = Lucide.Target, containerColor = if (location.location != null) tokens.primary else tokens.surfaceBase,
-            contentDescription = "Centralizar na minha localização", onClick = locate)
+        Column(Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuimiaIconButton(icon = Lucide.Target, iconSize = 24.dp,
+                containerColor = if (focus == NearbyMapFocus.User && location.location != null) tokens.primary else tokens.surfaceBase,
+                contentDescription = "Centralizar na minha localização atual", onClick = {
+                    focus = NearbyMapFocus.User; cameraRevision++; locate()
+                })
+            QuimiaIconButton(icon = Lucide.House, iconSize = 24.dp,
+                containerColor = if (focus == NearbyMapFocus.Home && homeCoordinate != null) tokens.primary else tokens.surfaceBase,
+                contentDescription = "Centralizar na minha casa", onClick = {
+                    focus = NearbyMapFocus.Home; cameraRevision++
+                    if (homeCoordinate == null) onHomeUnavailable()
+                })
+        }
         if (loading) Row(Modifier.align(Alignment.Center).background(tokens.surfaceBase, RoundedCornerShape(24.dp))
             .quimiaContrastOutline(RoundedCornerShape(24.dp)).padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -198,7 +241,7 @@ private fun NearbyGoogleMap(
             NearbyLocationStatus.Unavailable -> "Não foi possível obter sua localização. Tente novamente pelo botão de GPS."
             else -> null
         }
-        if (message != null) Column(Modifier.align(Alignment.TopCenter).padding(start = 24.dp, end = 24.dp, top = 137.dp),
+        if (message != null) Column(Modifier.align(Alignment.TopCenter).padding(start = 24.dp, end = 24.dp, top = 195.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             QuimiaToast(message = message, type = QuimiaToastType.Info, onDismiss = location::dismissNotice)
             if (location.status == NearbyLocationStatus.PermissionBlocked || location.status == NearbyLocationStatus.Disabled) {
@@ -240,6 +283,28 @@ private fun nearbyMarkerBitmap(color: Int, density: Float, selected: Boolean): B
         paint.color = color
         canvas.drawCircle(center, center, 8f * density, paint)
     }
+}
+
+private fun nearbyHomeBitmap(color: Int, density: Float): Bitmap {
+    val bitmap = Bitmap.createBitmap((72 * density).roundToInt().coerceAtLeast(1),
+        (82 * density).roundToInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.scale(density, density)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawPath(Path().apply { moveTo(23f, 51f); lineTo(36f, 77f); lineTo(49f, 51f); close() }, paint)
+    canvas.drawCircle(36f, 32f, 29f, paint)
+    paint.color = color
+    canvas.drawCircle(36f, 32f, 25f, paint)
+    paint.color = android.graphics.Color.rgb(47, 47, 47)
+    paint.style = Paint.Style.STROKE; paint.strokeWidth = 2.5f
+    paint.strokeJoin = Paint.Join.ROUND; paint.strokeCap = Paint.Cap.ROUND
+    canvas.drawPath(Path().apply {
+        moveTo(22f, 31f); lineTo(36f, 20f); lineTo(50f, 31f)
+        moveTo(26f, 29f); lineTo(26f, 45f); lineTo(46f, 45f); lineTo(46f, 29f)
+        moveTo(33f, 45f); lineTo(33f, 35f); lineTo(39f, 35f); lineTo(39f, 45f)
+    }, paint)
+    return bitmap
 }
 
 private class NearbyGoogleLocationSource : LocationSource {
