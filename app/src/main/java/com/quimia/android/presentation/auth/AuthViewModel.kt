@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.quimia.android.data.auth.*
 import com.quimia.android.domain.auth.AuthResult
 import com.quimia.android.presentation.screens.auth.*
-import com.quimia.android.presentation.screens.profile.LocalProfileStore
 import com.quimia.android.presentation.screens.proximity.NearbyAddress
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,6 +62,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val profile = initial.finishRegistration(apiAddress)
         currentProfile = profile
         if (address != null) withContext(Dispatchers.IO) { onboardingStore.cacheAddress(profile.id, profile.email, address) }
+        withContext(Dispatchers.IO) { onboardingStore.markCompleted(profile.id, profile.email) }
         unlock(profile)
     }
     fun forgotPassword(email: String) = request("Solicitando código de recuperação…") {
@@ -94,8 +94,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             is SessionState.Authenticated -> {
                 currentProfile = state.profile
                 if (onboardingStore.pending(state.profile.id, state.profile.email)) {
-                    _googleOnboarding.value = googleProfile(state.profile)
-                    _authState.value = AuthResult.Error("Complete seus dados para continuar.")
+                    enterGoogle(state.profile)
                 } else unlock(state.profile)
             }
             is SessionState.Unavailable -> {
@@ -112,8 +111,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             firebase.logout()
             repository.login(email, password)
             val profile = authenticatedProfile()
-            onboardingStore.clearPending(profile.id, profile.email)
-            _googleOnboarding.value = null
+            withContext(Dispatchers.IO) { onboardingStore.markCompleted(profile.id, profile.email) }
             unlock(profile)
         }
     }
@@ -129,10 +127,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 repository.loginWithFirebaseToken(firebase.backendIdToken())
                 val profile = authenticatedProfile()
-                currentProfile = profile
-                withContext(Dispatchers.IO) { onboardingStore.markPending(profile.id, profile.email) }
-                _googleOnboarding.value = googleProfile(profile)
-                _authState.value = AuthResult.Error("Complete seus dados para continuar.")
+                enterGoogle(profile)
             } catch (error: Exception) {
                 firebase.logout()
                 withContext(NonCancellable) { repository.logout() }
@@ -144,16 +139,31 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private fun authenticatedProfile() = (repository.session.value as? SessionState.Authenticated)?.profile
         ?: throw AuthFailure("A API não confirmou sua sessão. Entre novamente.")
 
+    private suspend fun enterGoogle(profile: UserProfile) {
+        currentProfile = profile
+        val destination = googleEntryDestination(profile, onboardingStore.completed(profile.id, profile.email),
+            onboardingStore.pending(profile.id, profile.email))
+        if (destination == null) {
+            withContext(Dispatchers.IO) { onboardingStore.markCompleted(profile.id, profile.email) }
+            unlock(profile)
+        } else {
+            withContext(Dispatchers.IO) { onboardingStore.markPending(profile.id, profile.email) }
+            _googleOnboarding.value = googleProfile(profile).copy(addressStep = destination == AuthDestination.GoogleAddress)
+            _authState.value = AuthResult.Error("Complete seus dados para continuar.")
+        }
+    }
+
     private fun unlock(profile: UserProfile) {
         initial.clear()
+        _googleOnboarding.value = null
+        nextDestination.value = null
         currentProfile = profile
         sessionProblem.value = null
         _authState.value = AuthResult.Success(profile.id, profile.email)
     }
     private fun googleProfile(profile: UserProfile): GoogleOnboarding {
-        val stored = LocalProfileStore(getApplication<Application>(), profile.id, profile.email)
-        return GoogleOnboarding(profile.id, profile.email, stored.displayName() ?: profile.nome,
-            stored.birthDate().ifBlank { displayBirthDate(profile.dataNasc) }, profile.fotoUrl)
+        return GoogleOnboarding(profile.id, profile.email, profile.nome,
+            displayBirthDate(profile.dataNasc), profile.fotoUrl)
     }
     fun editGoogle(name: String, birthDate: String) {
         if (!busy.value) _googleOnboarding.value = _googleOnboarding.value?.copy(name = name, birthDate = birthDate)
