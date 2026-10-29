@@ -89,6 +89,14 @@ class CatalogRepositoryTest {
         assertEquals("/api/v1/auth/mobile/refresh", server.takeRequest().path)
         assertEquals("Bearer new-access", server.takeRequest().getHeader("Authorization"))
     }
+    @Test fun `extracted barcode is sent as string with all leading zeros`() = runBlocking {
+        response(product.replace("0123456789012", "0000123456789"))
+        repository.barcode("u1", "0000123456789")
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/produtos/busca-por-codigo-barras", request.path)
+        assertEquals("""{"codBarras":"0000123456789"}""", request.body.readUtf8())
+    }
     @Test fun `wrong account sends no request and expired refresh signs out`() = runBlocking {
         assertTrue(runCatching { repository.products("other", "", 0, 20) }.isFailure)
         assertEquals(1, server.requestCount)

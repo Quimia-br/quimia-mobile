@@ -57,9 +57,10 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     var query by rememberSaveable(userId) { mutableStateOf("") }
     var substancesTab by rememberSaveable(userId) { mutableStateOf(false) }
     var alphabetical by rememberSaveable(userId) { mutableStateOf(true) }
+    val repository = remember(context) { ShelfRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, ShelfApi::class.java), AuthRepositoryProvider.get(context)) }
+    var favoriteBusy by remember(userId) { mutableStateOf(false) }
     val controller = remember(context, userId) {
-        ShelfController(ShelfRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, ShelfApi::class.java),
-            AuthRepositoryProvider.get(context)), userId).apply {
+        ShelfController(repository, userId).apply {
             setQuery(query); setTab(substancesTab); setSort(if (alphabetical) ShelfSort.Alphabetical else null)
         }
     }
@@ -81,11 +82,17 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     LaunchedEffect(state.removedId) { if (state.removedId != null && removal?.id == state.removedId.toString()) removal = null }
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.notice(null) } }
     val products = state.products.map { it.catalogProduct() }
-    ShelfScreen(savedIds = products.map { it.id }, onSavedIdsChange = {}, onMenuItemSelected = onMenuItemSelected,
+    ShelfScreen(favoriteIds = state.products.filter { it.favorito }.map { it.id.toString() }, savedIds = products.map { it.id }, onSavedIdsChange = {}, onMenuItemSelected = onMenuItemSelected,
         onAiClick = onAiClick, onAddProduct = onAddProduct, initialQuery = query, initialSubstancesTab = substancesTab,
         apiProducts = products, apiSubstances = state.substances.map { it.shelfSubstance() },
         onQueryChange = { query = it; controller.setQuery(it) }, onTabChange = { substancesTab = it; controller.setTab(it) },
-        onSortChange = { alphabetical = it != null; controller.setSort(it) },
+        onSortChange = { alphabetical = it == ShelfSort.Alphabetical; controller.setSort(it) },
+        onApiFavorite = { id, favorite -> if (!favoriteBusy) { favoriteBusy = true; scope.launch {
+            try { repository.setFavorite(userId, id.toInt(), favorite); controller.load() }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) { controller.notice(com.quimia.android.data.auth.authErrorMessage(failure)) }
+            finally { favoriteBusy = false }
+        } } },
         onUnavailable = { controller.notice(it) }, onApiActions = { action = it },
         onApiRoom = { scope.launch { controller.showRoom(it.toInt()) } },
         onApiExpand = { scope.launch { controller.protect(it.toInt()) } },

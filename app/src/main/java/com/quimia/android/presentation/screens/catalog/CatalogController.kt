@@ -22,6 +22,7 @@ internal data class CatalogState(
     val noticeSuccess: Boolean = false,
     val detailOpen: Boolean = false, val detail: ApiCatalogProduct? = null,
     val detailLoading: Boolean = false, val detailError: CatalogProblem? = null,
+    val lookupBarcode: String? = null,
 )
 
 internal class CatalogController(private val source: CatalogDataSource, private val userId: String) {
@@ -114,20 +115,23 @@ internal class CatalogController(private val source: CatalogDataSource, private 
     }
     suspend fun retrySave() { save(lastSaveIds) }
     suspend fun openDetail(id: Int) { lastDetail = id; lastBarcode = null; fetchDetail { source.detail(userId, id) } }
-    suspend fun findBarcode(code: String) { lastBarcode = code; lastDetail = null; fetchDetail { source.barcode(userId, code) } }
+    suspend fun findBarcode(code: String) { lastBarcode = code; lastDetail = null; fetchDetail(code) { source.barcode(userId, code) } }
     suspend fun retryDetail() { lastBarcode?.let { findBarcode(it); return }; lastDetail?.let { openDetail(it) } }
-    private suspend fun fetchDetail(request: suspend () -> ApiCatalogProduct) {
+    private suspend fun fetchDetail(barcode: String? = null, request: suspend () -> ApiCatalogProduct) {
         val revision = ++detailRevision
-        mutable.update { it.copy(detailOpen = true, detail = null, detailLoading = true, detailError = null) }
+        mutable.update { it.copy(detailOpen = true, detail = null, detailLoading = true, detailError = null, lookupBarcode = barcode) }
         try {
             val detail = request().also(::validateCatalogProduct)
             if (revision == detailRevision) mutable.update { it.copy(detail = detail, detailLoading = false) }
         } catch (cancelled: CancellationException) { throw cancelled
         } catch (error: Exception) {
-            if (revision == detailRevision) mutable.update { it.copy(detailLoading = false, detailError = catalogProblem(error)) }
+            val problem = if (barcode != null && error is HttpException && error.code() == 404)
+                CatalogProblem(GenericErrorKind.ContentUnavailable, "Nenhum produto encontrado para o código de barras $barcode.")
+                else catalogProblem(error)
+            if (revision == detailRevision) mutable.update { it.copy(detailLoading = false, detailError = problem) }
         }
     }
-    fun closeDetail() { detailRevision++; mutable.update { it.copy(detailOpen = false, detail = null, detailError = null, detailLoading = false) } }
+    fun closeDetail() { detailRevision++; mutable.update { it.copy(detailOpen = false, detail = null, detailError = null, detailLoading = false, lookupBarcode = null) } }
     fun dismissNotice() { mutable.update { it.copy(notice = null, saveError = null) } }
 }
 

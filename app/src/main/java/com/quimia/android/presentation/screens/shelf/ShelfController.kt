@@ -36,10 +36,10 @@ internal class ShelfController(private val source: ShelfDataSource, private val 
         if (state.value.query == query.take(100)) return
         invalidate { it.copy(query = query.take(100)) }
     }
-    fun setTab(substances: Boolean) { if (state.value.substancesTab != substances) invalidate { it.copy(substancesTab = substances) } }
+    fun setTab(substances: Boolean) { if (state.value.substancesTab != substances) invalidate { it.copy(substancesTab = substances, order = "alfabetica") } }
     fun setSort(sort: ShelfSort?) {
-        if (sort != null && sort != ShelfSort.Alphabetical) { notice("Este filtro ainda não está disponível na API."); return }
-        val order = if (sort == null) null else "alfabetica"
+        if (state.value.substancesTab && sort != null && sort != ShelfSort.Alphabetical) { notice("Este filtro ainda não está disponível para substâncias."); return }
+        val order = when(sort) { ShelfSort.Alphabetical -> "alfabetica"; ShelfSort.Recent -> "recentes"; ShelfSort.Oldest -> "antigos"; ShelfSort.Favorites -> "favoritos"; null -> null }
         if (order != state.value.order) invalidate { it.copy(order = order) }
     }
     private fun invalidate(change: (ShelfState) -> ShelfState) {

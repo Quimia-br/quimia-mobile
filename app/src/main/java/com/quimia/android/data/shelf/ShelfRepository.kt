@@ -26,6 +26,8 @@ import retrofit2.http.*
     val resultado: String, val severidade: String? = null, val descricaoRisco: String? = null, val consultadoEm: String? = null)
 
 internal interface ShelfApi {
+    @PUT("api/v1/estante/produtos/{id}/favorito") suspend fun favorite(@Header("Authorization") bearer: String, @Path("id") id: Int): Response<Unit>
+    @DELETE("api/v1/estante/produtos/{id}/favorito") suspend fun unfavorite(@Header("Authorization") bearer: String, @Path("id") id: Int): Response<Unit>
     @GET("api/v1/estante/produtos") suspend fun products(@Header("Authorization") bearer: String,
         @Query("q") query: String?, @Query("ordem") order: String?, @Query("page") page: Int,
         @Query("size") size: Int): CatalogPage<ApiCatalogProduct>
@@ -58,6 +60,11 @@ internal class ShelfRepository(private val api: ShelfApi, private val sessions: 
     } catch (error: Exception) {
         if (sessions.session.value == SessionState.SignedOut) throw CatalogSessionExpired()
         throw error
+    }
+    suspend fun setFavorite(user: String, id: Int, favorite: Boolean) = authenticated(user) {
+        val response = if (favorite) api.favorite(it, id) else api.unfavorite(it, id)
+        if (!response.isSuccessful) throw HttpException(response)
+        if (response.code() != 204) throw CatalogContractException()
     }
     override suspend fun products(user: String, query: String, order: String?, page: Int) = authenticated(user) {
         api.products(it, query.trim().ifBlank { null }, order, page, 20).also { result -> validateCatalogPage(result, page, 20) }
