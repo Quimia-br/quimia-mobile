@@ -54,17 +54,19 @@ class AuthRepository(private val api: QuimiaAuthApi, private val store: SessionS
     suspend fun resetPassword(token: String, password: String) = withContext(Dispatchers.IO) {
         api.reset(ResetPasswordRequest(token, password))
     }
-    suspend fun completeInitialProfile(name: String, birthDate: String): UserProfile = withContext(Dispatchers.IO) {
+    suspend fun completeInitialProfile(name: String, birthDate: String, expectedUserId: String? = null): UserProfile = withContext(Dispatchers.IO) {
         mutex.withLock {
+            if (expectedUserId != null && tokens?.userId != expectedUserId) throw AuthFailure("Entre novamente para continuar.")
             val result = authorized { api.completeProfile(it, InitialProfileRequest(name, birthDate)) }
-            if (result.id != tokens?.userId || result.nome.isBlank() || result.email.isBlank() || result.dataNasc != birthDate)
+            if (result.id != tokens?.userId || result.nome != name || result.email.isBlank() || result.dataNasc != birthDate)
                 throw AuthFailure("A API não confirmou os dados do perfil. Tente novamente.")
             mutableSession.value = SessionState.Authenticated(result)
             result
         }
     }
-    suspend fun saveInitialAddress(address: AuthAddress): AuthAddress = withContext(Dispatchers.IO) {
+    suspend fun saveInitialAddress(address: AuthAddress, expectedUserId: String? = null): AuthAddress = withContext(Dispatchers.IO) {
         mutex.withLock {
+            if (expectedUserId != null && tokens?.userId != expectedUserId) throw AuthFailure("Entre novamente para continuar.")
             val saved = authorized { api.saveAddress(it, address) }
             if (saved.cep.replace("-", "") != address.cep.replace("-", "") || saved.estado != address.estado ||
                 saved.bairro != address.bairro || saved.rua != address.rua || saved.numero != address.numero ||
@@ -83,8 +85,11 @@ class AuthRepository(private val api: QuimiaAuthApi, private val store: SessionS
         }
     }
 
-    suspend fun reloadProfile() = withContext(Dispatchers.IO) {
-        mutex.withLock { mutableSession.value = SessionState.Authenticated(profile()) }
+    suspend fun reloadProfile(expectedUserId: String? = null) = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            if (expectedUserId != null && tokens?.userId != expectedUserId) throw AuthFailure("Entre novamente para continuar.")
+            mutableSession.value = SessionState.Authenticated(profile())
+        }
     }
 
     suspend fun <T> withSession(expectedUserId: String, request: suspend (String) -> T): T = withContext(Dispatchers.IO) {
