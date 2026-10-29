@@ -80,9 +80,10 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
             } })
         return
     }
-    if (!loaded || profile == null) Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        nav.QuimiaNav(showBackButton = true, onBackClick = onBack, onCloseClick = onBack)
-        com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Profile, "Carregando perfil")
+    if (!loaded || profile == null) {
+        CompositionLocalProvider(theme.LocalQuimiaSkeleton provides true) {
+            ProfileScreen("Seu nome", "email@quimia.com", preferences, {}, {}, {}, onBack = onBack)
+        }
     } else {
         val photo = rememberAsyncImagePainter(profile.fotoUrl?.takeIf { it.startsWith("https://") })
         ProfileScreen(profile.nome, profile.email, preferences, onPreferencesChange,

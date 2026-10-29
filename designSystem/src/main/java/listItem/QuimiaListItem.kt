@@ -1,5 +1,6 @@
 package listItem
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -132,7 +133,7 @@ fun QuimiaListItem(
     val resolvedSubtitleColor = subtitleColor ?: tokens.foregroundSubtle
 
     Row(
-        modifier = modifier
+        modifier = modifier.quimiaSkeleton()
             .fillMaxWidth()
             .clip(RoundedCornerShape(cornerRadius))
             .background(resolvedContainerColor)

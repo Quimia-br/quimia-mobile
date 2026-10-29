@@ -1,5 +1,6 @@
 package avatar
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.Image
@@ -45,7 +46,7 @@ fun QuimiaAvatar(
     val resolvedForeground = foregroundColor ?: tokens.foregroundPrimary
 
     Box(
-        modifier = modifier
+        modifier = modifier.quimiaSkeleton(1000.dp)
             .size(size)
             .clip(CircleShape)
             .background(resolvedBackground),

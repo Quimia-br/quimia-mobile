@@ -1,5 +1,6 @@
 package shapeIcon
 
+import theme.quimiaSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,7 +61,7 @@ fun QuimiaShapeIcon(
         tokens.foregroundError else tokens.foregroundPrimary
 
     Box(
-        modifier = modifier
+        modifier = modifier.quimiaSkeleton(1000.dp)
             .size(size)
             .clip(CircleShape)
             .background(background)

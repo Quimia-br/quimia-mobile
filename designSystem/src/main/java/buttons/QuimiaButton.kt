@@ -1,5 +1,6 @@
 package buttons
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.annotation.DrawableRes
@@ -73,7 +74,7 @@ fun QuimiaButton(
     val actualIconColor = if (enabled) actionContentColor(actualContainer, iconColor, tokens) else disabledContentColor
 
     Button(
-        modifier = modifier,
+        modifier = modifier.quimiaSkeleton(1000.dp),
         onClick = onClick,
         enabled = enabled,
         border = quimiaContrastBorder(),

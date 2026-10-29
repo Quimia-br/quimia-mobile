@@ -1,5 +1,6 @@
 package buttons
 
+import theme.quimiaSkeleton
 import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +41,7 @@ fun QuimiaAvatarButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(size).quimiaContrastOutline(CircleShape)
+        modifier = modifier.size(size).quimiaSkeleton(size).quimiaContrastOutline(CircleShape)
     ) {
         QuimiaAvatar(
             size = size,

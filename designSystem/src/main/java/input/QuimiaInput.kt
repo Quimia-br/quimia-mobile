@@ -1,5 +1,6 @@
 package input
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.animation.animateColorAsState
@@ -120,6 +121,7 @@ fun QuimiaInput(
         if (label != null) {
             Text(
                 text = label,
+                modifier = Modifier.quimiaSkeleton(8.dp),
                 style = primaryTextStyle
             )
         }
@@ -133,7 +135,7 @@ fun QuimiaInput(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             visualTransformation = visualTransformation,
-            modifier = modifier
+            modifier = modifier.quimiaSkeleton()
                 .fillMaxWidth()
                 .background(
                     color = actualContainerColor,

@@ -1,5 +1,6 @@
 package toast
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.layout.Arrangement
@@ -74,7 +75,7 @@ fun QuimiaToast(
     }
 
     Surface(
-        modifier = modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+        modifier = modifier.quimiaSkeleton(32.dp).fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
         shape = RoundedCornerShape(RadiusFull.dp),
         color = containerColor ?: tokens.surfaceBase,
         contentColor = tokens.textPrimary,

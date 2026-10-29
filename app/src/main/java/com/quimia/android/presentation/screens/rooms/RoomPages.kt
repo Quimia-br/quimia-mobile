@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.rooms
 
+import theme.quimiaSkeleton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,7 +48,7 @@ internal fun RoomForm(
                 Column(Modifier.fillMaxWidth().padding(24.dp)) {
                     QuimiaMainTitle(title = formTitle)
                     Spacer(Modifier.height(4.dp))
-                    Text("Insira as informações do cômodo", style = QuimiaTextStyles.medium16, color = tokens.textSecondary)
+                    Text("Insira as informações do cômodo", modifier = Modifier.quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium16, color = tokens.textSecondary)
                 }
                 if (showIdentity) {
                 Box(Modifier.fillMaxWidth().padding(24.dp)) {
@@ -56,8 +57,8 @@ internal fun RoomForm(
                         trailingIconSize = 16.dp, trailingIconContentDescription = "Limpar nome do cômodo",
                         trailingIcon = if (name.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { onNameChange("") })
                 }
-                Text("Ícone", Modifier.padding(horizontal = 24.dp), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
-                Text("Escolha o ícone que melhor representa o cômodo", Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                Text("Ícone", Modifier.padding(horizontal = 24.dp).quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
+                Text("Escolha o ícone que melhor representa o cômodo", Modifier.padding(horizontal = 24.dp, vertical = 12.dp).quimiaSkeleton(8.dp),
                     style = QuimiaTextStyles.medium14, color = tokens.textSecondary)
                 BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                     val iconColumns = roomIconColumns(maxWidth.value)
@@ -79,8 +80,8 @@ internal fun RoomForm(
                     }
                 }
                 }
-                Text("Produtos", Modifier.padding(horizontal = 24.dp), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
-                Text(selectionHint, Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                Text("Produtos", Modifier.padding(horizontal = 24.dp).quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
+                Text(selectionHint, Modifier.padding(horizontal = 24.dp, vertical = 16.dp).quimiaSkeleton(8.dp),
                     style = QuimiaTextStyles.medium14, color = tokens.textSecondary)
                 statusContent?.invoke()
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -133,7 +134,7 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                             RoomShapeIcon(room.icon, 76.dp, critical = safety == RoomSafety.Critical, onBase = true, knownIcon = room.knownIcon)
                             Spacer(Modifier.height(if (safety == RoomSafety.Critical) 18.dp else 26.dp))
-                            Text(room.name, Modifier.padding(24.dp), style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
+                            Text(room.name, Modifier.padding(24.dp).quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
                             Spacer(Modifier.height(if (safety == RoomSafety.Critical) 18.dp else 26.dp))
                             val title = when (safety) {
                                 RoomSafety.Critical -> "Crítico: nunca use esses produtos juntos"

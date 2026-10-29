@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.profile
 
+import theme.quimiaSkeleton
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -156,8 +157,8 @@ private fun ProfilePreferencesScreen(
                 val identity: @Composable (Modifier) -> Unit = { identityModifier ->
                     Column(identityModifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(displayName.ifBlank { "Seu nome" }, style = QuimiaTextStyles.medium20, color = tokens.foregroundPrimary)
-                            Text(email, Modifier.widthIn(max = if (accessibleLayout) 264.dp else 112.dp)
+                            Text(displayName.ifBlank { "Seu nome" }, modifier = Modifier.quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium20, color = tokens.foregroundPrimary)
+                            Text(email, Modifier.quimiaSkeleton(8.dp).widthIn(max = if (accessibleLayout) 264.dp else 112.dp)
                                 .semantics { contentDescription = email }, style = QuimiaTextStyles.medium14,
                                 color = if (tokens.surfaceBackground == theme.DarkTokens.surfaceBackground) tokens.foregroundPrimary.copy(alpha = .6f) else tokens.textSecondary,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)

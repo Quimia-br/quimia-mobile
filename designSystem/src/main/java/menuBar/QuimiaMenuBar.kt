@@ -1,5 +1,6 @@
 package menuBar
 
+import theme.quimiaSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -100,6 +101,7 @@ fun QuimiaMenuBar(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(QuimiaMenuBarHeight)
+                .quimiaSkeleton(1000.dp)
                 .background(tokens.secondary, RoundedCornerShape(RadiusFull.dp))
                 .quimiaContrastOutline(RoundedCornerShape(RadiusFull.dp))
                 .padding(horizontal = 10.dp, vertical = 14.dp),

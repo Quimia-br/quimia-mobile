@@ -1,5 +1,6 @@
 package shortCut
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -81,7 +82,7 @@ fun QuimiaShortCut(
 
     Surface(
         onClick = onClick,
-        modifier = componentModifier,
+        modifier = componentModifier.quimiaSkeleton(),
         shape = shape,
         color = containerColor,
         border = quimiaContrastBorder(),

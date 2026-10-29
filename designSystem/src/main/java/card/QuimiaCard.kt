@@ -1,5 +1,6 @@
 package card
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -79,7 +80,7 @@ fun QuimiaCard(
     val hasActions = !primaryActionLabel.isNullOrBlank() || !secondaryActionLabel.isNullOrBlank()
 
     Column(
-        modifier = modifier
+        modifier = modifier.quimiaSkeleton()
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
             .background(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)

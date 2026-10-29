@@ -1,5 +1,6 @@
 package buttons
 
+import theme.quimiaSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -42,7 +43,7 @@ fun QuimiaFAB(
 
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(QuimiaFABSize).quimiaContrastOutline(CircleShape),
+        modifier = modifier.size(QuimiaFABSize).quimiaSkeleton(QuimiaFABSize).quimiaContrastOutline(CircleShape),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,
             contentColor = actualIconColor

@@ -105,16 +105,18 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
     var rescan by rememberSaveable { mutableStateOf(false) }
     if (rescan) CatalogBarcodeScannerSheet(onDismiss = { rescan = false }, onBarcode = { code -> rescan = false; scope.launch { controller.findBarcode(code) } })
     val canSave = state.shelfReady && !state.shelfLoading
+    val screenLoading = state.loading || state.shelfLoading
+    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
-        initialQuery = initialQuery, products = state.products.map { it.catalogProduct() },
+        initialQuery = initialQuery, products = if (screenLoading) sampleCatalogProducts.take(5) else state.products.map { it.catalogProduct() },
         initialSavedProductIds = state.savedIds.map(Int::toString), onQueryChange = { query = it; controller.setQuery(it) },
         onSaveProducts = { ids -> scope.launch { controller.save(ids.mapNotNull(String::toIntOrNull)) } },
-        onProductDetails = { product -> scope.launch { controller.openDetail(product.id.toInt()) } },
+        onProductDetails = { product -> if (!screenLoading) scope.launch { controller.openDetail(product.id.toInt()) } },
         saving = state.savingIds.isNotEmpty(), canSave = canSave,
         saveMessage = state.notice, saveMessageSuccess = state.noticeSuccess, onDismissSaveMessage = controller::dismissNotice,
         onBarcode = { code -> scope.launch { controller.findBarcode(code) } },
         statusContent = {
-            if (state.loading && state.products.isEmpty()) CatalogLoading("Carregando produtos…")
+            if (!screenLoading) {
             state.error?.let { CatalogError(it) { scope.launch { controller.search() } } }
             if (!state.loading && state.error == null && state.products.isEmpty()) {
                 Text("Nenhum produto encontrado", Modifier.padding(24.dp), color = quimiaColorTokens().textSecondary)
@@ -122,6 +124,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
             if (state.shelfLoading && !state.loading) com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Lines, "Conferindo os produtos da sua estante")
             state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
             state.saveError?.let { CatalogError(it) { scope.launch { controller.retrySave() } } }
+            }
         }, footerContent = {
             if (state.moreLoading) CatalogLoading("Carregando mais produtos…")
             state.moreError?.let { CatalogError(it) { scope.launch { controller.loadMore() } } }
@@ -130,6 +133,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
                     iconSize = 0, espacamento = 0, onClick = { scope.launch { controller.loadMore() } })
             }
         })
+    }
     if (state.detailOpen) {
         state.detail?.let { product ->
             CatalogProductDetailsSheet(product.catalogProduct(), product.id in state.savedIds, controller::closeDetail,

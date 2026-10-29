@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.catalog
 
+import theme.quimiaSkeleton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -365,7 +366,7 @@ private fun CatalogBanner(message: String, success: Boolean, onDismiss: () -> Un
     val tokens = quimiaColorTokens()
     Row(
         modifier = Modifier.fillMaxWidth().padding(16.dp)
-            .clip(RoundedCornerShape(40.dp)).background(tokens.surfaceBase)
+            .quimiaSkeleton(40.dp).clip(RoundedCornerShape(40.dp)).background(tokens.surfaceBase)
             .quimiaContrastOutline(RoundedCornerShape(40.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
