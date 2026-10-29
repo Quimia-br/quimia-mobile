@@ -101,6 +101,15 @@ class AuthRepository(private val api: QuimiaAuthApi, private val store: SessionS
         }
     }
 
+    suspend fun <T> withSession(expectedUserId: String, request: suspend (String) -> T): T = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            if (tokens?.userId != expectedUserId || expectedUserId.isBlank()) throw AuthFailure("Entre novamente para continuar.")
+            val result = authorized(request)
+            if (tokens?.userId != expectedUserId) throw AuthFailure("A sessão mudou. Entre novamente.")
+            result
+        }
+    }
+
     suspend fun logout(): Boolean = withContext(Dispatchers.IO) {
         mutex.withLock {
             try {

@@ -38,7 +38,7 @@ import com.quimia.android.presentation.screens.auth.password.LoginPassCodeScreen
 import com.quimia.android.presentation.screens.auth.password.LoginPassSuccesScreen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
-import com.quimia.android.presentation.screens.home.HomeScreen
+import com.quimia.android.presentation.screens.home.HomeRoute
 import com.quimia.android.presentation.screens.catalog.CatalogScreen
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
@@ -184,6 +184,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val photoPainter = rememberAsyncImagePainter(photoUri)
     val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
     var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
+    var homeSearch by rememberSaveable(sessionUid) { mutableStateOf("") }
     var savedProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var rooms by rememberSaveable(sessionUid, stateSaver = RoomListSaver) { mutableStateOf(emptyList<QuimiaRoom>()) }
@@ -217,6 +218,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val kemiController = rememberSaveable(sessionUid, saver = KemiControllerSaver) { KemiController() }
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
+        homeSearch = ""
         if (index in 0..4) selectedMainTab = index
         else unavailableTab = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
             .getOrElse(index) { "Esta tela" }
@@ -233,7 +235,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     LaunchedEffect(currentScreen) {
         AnalyticsLogger.logScreenView(currentScreen)
     }
-    BackHandler(enabled = authState is AuthResult.Success && !showKemi && !showMixtures && (showProfile || selectedMainTab in 2..4)) {
+    BackHandler(enabled = authState is AuthResult.Success && !showKemi && !showMixtures && (showProfile || selectedMainTab in 1..4)) {
         if (showProfile) showProfile = false else selectedMainTab = 0
     }
 
@@ -271,6 +273,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         },
                     ) else when (selectedMainTab) {
                         1 -> CatalogScreen(
+                            initialQuery = homeSearch,
                             onMenuItemSelected = onMainTabSelected,
                             onAiClick = { showKemi = true },
                             initialSavedProductIds = savedProductIds,
@@ -307,16 +310,23 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             initialAddressFields = referenceAddressFields,
                             onAddressFieldsChange = { referenceAddressFields = it },
                         )
-                        else -> HomeScreen(
-                            avatarInitials = profileInitials(displayName), avatarPhoto = photo,
+                        else -> HomeRoute(
+                            userId = sessionUid.orEmpty(),
+                            onSearch = { homeSearch = it.trim(); selectedMainTab = 1 },
                             onAvatarClick = { showProfile = true },
                             onMenuItemSelected = onMainTabSelected,
                             onFindDropOffClick = { selectedMainTab = 3 },
                             onShelfClick = { selectedMainTab = 2 },
-                            onAiClick = { showKemi = true },
-                            onMixturesClick = { openMixtures() }, onMixClick = { openMixtures() },
-                            mixtureHistory = mixtures.state.history,
-                            onMixtureHistoryClick = { result -> openMixtures(history = true); mixtures.openResult(result.id) },
+                            onMixturesClick = { openMixtures() },
+                            onProfileLoaded = { profile ->
+                                displayName = profile.nome; profileEmail = profile.email; photoUri = profile.fotoUrl
+                                birthDate = com.quimia.android.presentation.auth.displayBirthDate(profile.dataNasc)
+                            },
+                            onSessionExpired = {
+                                selectedMainTab = 0; showProfile = false; showMixtures = false
+                                navigateAuth(AuthDestination.Login); authViewModel.logout()
+                                authNotice = "Sua sessão expirou. Entre novamente para continuar."
+                            },
                         )
                     }
                 }
