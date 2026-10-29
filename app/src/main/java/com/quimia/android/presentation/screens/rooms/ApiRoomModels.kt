@@ -4,7 +4,7 @@ import com.quimia.android.data.rooms.*
 
 internal val RoomIcon.apiCode: String get() = when (this) {
     RoomIcon.Mirror -> "mirror"; RoomIcon.Refrigerator -> "refrigerator"; RoomIcon.Fence -> "fence"
-    RoomIcon.Laundry -> "laundry"; RoomIcon.DoubleBed -> "double_bed"; RoomIcon.SingleBed -> "single_bed"
+    RoomIcon.Laundry -> "laundry"; RoomIcon.DoubleBed -> "double-bed"; RoomIcon.SingleBed -> "single-bed"
     RoomIcon.Toilet -> "toilet"; RoomIcon.Sofa -> "sofa"; RoomIcon.Pool -> "pool"; RoomIcon.Shelving -> "shelving"
 }
 internal fun apiRoomIcon(code: String): RoomIcon? = RoomIcon.entries.find { it.apiCode == code }
