@@ -70,7 +70,8 @@ class AuthRepository(private val api: QuimiaAuthApi, private val store: SessionS
             val saved = authorized { api.saveAddress(it, address) }
             if (saved.cep.replace("-", "") != address.cep.replace("-", "") || saved.estado != address.estado ||
                 saved.bairro != address.bairro || saved.rua != address.rua || saved.numero != address.numero ||
-                saved.complemento.orEmpty() != address.complemento.orEmpty())
+                saved.complemento.orEmpty() != address.complemento.orEmpty() ||
+                !confirmedCoordinate(address.latitude, saved.latitude) || !confirmedCoordinate(address.longitude, saved.longitude))
                 throw AuthFailure("A API não confirmou o endereço informado. Tente novamente.")
             saved
         }
@@ -89,6 +90,15 @@ class AuthRepository(private val api: QuimiaAuthApi, private val store: SessionS
         mutex.withLock {
             if (expectedUserId != null && tokens?.userId != expectedUserId) throw AuthFailure("Entre novamente para continuar.")
             mutableSession.value = SessionState.Authenticated(profile())
+        }
+    }
+
+    suspend fun <T> withSession(expectedUserId: String, request: suspend (String) -> T): T = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            if (tokens?.userId != expectedUserId || expectedUserId.isBlank()) throw AuthFailure("Entre novamente para continuar.")
+            val result = authorized(request)
+            if (tokens?.userId != expectedUserId) throw AuthFailure("A sessão mudou. Entre novamente.")
+            result
         }
     }
 
@@ -158,6 +168,9 @@ class AuthRepository(private val api: QuimiaAuthApi, private val store: SessionS
         catch (error: HttpException) { if (error.code() == 401) signOutLocally(); throw error }
     }
 }
+
+private fun confirmedCoordinate(expected: Double?, actual: Double?): Boolean =
+    if (expected == null) actual == null else expected.isFinite() && actual != null && actual.isFinite() && kotlin.math.abs(expected - actual) <= .000001
 
 fun authErrorMessage(error: Exception): String {
     if (error is AuthFailure) return error.message ?: "Entre novamente."
