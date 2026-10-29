@@ -60,6 +60,11 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     var addressError by remember { mutableStateOf<String?>(null) }
     var editing by rememberSaveable { mutableStateOf(false) }
     var listVisible by rememberSaveable { mutableStateOf(false) }
+    var saved by remember(userId) { mutableStateOf<List<ApiPoint>>(emptyList()) }
+    var savedReady by remember(userId) { mutableStateOf(false) }
+    var savingPoint by remember { mutableStateOf(false) }
+    var selectedPoint by remember { mutableStateOf<Int?>(null) }
+    var showSaved by remember { mutableStateOf(false) }
     var points by remember(userId) { mutableStateOf(emptyList<ApiPoint>()) }
     var nextPage by remember { mutableIntStateOf(0) }
     var total by remember { mutableStateOf<Long?>(null) }
@@ -89,6 +94,11 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             finally { if (revision == requestRevision) loading = false }
         }
     }
+    suspend fun loadSaved() {
+        try { saved = repository.saved(userId); savedReady = true }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: Exception) { savedReady = false; notice = authErrorMessage(failure) }
+    }
     suspend fun loadAddress() {
         try { address = repository.address(userId); addressError = null }
         catch (cancelled: CancellationException) { throw cancelled }
@@ -106,7 +116,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         finally { homeLoading = false }
     }
     LaunchedEffect(userId, type, registered) { load() }
-    LaunchedEffect(userId) { loadAddress() }
+    LaunchedEffect(userId) { loadAddress(); loadSaved() }
     LaunchedEffect(session) { if (session == SessionState.SignedOut) onSessionExpired() }
     val owner = LocalLifecycleOwner.current
     val latestReload by rememberUpdatedState({ load(); scope.launch { loadAddress() } })
@@ -143,8 +153,12 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             }
         }
         Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp))) {
-            // The API has no coordinates. Never place sample markers for real points.
-            ProximityMap(emptyList(), null, {}, bottomContentInset = 150.dp,
+            ProximityMap(points.mapNotNull { point ->
+                val coordinate = point.latitude?.let { lat -> point.longitude?.let { lng -> NearbyCoordinate(lat, lng) } }
+                    ?.takeIf { it.isValid() } ?: return@mapNotNull null
+                NearbyPoint(point.id, point.nome, point.address, if (point.tipo == "descarte") NearbyCategory.Collection else NearbyCategory.Shopping,
+                    "", 0f, 0f, coordinate)
+            }, selectedPoint, { selectedPoint = it; showSaved = false; listVisible = true }, bottomContentInset = 150.dp,
                 homeCoordinate = home, homeLabel = address?.let { "${it.rua.orEmpty()}, ${it.numero} · ${it.bairro}" }.orEmpty(),
                 onHomeUnavailable = {
                     when {
@@ -162,11 +176,11 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             Surface(Modifier.align(Alignment.BottomCenter).padding(16.dp).fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp), color = tokens.surfaceBackground, border = quimiaContrastBorder()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Os pontos ainda não têm coordenadas na API. Consulte os endereços na lista.",
-                        style = QuimiaTextStyles.medium14, color = tokens.foregroundPrimary)
+                    Text("Pontos disponíveis no mapa e na lista.", style = QuimiaTextStyles.medium14, color = tokens.foregroundPrimary)
                     QuimiaButton(text = if (loading) "Carregando pontos…" else if (error != null) "Ver erro e tentar novamente" else "Ver pontos (${total ?: 0})",
                         textColor = LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0,
-                        modifier = Modifier.fillMaxWidth(), onClick = { listVisible = true })
+                        modifier = Modifier.fillMaxWidth(), onClick = { showSaved = false; listVisible = true })
+                    TextButton(onClick = { showSaved = true; listVisible = true; scope.launch { loadSaved() } }) { Text("Pontos salvos", color = tokens.foregroundPrimary) }
                 }
             }
         }
@@ -180,8 +194,8 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                 Text(error.orEmpty(), color = tokens.foregroundPrimary)
                 TextButton(onClick = { load(reset = points.isEmpty()) }) { Text("Tentar novamente") }
             }
-            if (!loading && error == null && points.isEmpty()) item { Text("Nenhum ponto encontrado para este filtro.", color = tokens.foregroundPrimary) }
-            items(points, key = { it.id }) { point ->
+            if (!loading && error == null && (if (showSaved) saved.isEmpty() else points.isEmpty())) item { Text(if (showSaved) "Nenhum ponto salvo." else "Nenhum ponto encontrado para este filtro.", color = tokens.foregroundPrimary) }
+            items(if (showSaved) saved else points, key = { it.id }) { point ->
                 Surface(shape = RoundedCornerShape(28.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(point.nome, style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
@@ -189,13 +203,22 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                         QuimiaButton(text = "Abrir aplicativo de mapas", iconSize = 0, espacamento = 0,
                             textColor = LightTokens.foregroundPrimary, enabled = point.mapsQuery != null,
                             modifier = Modifier.fillMaxWidth(), onClick = { openMaps(point) })
-                        TextButton(onClick = { notice = "A API ainda não permite salvar pontos por usuário. Nenhum ponto foi salvo." }) {
-                            Text("Salvar ponto", color = tokens.foregroundPrimary)
-                        }
+                        TextButton(enabled = savedReady && !savingPoint, onClick = {
+                            savingPoint = true
+                            scope.launch {
+                                try {
+                                    if (saved.any { it.id == point.id }) repository.removePoint(userId, point.id)
+                                    else repository.savePoint(userId, point.id)
+                                    loadSaved()
+                                } catch (cancelled: CancellationException) { throw cancelled }
+                                catch (failure: Exception) { notice = authErrorMessage(failure) }
+                                finally { savingPoint = false }
+                            }
+                        }) { Text(if (saved.any { it.id == point.id }) "Remover dos salvos" else "Salvar ponto", color = tokens.foregroundPrimary) }
                     }
                 }
             }
-            if (hasMore && !loading && error == null) item { TextButton(onClick = { load(false) }) { Text("Carregar mais") } }
+            if (!showSaved && hasMore && !loading && error == null) item { TextButton(onClick = { load(false) }) { Text("Carregar mais") } }
         }
     }
     if (editing) NearbyAddressSheet(onDismiss = { editing = false }, onSave = { editing = false; if (registered) load() },

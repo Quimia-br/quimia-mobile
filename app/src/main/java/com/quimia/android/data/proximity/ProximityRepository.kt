@@ -11,7 +11,8 @@ import retrofit2.http.*
     val totalItens: Long, val totalPaginas: Int)
 @Serializable internal data class ApiPoint(val id: Int, val nome: String, val tipo: String,
     val cep: String? = null, val estado: String? = null, val bairro: String? = null,
-    val rua: String? = null, val numero: Int? = null, val complemento: String? = null) {
+    val rua: String? = null, val numero: Int? = null, val complemento: String? = null,
+    val latitude: Double? = null, val longitude: Double? = null) {
     val address: String get() = listOfNotNull(rua?.takeIf(String::isNotBlank), numero?.toString(),
         bairro?.takeIf(String::isNotBlank), estado?.takeIf(String::isNotBlank), cep?.takeIf(String::isNotBlank),
         complemento?.takeIf(String::isNotBlank)).joinToString(" · ").ifBlank { "Endereço não informado pela API" }
@@ -23,6 +24,9 @@ internal interface ProximityApi {
     @GET("api/v1/pontos") suspend fun points(@Header("Authorization") bearer: String,
         @Query("tipo") type: String, @Query("usarLocalizacaoCadastrada") registered: Boolean,
         @Query("page") page: Int, @Query("size") size: Int): PointsPage
+    @PUT("api/v1/pontos/salvos/{id}") suspend fun savePoint(@Header("Authorization") bearer: String, @Path("id") id: Int): ApiPoint
+    @DELETE("api/v1/pontos/salvos/{id}") suspend fun removePoint(@Header("Authorization") bearer: String, @Path("id") id: Int): retrofit2.Response<Unit>
+    @GET("api/v1/pontos/salvos") suspend fun savedPoints(@Header("Authorization") bearer: String, @Query("page") page: Int, @Query("size") size: Int): PointsPage
     @GET("api/v1/usuarios/me/localizacao") suspend fun address(@Header("Authorization") bearer: String): AuthAddress
 }
 internal class ProximityContractException(message: String) : Exception(message)
@@ -37,6 +41,24 @@ internal class ProximityRepository(private val api: ProximityApi, private val se
                 result.itens.any { it.id <= 0 || it.nome.isBlank() || it.tipo != type })
                 throw ProximityContractException("A API retornou uma lista de pontos inconsistente.")
         }
+    }
+    suspend fun saved(userId: String): List<ApiPoint> {
+        val all = mutableListOf<ApiPoint>()
+        var page = 0
+        do {
+            val result = sessions.withSession(userId) { api.savedPoints(it, page, 50) }
+            if (result.pagina != page || result.tamanho != 50 || result.totalPaginas < 0 || result.itens.size > 50 || result.totalPaginas > 1000)
+                throw ProximityContractException("Lista de pontos salvos inválida.")
+            all.addAll(result.itens); page++
+        } while (page < result.totalPaginas)
+        return all.distinctBy { it.id }
+    }
+    suspend fun savePoint(userId: String, id: Int) = sessions.withSession(userId) { api.savePoint(it, id) }.also {
+        if (it.id != id) throw ProximityContractException("A API não confirmou o ponto salvo.")
+    }
+    suspend fun removePoint(userId: String, id: Int) {
+        val response = sessions.withSession(userId) { api.removePoint(it, id) }
+        if (response.code() != 204) throw ProximityContractException("A API não confirmou a remoção do ponto.")
     }
     suspend fun address(userId: String): AuthAddress? = try {
         sessions.withSession(userId) { api.address(it) }
