@@ -27,15 +27,21 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     onFindDropOffClick: () -> Unit, onMixturesClick: () -> Unit, onShelfClick: () -> Unit,
     onMenuItemSelected: (Int) -> Unit, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
     val context = LocalContext.current.applicationContext
-    val controller = remember(userId, context) {
-        HomeController(HomeRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, HomeApi::class.java),
-            AuthRepositoryProvider.get(context)), userId)
-    }
+    val repository = remember(userId, context) { HomeRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, HomeApi::class.java), AuthRepositoryProvider.get(context)) }
+    val controller = remember(userId, repository) { HomeController(repository, userId) }
+    var pointLabel by remember(userId) { mutableStateOf("Carregando…") }
     val state by controller.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val owner = LocalLifecycleOwner.current
     var selected by remember(userId) { mutableStateOf<HomeMixture?>(null) }
-    fun refresh() { scope.launch { controller.refresh() } }
+    fun refresh() {
+        scope.launch { controller.refresh() }
+        scope.launch {
+            try { pointLabel = repository.lastPoint(userId)?.nome ?: "Não cadastrado" }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { pointLabel = "Não foi possível carregar" }
+        }
+    }
     DisposableEffect(owner, controller) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh() }
         owner.lifecycle.addObserver(observer)
@@ -52,7 +58,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
         onSearch = onSearch, onAvatarClick = onAvatarClick, onFindDropOffClick = onFindDropOffClick,
         onMixturesClick = onMixturesClick, onShelfClick = onShelfClick, onMixClick = onMixturesClick,
-        onMenuItemSelected = onMenuItemSelected, dropOffDescription = "Consulte no mapa",
+        onMenuItemSelected = onMenuItemSelected, dropOffDescription = pointLabel,
         profileStatus = {
             if (state.profileLoading) HomeLoading("Carregando perfil…")
             state.profileError?.let { HomeLoadError(it, "seu perfil", ::refresh) }
