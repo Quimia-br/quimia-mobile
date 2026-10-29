@@ -80,12 +80,9 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
             } })
         return
     }
-    if (!loaded || profile == null) Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (loading) CircularProgressIndicator()
-        Text(error ?: "Carregando seu perfil…")
-        if (error != null) TextButton(onClick = { scope.launch { reload() } }) { Text("Tentar novamente") }
-        TextButton(onClick = onBack) { Text("Voltar") }
+    if (!loaded || profile == null) Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        nav.QuimiaNav(showBackButton = true, onBackClick = onBack, onCloseClick = onBack)
+        com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Profile, "Carregando perfil")
     } else {
         val photo = rememberAsyncImagePainter(profile.fotoUrl?.takeIf { it.startsWith("https://") })
         ProfileScreen(profile.nome, profile.email, preferences, onPreferencesChange,

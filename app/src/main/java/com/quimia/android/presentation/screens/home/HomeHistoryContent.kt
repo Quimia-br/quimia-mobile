@@ -55,11 +55,10 @@ private fun HomeMixture.severityLabel(): String? = severidade?.takeIf { it.isNot
 
 @Composable
 internal fun HomeLoading(message: String) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-        Text(message, style = QuimiaTextStyles.medium14, color = quimiaColorTokens().foregroundSubtle)
-    }
+    com.quimia.android.presentation.components.LoadingSkeleton(
+        if (message.contains("perfil")) com.quimia.android.presentation.components.SkeletonLayout.Lines
+        else com.quimia.android.presentation.components.SkeletonLayout.History, message)
+
 }
 
 @Composable

@@ -90,6 +90,7 @@ import com.quimia.android.presentation.screens.mixtures.previewMixtureHistory
 fun HomeScreen(
     modifier: Modifier = Modifier,
     avatarInitials: String = "Q",
+    avatarLoading: Boolean = false,
     avatarPhoto: Painter? = null,
     onSearch: ((String) -> Unit)? = null,
     onMicClick: (() -> Unit)? = null,
@@ -106,6 +107,7 @@ fun HomeScreen(
     historyContent: (@Composable ColumnScope.() -> Unit)? = null,
     profileStatus: (@Composable () -> Unit)? = null,
     dropOffDescription: String = "Não cadastrado",
+    dropOffLoading: Boolean = false,
 ) {
     HomeSystemBarsEffect()
 
@@ -160,7 +162,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    QuimiaAvatarButton(
+                    if (avatarLoading) com.quimia.android.presentation.components.SkeletonBlock(Modifier.size(48.dp), 48) else QuimiaAvatarButton(
                         onClick = {
                             AnalyticsLogger.logInteraction("home", "profile_tapped")
                             if (onAvatarClick != null) onAvatarClick() else unavailable("Perfil")
@@ -203,6 +205,7 @@ fun HomeScreen(
 
                 HomeQuickActions(
                     dropOffDescription = dropOffDescription,
+                    dropOffLoading = dropOffLoading,
                     onFindDropOffClick = {
                         AnalyticsLogger.logInteraction("home", "find_drop_off_tapped")
                         if (onFindDropOffClick != null) onFindDropOffClick() else unavailable("Pontos de descarte")
@@ -318,6 +321,7 @@ internal fun HomeEmptyHistory(onMix: () -> Unit) {
 @Composable
 private fun HomeQuickActions(
     dropOffDescription: String = "Não cadastrado",
+    dropOffLoading: Boolean = false,
     modifier: Modifier = Modifier,
     onFindDropOffClick: () -> Unit,
     onMixturesClick: () -> Unit,
@@ -342,7 +346,7 @@ private fun HomeQuickActions(
                 .padding(horizontal = rowPadding),
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),
         ) {
-            QuimiaCard(
+            if (dropOffLoading) com.quimia.android.presentation.components.SkeletonBlock(Modifier.weight(leftWeight).fillMaxHeight(), 24) else QuimiaCard(
                 modifier = Modifier
                     .weight(leftWeight)
                     .fillMaxHeight(),

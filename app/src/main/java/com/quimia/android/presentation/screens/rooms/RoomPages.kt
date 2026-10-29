@@ -107,10 +107,10 @@ internal fun RoomForm(
                 }
                 if (error != null) QuimiaToast(message = error, type = QuimiaToastType.Error,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp),
+                    text = submitLabel, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0,
+                    enabled = canSubmit ?: (roomValidationError(name, icon, selectedIds, products.map { it.id }) == null), onClick = onSubmit)
             }
-            QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp),
-                text = submitLabel, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0,
-                enabled = canSubmit ?: (roomValidationError(name, icon, selectedIds, products.map { it.id }) == null), onClick = onSubmit)
         }
     }
 }
@@ -151,19 +151,13 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                                 containerColor = if (safety == RoomSafety.Critical) tokens.error else tokens.surfaceBase,
                                 titleColor = if (safety == RoomSafety.Critical) tokens.white else tokens.foregroundPrimary,
                                 subtitleColor = if (safety == RoomSafety.Critical) tokens.white.copy(alpha = .8f) else tokens.foregroundSubtle,
-                                subtitleMaxLines = 3,
+                                subtitleMaxLines = 4,
                                 leadingContent = { QuimiaShapeIcon(size = 50.dp,
                                     icon = when (safety) { RoomSafety.Critical -> Lucide.ShieldX; RoomSafety.Safe -> Lucide.Check; else -> Lucide.Info },
                                     containerColor = if (safety == RoomSafety.Safe) tokens.success else tokens.surfaceBase,
                                     iconColor = if (safety == RoomSafety.Critical) tokens.error else tokens.foregroundPrimary) })
                             statusContent?.invoke()
-                            if (onEdit != null && onDelete != null) Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuimiaButton(text = "Editar cômodo", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onEdit)
-                                QuimiaButton(text = "Excluir", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onDelete)
-                            }
-                            onAddProducts?.let { add -> QuimiaButton(text = "Adicionar produtos", iconSize = 0, espacamento = 0,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).height(48.dp), onClick = add) }
-                            if (apiAssessment == null && safety == RoomSafety.Critical && noticeVisible) Box(Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(16.dp), contentAlignment = Alignment.Center) {
+                            if (safety == RoomSafety.Critical && noticeVisible) Box(Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(16.dp), contentAlignment = Alignment.Center) {
                                 QuimiaToast(message = "Alterar status da mistura", description = "Adicione ou remova produtos do cômodo para recalcular",
                                     onDismiss = { noticeVisible = false })
                             } else Spacer(Modifier.height(24.dp))
@@ -176,6 +170,15 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                             row.forEach { product -> RoomProductCard(product, Modifier.weight(1f), critical = safety == RoomSafety.Critical,
                                 previewQuantity = preview && safety == RoomSafety.Safe, onActions = { onProductActions(product.id) }) }
                             repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                    item {
+                        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            onAddProducts?.let { add -> QuimiaButton(text = "Adicionar produtos", iconSize = 0, espacamento = 0, modifier = Modifier.fillMaxWidth().height(48.dp), onClick = add) }
+                            if (onEdit != null && onDelete != null) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                QuimiaButton(text = "Editar cômodo", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onEdit)
+                                QuimiaButton(text = "Excluir", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onDelete)
+                            }
                         }
                     }
                 }

@@ -54,13 +54,12 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     }
     val photoUrl = homePhotoUrl(state.profile?.fotoUrl)
     val photo = rememberAsyncImagePainter(photoUrl)
-    HomeScreen(avatarInitials = state.profile?.nome?.let(::profileInitials).orEmpty(),
+    HomeScreen(avatarLoading = state.profileLoading && state.profile == null, avatarInitials = state.profile?.nome?.let(::profileInitials).orEmpty(),
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
         onSearch = onSearch, onAvatarClick = onAvatarClick, onFindDropOffClick = onFindDropOffClick,
         onMixturesClick = onMixturesClick, onShelfClick = onShelfClick, onMixClick = onMixturesClick,
-        onMenuItemSelected = onMenuItemSelected, dropOffDescription = pointLabel,
+        onMenuItemSelected = onMenuItemSelected, dropOffDescription = pointLabel, dropOffLoading = pointLabel == "Carregando…",
         profileStatus = {
-            if (state.profileLoading) HomeLoading("Carregando perfil…")
             state.profileError?.let { HomeLoadError(it, "seu perfil", ::refresh) }
         }, historyContent = {
             if (state.historyLoading) HomeLoading("Carregando histórico…")

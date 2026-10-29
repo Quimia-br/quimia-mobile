@@ -115,7 +115,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         }, statusContent = {
             state.notice?.let { QuimiaToast(modifier = Modifier.padding(16.dp), message = it, type = QuimiaToastType.Info,
                 onDismiss = { controller.notice(null) }) }
-            if (state.loading) CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando sua estante…")
+            if (state.loading && (if (state.substancesTab) state.substances.isEmpty() else state.products.isEmpty())) CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando sua estante…")
             state.error?.let { CatalogError(it) { reload++ } }
         }, footerContent = {
             if (state.moreLoading) CatalogLoading("Carregando mais produtos…")

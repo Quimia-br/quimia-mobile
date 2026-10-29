@@ -139,7 +139,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                 authViewModel.loginWithGoogle(token)
             } catch (error: com.google.android.gms.common.api.ApiException) {
                 if (error.statusCode != com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
-                    authNotice = "Não foi possível entrar com Google. Tente novamente. Código: ${error.statusCode}."
+                    authNotice = com.quimia.android.data.auth.googleSignInErrorMessage(error.statusCode)
                 }
             } catch (error: Exception) { authNotice = error.message ?: "Não foi possível entrar com Google. Tente novamente." }
         }
