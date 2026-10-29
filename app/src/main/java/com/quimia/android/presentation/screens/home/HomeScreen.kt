@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -102,6 +103,9 @@ fun HomeScreen(
     onAiClick: (() -> Unit)? = null,
     mixtureHistory: List<MixtureResult> = emptyList(),
     onMixtureHistoryClick: (MixtureResult) -> Unit = {},
+    historyContent: (@Composable ColumnScope.() -> Unit)? = null,
+    profileStatus: (@Composable () -> Unit)? = null,
+    dropOffDescription: String = "Não cadastrado",
 ) {
     HomeSystemBarsEffect()
 
@@ -170,6 +174,7 @@ fun HomeScreen(
                     )
                 }
 
+                profileStatus?.invoke()
                 Spacer(modifier = Modifier.height(40.dp))
 
                 QuimiaSearchBar(
@@ -197,6 +202,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 HomeQuickActions(
+                    dropOffDescription = dropOffDescription,
                     onFindDropOffClick = {
                         AnalyticsLogger.logInteraction("home", "find_drop_off_tapped")
                         if (onFindDropOffClick != null) onFindDropOffClick() else unavailable("Pontos de descarte")
@@ -221,7 +227,8 @@ fun HomeScreen(
                     verticalPadding = 12.dp,
                 )
 
-                if (mixtureHistory.isNotEmpty()) {
+                if (historyContent != null) historyContent()
+                else if (mixtureHistory.isNotEmpty()) {
                     mixtureHistory.forEach { result ->
                         MixtureHistoryCard(result,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp),
@@ -230,29 +237,10 @@ fun HomeScreen(
                                 onMixtureHistoryClick(result)
                             })
                     }
-                } else QuimiaEmptyState(
-                    modifier = Modifier.fillMaxWidth(),
-                    fillAvailableSpace = false,
-                    theme = QuimiaEmptyStateTheme.OnColor,
-                    icon = Lucide.Atom,
-                    iconSize = 80.dp,
-                    contentSpacing = 24.dp,
-                    buttonSpacing = 24.dp,
-                    buttonTextStyle = Typography.bodyMedium,
-                    buttonModifier = Modifier.width(158.dp),
-                    title = "Você ainda não fez\nnenhuma mistura",
-                    titleTextStyle = Typography.bodyLarge.copy(
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 20.sp,
-                        textAlign = TextAlign.Center,
-                    ),
-                    buttonLabel = "Misturar",
-                    onButtonClick = {
-                        AnalyticsLogger.logInteraction("home", "start_mixing_tapped")
-                        if (onMixClick != null) onMixClick() else unavailable("Misturar")
-                    },
-                )
+                } else HomeEmptyHistory {
+                    AnalyticsLogger.logInteraction("home", "start_mixing_tapped")
+                    if (onMixClick != null) onMixClick() else unavailable("Misturar")
+                }
 
             }
 
@@ -317,7 +305,19 @@ private fun HomeSystemBarsEffect() {
 }
 
 @Composable
+internal fun HomeEmptyHistory(onMix: () -> Unit) {
+    QuimiaEmptyState(modifier = Modifier.fillMaxWidth(), fillAvailableSpace = false,
+        theme = QuimiaEmptyStateTheme.OnColor, icon = Lucide.Atom, iconSize = 80.dp,
+        contentSpacing = 24.dp, buttonSpacing = 24.dp, buttonTextStyle = Typography.bodyMedium,
+        buttonModifier = Modifier.width(158.dp), title = "Você ainda não fez\nnenhuma mistura",
+        titleTextStyle = Typography.bodyLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium,
+            lineHeight = 20.sp, textAlign = TextAlign.Center),
+        buttonLabel = "Misturar", onButtonClick = onMix)
+}
+
+@Composable
 private fun HomeQuickActions(
+    dropOffDescription: String = "Não cadastrado",
     modifier: Modifier = Modifier,
     onFindDropOffClick: () -> Unit,
     onMixturesClick: () -> Unit,
@@ -347,7 +347,7 @@ private fun HomeQuickActions(
                     .weight(leftWeight)
                     .fillMaxHeight(),
                 title = "Meu ponto de\ndescarte",
-                description = "Não cadastrado",
+                description = dropOffDescription,
                 icon = Lucide.MapPin,
                 primaryActionLabel = null,
                 secondaryActionLabel = "Encontrar",

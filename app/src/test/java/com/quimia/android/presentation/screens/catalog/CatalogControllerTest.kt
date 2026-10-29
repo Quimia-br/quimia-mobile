@@ -9,6 +9,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.io.IOException
 import java.net.SocketTimeoutException
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 class CatalogControllerTest {
     private val first = ApiCatalogProduct(1, "Produto um", "limpeza_geral")
@@ -20,13 +21,14 @@ class CatalogControllerTest {
         var shelf: suspend () -> Set<Int> = { emptySet() }
         var saving: suspend (List<Int>) -> List<SavedCatalogItem> = { ids -> ids.map { SavedCatalogItem(it, "Produto", "adicionado") } }
         var detailLoad: suspend (Int) -> ApiCatalogProduct = { first.copy(id = it) }
+        var barcodeLoad: suspend (String) -> ApiCatalogProduct = { first }
         val users = mutableListOf<String>()
         override suspend fun products(userId: String, query: String, page: Int, size: Int): CatalogPage<ApiCatalogProduct> {
             users += userId; return load(query, page)
         }
         override suspend fun savedIds(userId: String): Set<Int> { users += userId; return shelf() }
         override suspend fun detail(userId: String, id: Int) = detailLoad(id)
-        override suspend fun barcode(userId: String, code: String) = first
+        override suspend fun barcode(userId: String, code: String) = barcodeLoad(code)
         override suspend fun save(userId: String, ids: List<Int>) = saving(ids)
     }
     @Test fun `loading empty and offline are different states`() = runBlocking {
@@ -113,5 +115,22 @@ class CatalogControllerTest {
         for (y in 0 until matrix.height) for (x in 0 until matrix.width) rotated[x * matrix.height + matrix.height - y - 1] = pixels[y * matrix.width + x]
         assertEquals(code, decodeCatalogPixels(matrix.height, matrix.width, rotated))
         assertNull(decodeCatalogPixels(20, 20, IntArray(400) { -1 }))
+    }
+    @Test fun `scanner sends one lookup and not found keeps the extracted number`() = runBlocking {
+        val source = Source()
+        val codes = mutableListOf<String>()
+        source.barcodeLoad = { code ->
+            codes += code
+            throw retrofit2.HttpException(retrofit2.Response.error<ApiCatalogProduct>(404,
+                "".toResponseBody()))
+        }
+        val controller = CatalogController(source, "user")
+        val gate = BarcodeCaptureGate()
+        repeat(6) { gate.accept("001234567890")?.let { controller.findBarcode(it) } }
+        assertEquals(listOf("001234567890"), codes)
+        assertEquals("001234567890", controller.state.value.lookupBarcode)
+        assertEquals(GenericErrorKind.ContentUnavailable, controller.state.value.detailError?.kind)
+        assertTrue(controller.state.value.detailError?.message.orEmpty().contains("001234567890"))
+        assertNull(controller.state.value.detail)
     }
 }

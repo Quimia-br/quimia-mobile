@@ -96,6 +96,9 @@ dependencies {
     implementation(project(":designSystem"))
     implementation(libs.coil.compose)
     implementation("com.google.zxing:core:3.5.4")
+    implementation("androidx.camera:camera-camera2:1.5.3")
+    implementation("androidx.camera:camera-lifecycle:1.5.3")
+    implementation("androidx.camera:camera-view:1.5.3")
     implementation(libs.play.services.maps)
     
     implementation(libs.retrofit)
