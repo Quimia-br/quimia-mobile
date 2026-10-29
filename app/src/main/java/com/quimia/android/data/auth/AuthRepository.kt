@@ -166,7 +166,7 @@ fun authErrorMessage(error: Exception): String {
             detail == "invalid_firebase_token" -> "O servidor não confirmou a conta Google. Tente entrar novamente."
             detail == "blocked" -> "Acesso temporariamente bloqueado por excesso de tentativas. Aguarde e tente novamente."
             detail == "email_in_use" -> "Este e-mail já tem cadastro. Faça login ou recupere sua senha."
-            detail == "underage" -> "A API permite cadastro somente a partir dos 18 anos."
+            detail == "underage" -> "A API permite cadastro somente a partir dos 16 anos."
             detail == "weak_password" -> "Escolha uma senha menos comum, com pelo menos 8 caracteres, letra e número."
             detail == "password_too_long" -> "A senha ultrapassa o limite de 72 bytes. Use uma senha menor."
             detail == "invalid_recovery_code" -> "Código inválido, expirado ou já utilizado. Confira o código ou solicite outro."

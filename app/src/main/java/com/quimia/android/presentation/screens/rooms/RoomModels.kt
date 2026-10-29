@@ -25,6 +25,7 @@ data class QuimiaRoom(
     val icon: RoomIcon,
     val productIds: List<String>,
     val safety: RoomSafety = RoomSafety.NotEvaluated,
+    val knownIcon: Boolean = true,
 )
 
 internal enum class RoomSort(val label: String) { Alphabetical("Alfabética"), Recent("Recentes"), Oldest("Antigos") }

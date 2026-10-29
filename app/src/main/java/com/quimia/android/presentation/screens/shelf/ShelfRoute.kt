@@ -51,7 +51,8 @@ internal fun firstAidText(aid: ShelfFirstAid): String {
 
 @Composable
 internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit,
-    onAddProduct: () -> Unit, onSessionExpired: () -> Unit) {
+    onAddProduct: () -> Unit, onSessionExpired: () -> Unit,
+    onCreateRoom: (String) -> Unit = {}, onOpenRoom: (String) -> Unit = {}) {
     val context = LocalContext.current.applicationContext
     var query by rememberSaveable(userId) { mutableStateOf("") }
     var substancesTab by rememberSaveable(userId) { mutableStateOf(false) }
@@ -150,7 +151,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     state.roomId?.let { id ->
         if (!state.room.loading && state.room.error == null && state.room.data == null) {
             ShelfNoRoomConfirmation(controller::closeRoom) {
-                controller.closeRoom(); controller.notice("Criação de cômodos indisponível no momento.")
+                controller.closeRoom(); onCreateRoom(id.toString())
             }
         } else ShelfFloatingPanel(controller::closeRoom) {
             ShelfPanelTitle("Cômodo do produto", controller::closeRoom)
@@ -160,6 +161,9 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                 Text(room.nome, color = quimiaColorTokens().textPrimary, style = Typography.titleMedium)
                 Text("${room.totalProdutos} produto(s)", color = quimiaColorTokens().textSecondary)
                 Text("Situação: ${room.status}", color = quimiaColorTokens().textSecondary)
+                QuimiaButton(text = "Abrir cômodo", iconSize = 0, espacamento = 0, onClick = {
+                    controller.closeRoom(); onOpenRoom(room.id.toString())
+                })
             }
         }
     }
