@@ -103,10 +103,11 @@ fun CatalogScreen(
     onSavedProductIdsChange: (List<String>) -> Unit = {},
     initialSelectedProductIds: List<String> = emptyList(),
     initialBannerVisible: Boolean = true,
+    initialQuery: String = "",
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
     val voiceInput = rememberVoiceInput { query = it }
     var bannerVisible by rememberSaveable { mutableStateOf(initialBannerVisible) }
     var showLabelScanner by rememberSaveable { mutableStateOf(false) }
