@@ -1,5 +1,6 @@
 package toast
 
+import motion.quimiaEnter
 import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
@@ -75,7 +76,7 @@ fun QuimiaToast(
     }
 
     Surface(
-        modifier = modifier.quimiaSkeleton(32.dp).fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+        modifier = modifier.quimiaEnter().quimiaSkeleton(32.dp).fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
         shape = RoundedCornerShape(RadiusFull.dp),
         color = containerColor ?: tokens.surfaceBase,
         contentColor = tokens.textPrimary,

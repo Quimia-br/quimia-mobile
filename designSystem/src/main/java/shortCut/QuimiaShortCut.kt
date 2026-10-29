@@ -1,5 +1,10 @@
 package shortCut
 
+import motion.quimiaPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
@@ -80,9 +85,12 @@ fun QuimiaShortCut(
         QuimiaShortCutType.Small -> CircleShape
     }
 
+    val motionInteractions = remember { MutableInteractionSource() }
+    val motionPressed by motionInteractions.collectIsPressedAsState()
     Surface(
+        interactionSource = motionInteractions,
         onClick = onClick,
-        modifier = componentModifier.quimiaSkeleton(),
+        modifier = componentModifier.quimiaPress(motionPressed).quimiaSkeleton(),
         shape = shape,
         color = containerColor,
         border = quimiaContrastBorder(),

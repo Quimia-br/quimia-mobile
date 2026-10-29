@@ -162,6 +162,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    androidx.compose.runtime.CompositionLocalProvider(theme.LocalQuimiaSkeleton provides false) {
                     if (avatarLoading) com.quimia.android.presentation.components.SkeletonBlock(Modifier.size(48.dp), 48) else QuimiaAvatarButton(
                         onClick = {
                             AnalyticsLogger.logInteraction("home", "profile_tapped")
@@ -174,6 +175,7 @@ fun HomeScreen(
                         foregroundColor = tokens.foregroundPrimary,
                         contentDescription = "Abrir perfil",
                     )
+                    }
                 }
 
                 profileStatus?.invoke()

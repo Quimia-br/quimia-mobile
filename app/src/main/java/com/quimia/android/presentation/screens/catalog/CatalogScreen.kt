@@ -249,7 +249,7 @@ fun CatalogScreen(
                             if (index == 0 || index % 2 == 1 || layoutWidth < 240.dp) {
                                 if (index > 0 && layoutWidth >= 240.dp) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-                                        filtered.drop(index).take(2).forEach { paired ->
+                                        filtered.drop(index).take(2).forEachIndexed { pairIndex, paired ->
                                             ProductCard(
                                                 paired, paired.id in savedIds,
                                                 onSave = { save(listOf(paired.id)) },
@@ -258,7 +258,7 @@ fun CatalogScreen(
                                                 selected = paired.id in selectedIds,
                                                 selectionMode = selectedIds.isNotEmpty(),
                                                 onLongSelect = { select(paired.id) },
-                                                modifier = Modifier.width(pairWidth), compact = true,
+                                                modifier = Modifier.width(pairWidth), compact = true, motionIndex = index + pairIndex,
                                             )
                                         }
                                     }
@@ -271,7 +271,7 @@ fun CatalogScreen(
                                         selected = product.id in selectedIds,
                                         selectionMode = selectedIds.isNotEmpty(),
                                         onLongSelect = { select(product.id) },
-                                        modifier = Modifier.fillMaxWidth(), compact = false,
+                                        modifier = Modifier.fillMaxWidth(), compact = false, motionIndex = index,
                                     )
                                 }
                             }
@@ -409,6 +409,7 @@ private fun ProductCard(
     compact: Boolean,
     saving: Boolean = false,
     canSave: Boolean = true,
+    motionIndex: Int = 0,
 ) {
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
@@ -421,6 +422,7 @@ private fun ProductCard(
                 onLongClick = onLongSelect,
             ),
         title = product.name,
+        motionIndex = motionIndex,
         description = product.category,
         primaryActionLabel = null,
         secondaryActionLabel = null,

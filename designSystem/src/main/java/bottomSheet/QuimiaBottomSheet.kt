@@ -1,5 +1,6 @@
 package bottomSheet
 
+import motion.quimiaEnter
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.layout.Column
@@ -83,7 +84,7 @@ fun QuimiaBottomSheet(
         dragHandle = null,
     ) {
         QuimiaBottomSheetContent(
-            modifier = Modifier.fillMaxWidth().quimiaContrastOutline(sheetShape),
+            modifier = Modifier.fillMaxWidth().quimiaEnter().quimiaContrastOutline(sheetShape),
             title = title, description = description, theme = theme,
             showDragHandle = showDragHandle, showCloseButton = showCloseButton,
             onClose = onDismissRequest, primaryActionLabel = primaryActionLabel,

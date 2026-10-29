@@ -15,8 +15,10 @@ internal enum class SkeletonLayout { Grid, Lines, Detail, Profile, History }
 
 @Composable
 internal fun SkeletonBlock(modifier: Modifier = Modifier, radius: Int = 12) {
-    val transition = rememberInfiniteTransition(label = "skeleton")
-    val opacity by transition.animateFloat(.10f, .26f, infiniteRepeatable(tween(850, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "skeletonAlpha")
+    val opacity by if (motion.LocalQuimiaMotionEnabled.current) {
+        rememberInfiniteTransition(label = "skeleton").animateFloat(motion.QuimiaMotion.SkeletonMin, motion.QuimiaMotion.SkeletonMax,
+            infiniteRepeatable(tween(motion.QuimiaMotion.SkeletonPeriod, easing = motion.QuimiaMotion.Easing), RepeatMode.Reverse), label = "skeletonAlpha")
+    } else rememberUpdatedState(.16f)
     Box(modifier.clip(RoundedCornerShape(radius.dp)).background(quimiaColorTokens().textPrimary.copy(alpha = opacity)))
 }
 

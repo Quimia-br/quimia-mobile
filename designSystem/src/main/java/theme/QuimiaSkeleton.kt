@@ -18,8 +18,10 @@ val LocalQuimiaSkeleton = staticCompositionLocalOf { false }
 /** Keep the real component's measured bounds, hiding its data and interactions while loading. */
 fun Modifier.quimiaSkeleton(radius: Dp = 24.dp): Modifier = composed {
     if (!LocalQuimiaSkeleton.current) return@composed this
-    val transition = rememberInfiniteTransition(label = "screenSkeleton")
-    val alpha = transition.animateFloat(.10f, .26f, infiniteRepeatable(tween(850, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "skeletonOpacity")
+    val alpha = if (motion.LocalQuimiaMotionEnabled.current) {
+        rememberInfiniteTransition(label = "screenSkeleton").animateFloat(motion.QuimiaMotion.SkeletonMin, motion.QuimiaMotion.SkeletonMax,
+            infiniteRepeatable(tween(motion.QuimiaMotion.SkeletonPeriod, easing = motion.QuimiaMotion.Easing), RepeatMode.Reverse), label = "skeletonOpacity")
+    } else rememberUpdatedState(.16f)
     val color = quimiaColorTokens().textPrimary
     this.drawWithContent { drawRoundRect(color.copy(alpha = alpha.value), cornerRadius = CornerRadius(radius.toPx())) }
         .clearAndSetSemantics { stateDescription = "Carregando" }

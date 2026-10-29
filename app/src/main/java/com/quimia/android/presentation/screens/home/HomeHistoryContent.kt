@@ -93,9 +93,9 @@ private fun HomeAssessmentIcon(item: HomeMixture, size: androidx.compose.ui.unit
 }
 
 @Composable
-internal fun HomeApiHistoryCard(item: HomeMixture, onClick: () -> Unit) {
+internal fun HomeApiHistoryCard(item: HomeMixture, index: Int = 0, onClick: () -> Unit) {
     val tokens = quimiaColorTokens()
-    QuimiaCard(title = "", showTitle = false, primaryActionLabel = null, secondaryActionLabel = null,
+    QuimiaCard(title = "", motionIndex = index, showTitle = false, primaryActionLabel = null, secondaryActionLabel = null,
         layout = QuimiaCardLayout.Stacked, contentPadding = 24.dp,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp)
             .clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button, onClickLabel = "Ver mistura salva", onClick = onClick)) {

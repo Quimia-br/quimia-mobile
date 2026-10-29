@@ -1,5 +1,7 @@
 package menuBar
 
+import motion.quimiaAnimatedColor
+import motion.quimiaSelected
 import theme.quimiaSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -114,7 +116,7 @@ fun QuimiaMenuBar(
                         .weight(1f)
                         .height(56.dp)
                         .clip(CircleShape)
-                        .background(if (index == selectedIndex) tokens.white else tokens.secondary)
+                        .background(quimiaAnimatedColor(if (index == selectedIndex) tokens.white else tokens.secondary))
                         .clickable(interactionSource = interactionSource, indication = null) {
                             onItemSelected(index)
                         },
@@ -125,13 +127,13 @@ fun QuimiaMenuBar(
                             imageVector = element,
                             contentDescription = labels.getOrNull(index),
                             tint = iconColor,
-                            modifier = Modifier.size(30.dp),
+                            modifier = Modifier.size(30.dp).quimiaSelected(index == selectedIndex),
                         )
                         is Int -> Icon(
                             painter = painterResource(element),
                             contentDescription = labels.getOrNull(index),
                             tint = iconColor,
-                            modifier = Modifier.size(30.dp),
+                            modifier = Modifier.size(30.dp).quimiaSelected(index == selectedIndex),
                         )
                     }
                 }

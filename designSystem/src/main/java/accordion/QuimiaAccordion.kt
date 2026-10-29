@@ -1,5 +1,7 @@
 package accordion
 
+import motion.QuimiaExpand
+import motion.quimiaRotation
 import theme.QuimiaTextStyles
 
 import androidx.compose.animation.animateContentSize
@@ -56,7 +58,6 @@ fun QuimiaAccordion(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize()
             .quimiaContrastOutline(RoundedCornerShape(16.dp))
     ) {
         Row(
@@ -73,15 +74,15 @@ fun QuimiaAccordion(
                 modifier = Modifier.weight(1f)
             )
             Icon(
-                imageVector = if (isExpanded.value) Lucide.ChevronUp else Lucide.ChevronDown,
+                imageVector = Lucide.ChevronDown,
                 contentDescription = if (isExpanded.value) "Fechar" else "Abrir",
                 tint = actualIconColor,
-                modifier = Modifier.padding(start = PaddingSmall.dp)
+                modifier = Modifier.padding(start = PaddingSmall.dp).quimiaRotation(if (isExpanded.value) 180f else 0f)
             )
         }
         HorizontalDivider(color = Color.White, thickness = 1.dp, modifier = Modifier.fillMaxWidth())
 
-        if (isExpanded.value) {
+        QuimiaExpand(visible = isExpanded.value) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

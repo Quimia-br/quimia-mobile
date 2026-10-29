@@ -92,10 +92,12 @@ fun QuimiaTheme(
         LocalQuimiaHighContrast provides highContrast,
         LocalQuimiaFontFamily provides if (useDyslexicFont) DyslexicFontFamily else AeonikFontFamily,
     ) {
+        motion.QuimiaMotionTheme {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
             content = content
         )
+        }
     }
 }

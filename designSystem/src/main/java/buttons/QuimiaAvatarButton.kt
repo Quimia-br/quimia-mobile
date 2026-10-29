@@ -1,5 +1,10 @@
 package buttons
 
+import motion.quimiaPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import theme.quimiaSkeleton
 import android.R
 import androidx.compose.foundation.background
@@ -39,9 +44,12 @@ fun QuimiaAvatarButton(
     foregroundColor: Color? = null,
     contentDescription: String? = null,
 ) {
+    val motionInteractions = remember { MutableInteractionSource() }
+    val motionPressed by motionInteractions.collectIsPressedAsState()
     IconButton(
+        interactionSource = motionInteractions,
         onClick = onClick,
-        modifier = modifier.size(size).quimiaSkeleton(size).quimiaContrastOutline(CircleShape)
+        modifier = modifier.quimiaPress(motionPressed).size(size).quimiaSkeleton(size).quimiaContrastOutline(CircleShape)
     ) {
         QuimiaAvatar(
             size = size,

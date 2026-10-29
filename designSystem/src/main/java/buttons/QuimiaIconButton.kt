@@ -1,5 +1,10 @@
 package buttons
 
+import motion.quimiaPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import theme.quimiaSkeleton
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -61,9 +66,12 @@ fun QuimiaIconButton(
     val actualContainerColor = containerColor ?: tokens.primary
     val actualIconColor = actionContentColor(actualContainerColor, iconColor, tokens)
 
+    val motionInteractions = remember { MutableInteractionSource() }
+    val motionPressed by motionInteractions.collectIsPressedAsState()
     IconButton(
+        interactionSource = motionInteractions,
         onClick = onClick,
-        modifier = modifier.size(size.buttonSize).quimiaSkeleton(size.buttonSize).quimiaContrastOutline(CircleShape, contrastOutline && quimiaHighContrastEnabled()),
+        modifier = modifier.quimiaPress(motionPressed).size(size.buttonSize).quimiaSkeleton(size.buttonSize).quimiaContrastOutline(CircleShape, contrastOutline && quimiaHighContrastEnabled()),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,
             contentColor = actualIconColor

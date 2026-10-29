@@ -1,5 +1,6 @@
 package com.quimia.android
 
+import motion.quimiaEnter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -128,6 +129,9 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val sessionUid = (authState as? AuthResult.Success)?.uid
     val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
     val context = LocalContext.current
+    LaunchedEffect(sessionUid, authViewModel.providerPhotoUrl) {
+        sessionUid?.let { com.quimia.android.presentation.components.prefetchProfilePhoto(context, it, authViewModel.providerPhotoUrl) }
+    }
     val authScope = rememberCoroutineScope()
     val google = remember(context) { GoogleSignInHelper(context) }
     val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -255,7 +259,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
 
     when (authState) {
         is AuthResult.Success -> {
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().quimiaEnter(key = currentScreen)) {
                 Box(Modifier.fillMaxSize().then(if (showKemi || showMixtures) Modifier.clearAndSetSemantics { } else Modifier)) {
                     if (showProfile) ProfileRoute(
                         userId = sessionUid.orEmpty(), preferences = preferences,
@@ -370,6 +374,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         }
         else -> {
             authScreens.SaveableStateProvider(authDestination.name + if (authDestination == AuthDestination.GoogleDetails || authDestination == AuthDestination.GoogleAddress) googleDraft?.uid.orEmpty() else "") {
+                Box(Modifier.fillMaxSize().quimiaEnter(key = authDestination)) {
                 when (authDestination) {
                     AuthDestination.Welcome -> LoginHomeScreen(onStart = { navigateAuth(AuthDestination.Login) })
                     AuthDestination.Login -> Login1Screen(
@@ -413,6 +418,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         onPasswordConfirm = authViewModel::resetPassword,
                     )
                     AuthDestination.RecoverySuccess -> LoginPassSuccesScreen(onStart = { navigateAuth(AuthDestination.Login) })
+                }
                 }
             }
         }

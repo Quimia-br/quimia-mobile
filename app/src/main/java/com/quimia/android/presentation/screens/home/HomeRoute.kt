@@ -27,7 +27,9 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     onFindDropOffClick: () -> Unit, onMixturesClick: () -> Unit, onShelfClick: () -> Unit,
     onMenuItemSelected: (Int) -> Unit, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
     val context = LocalContext.current.applicationContext
-    val repository = remember(userId, context) { HomeRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, HomeApi::class.java), AuthRepositoryProvider.get(context)) }
+    val auth = remember(context) { AuthRepositoryProvider.get(context) }
+    val session by auth.session.collectAsStateWithLifecycle()
+    val repository = remember(userId, context, auth) { HomeRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, HomeApi::class.java), auth) }
     val controller = remember(userId, repository) { HomeController(repository, userId) }
     var pointLoading by remember(userId) { mutableStateOf(true) }
     var pointLabel by remember(userId) { mutableStateOf("Carregando…") }
@@ -55,11 +57,13 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     LaunchedEffect(state.profileError, state.historyError, state.moreError) {
         if (listOf(state.profileError, state.historyError, state.moreError).contains(GenericErrorKind.SessionExpired)) onSessionExpired()
     }
-    val photoUrl = homePhotoUrl(state.profile?.fotoUrl)
-    val photo = rememberAsyncImagePainter(photoUrl)
+    val availableProfile = homeVisibleProfile(userId, state.profile, (session as? SessionState.Authenticated)?.profile)
+    val photoUrl = homePhotoUrl(availableProfile?.fotoUrl)
+    val photo = com.quimia.android.presentation.components.rememberProfilePhoto(userId, photoUrl)
+    val avatarLoading = availableProfile == null || (photoUrl != null && (photo.state is AsyncImagePainter.State.Empty || photo.state is AsyncImagePainter.State.Loading))
     val screenLoading = state.profileLoading || state.historyLoading || pointLoading
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
-    HomeScreen(avatarLoading = false, avatarInitials = state.profile?.nome?.let(::profileInitials).orEmpty(),
+    HomeScreen(avatarLoading = avatarLoading, avatarInitials = availableProfile?.nome?.let(::profileInitials).orEmpty(),
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
         onSearch = onSearch, onAvatarClick = onAvatarClick, onFindDropOffClick = onFindDropOffClick,
         onMixturesClick = onMixturesClick, onShelfClick = onShelfClick, onMixClick = onMixturesClick,
@@ -73,7 +77,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
             if (!state.historyLoading && state.historyError == null && state.history.isEmpty()) {
                 HomeEmptyHistory(onMixturesClick)
             }
-            state.history.forEach { item -> HomeApiHistoryCard(item) { selected = item } }
+            state.history.forEachIndexed { index, item -> HomeApiHistoryCard(item, index) { selected = item } }
             if (state.moreLoading) HomeLoading("Carregando mais misturas…")
             state.moreError?.let { HomeLoadError(it, "mais misturas") { scope.launch { controller.loadMore() } } }
             if (state.nextPage != null && !state.moreLoading && !state.historyLoading && state.historyError == null && state.moreError == null) {

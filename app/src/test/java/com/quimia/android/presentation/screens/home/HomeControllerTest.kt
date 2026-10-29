@@ -3,7 +3,8 @@ package com.quimia.android.presentation.screens.home
 import com.quimia.android.data.auth.UserProfile
 import com.quimia.android.data.home.*
 import com.quimia.android.presentation.screens.errors.GenericErrorKind
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.IOException
@@ -24,6 +25,36 @@ class HomeControllerTest {
             historyFailure?.let { throw it }
             return pages[page] ?: HomePage(emptyList(), page, size, 0, 0)
         }
+    }
+    @Test fun avatarUsesAuthenticatedSessionWhileBothHomeRequestsAreStillPending() = runBlocking {
+        withTimeout(2_000) {
+            val sessionProfile = profile.copy(fotoUrl = "https://example.com/cached-avatar.jpg")
+            val fresh = profile.copy(fotoUrl = "https://example.com/updated-avatar.jpg")
+            val entered = CompletableDeferred<Unit>()
+            val profileResult = CompletableDeferred<UserProfile>()
+            val historyResult = CompletableDeferred<HomePage<HomeMixture>>()
+            val source = object : HomeDataSource {
+                override suspend fun profile(userId: String): UserProfile { entered.complete(Unit); return profileResult.await() }
+                override suspend fun history(userId: String, page: Int, size: Int) = historyResult.await()
+            }
+            val controller = HomeController(source, "u1")
+            val refresh = launch { controller.refresh() }
+            entered.await()
+            assertTrue(controller.state.value.profileLoading)
+            assertTrue(controller.state.value.historyLoading)
+            assertEquals(sessionProfile, homeVisibleProfile("u1", controller.state.value.profile, sessionProfile))
+            profileResult.complete(fresh)
+            controller.state.first { it.profile == fresh }
+            assertEquals(fresh, homeVisibleProfile("u1", controller.state.value.profile, sessionProfile))
+            assertTrue(controller.state.value.historyLoading)
+            historyResult.complete(HomePage(emptyList(), 0, 10, 0, 0))
+            refresh.join()
+        }
+    }
+    @Test fun earlyAvatarNeverUsesThePreviousAccountsProfile() {
+        assertNull(homeVisibleProfile("u2", null, profile))
+        assertNull(homeVisibleProfile("", profile, profile))
+        assertEquals(profile, homeVisibleProfile("u1", profile, profile.copy(id = "u2")))
     }
     @Test fun emptyStateOnlyAppearsAfterSuccessfulApiResponses() = runBlocking {
         val controller = HomeController(Source(profile), "u1")

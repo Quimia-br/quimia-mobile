@@ -1,5 +1,8 @@
 package card
 
+import theme.LocalQuimiaSkeleton
+import motion.quimiaResize
+import motion.quimiaEnter
 import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
@@ -74,13 +77,14 @@ fun QuimiaCard(
     contrastOutline: Boolean = true,
     outlineColor: Color? = null,
     outlineWidth: Dp = 3.dp,
+    motionIndex: Int = 0,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     val hasActions = !primaryActionLabel.isNullOrBlank() || !secondaryActionLabel.isNullOrBlank()
 
     Column(
-        modifier = modifier.quimiaSkeleton()
+        modifier = modifier.quimiaResize().quimiaEnter(key = LocalQuimiaSkeleton.current, index = motionIndex).quimiaSkeleton()
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
             .background(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)

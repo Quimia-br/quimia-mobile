@@ -64,6 +64,10 @@ internal fun validateHomePage(value: HomePage<HomeMixture>, page: Int, size: Int
     return value
 }
 
+/** Session data is already authenticated; it can paint the avatar before Home refresh finishes. */
+internal fun homeVisibleProfile(userId: String, refreshed: UserProfile?, authenticated: UserProfile?): UserProfile? =
+    if (userId.isBlank()) null else refreshed?.takeIf { it.id == userId } ?: authenticated?.takeIf { it.id == userId }
+
 internal class HomeController(private val source: HomeDataSource, private val userId: String) {
     private val operation = Mutex()
     private val mutableState = MutableStateFlow(HomeState())
