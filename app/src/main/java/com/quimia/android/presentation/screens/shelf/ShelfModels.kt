@@ -6,7 +6,8 @@ internal enum class ShelfSort(val label: String) {
     Alphabetical("Alfabética"), Favorites("Favoritos"), Recent("Recentes"), Oldest("Antigos"),
 }
 
-internal data class ShelfSubstance(val id: String, val name: String, val description: String)
+internal data class ShelfSubstance(val id: String, val name: String, val description: String,
+    val cas: String? = null, val classes: List<String> = emptyList(), val products: List<String> = emptyList())
 
 internal val sampleShelfSubstances = listOf(
     ShelfSubstance("bicarbonato", "Bicarbonato de sódio", "Consulte no rótulo a composição, as instruções de uso e os cuidados de armazenamento."),

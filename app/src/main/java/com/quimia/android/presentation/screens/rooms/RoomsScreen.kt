@@ -133,16 +133,20 @@ fun RoomsScreen(
 }
 
 @Composable
-private fun RoomList(
+internal fun RoomList(
     rooms: List<QuimiaRoom>, onOpen: (String) -> Unit, onCreate: () -> Unit,
     onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit,
+    connected: Boolean = false, initialQuery: String = "", onQueryChange: (String) -> Unit = {},
+    onUnavailable: (String) -> Unit = {}, showEmpty: Boolean = true,
+    statusContent: (@Composable () -> Unit)? = null, footerContent: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
-    var query by rememberSaveable { mutableStateOf("") }
-    val voiceInput = rememberVoiceInput { query = it }
+    var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
+    fun changeQuery(value: String) { query = value.take(100); onQueryChange(query) }
+    val voiceInput = rememberVoiceInput { changeQuery(it) }
     var filtersVisible by rememberSaveable { mutableStateOf(false) }
-    var sort by rememberSaveable { mutableStateOf(RoomSort.Oldest) }
-    val visibleRooms = remember(rooms, query, sort) { filterRooms(rooms, query, sort) }
+    var sort by rememberSaveable { mutableStateOf(if (connected) RoomSort.Alphabetical else RoomSort.Oldest) }
+    val visibleRooms = if (connected) rooms else remember(rooms, query, sort) { filterRooms(rooms, query, sort) }
     val headerBackground = remember(tokens) {
         fun tint(cyan: Float, green: Float = 0f) = tokens.brandPrimary.copy(alpha = green).compositeOver(
             tokens.brandSecondary.copy(alpha = cyan).compositeOver(tokens.surfaceBackground),
@@ -163,7 +167,7 @@ private fun RoomList(
             QuimiaSectionTitle(title = "Cômodos", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
                 horizontalPadding = 32.dp, verticalPadding = 32.dp)
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                QuimiaSearchBar(value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(58.dp),
+                QuimiaSearchBar(value = query, onValueChange = { changeQuery(it) }, modifier = Modifier.weight(1f).height(58.dp),
                     placeholder = "Pesquisar", icon = Lucide.Mic, iconDescription = "Pesquisar por voz", searchIconSize = 24.dp,
                     onClick = voiceInput,
                     horizontalPadding = 16.dp, verticalPadding = 12.dp, spacedBy = 10.dp, textStyle = QuimiaTextStyles.medium16)
@@ -173,11 +177,12 @@ private fun RoomList(
             }
             if (filtersVisible) Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 RoomSort.entries.forEach { item -> QuimiaChip(label = item.label, modifier = Modifier.weight(1f), centerContent = true,
-                    selected = item == sort, onClick = { sort = item }) }
+                    selected = item == sort, onClick = { if (connected && item != RoomSort.Alphabetical) onUnavailable("A ordenação por data de criação ainda não está disponível.") else sort = item }) }
             }
+            statusContent?.invoke()
             BoxWithConstraints(Modifier.weight(1f)) {
                 val columns = roomGridColumns(maxWidth.value)
-                if (visibleRooms.isEmpty()) Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (showEmpty && visibleRooms.isEmpty()) Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     QuimiaEmptyState(fillAvailableSpace = false, icon = Lucide.Bath,
                         title = if (query.isBlank()) "Seus cômodos ficam aqui" else "Nenhum cômodo encontrado",
                         description = if (query.isBlank()) "Cadastre um cômodo e organize os produtos da sua estante." else "Experimente pesquisar outro nome.")
@@ -192,9 +197,10 @@ private fun RoomList(
                             sectionSpacing = 28.dp, contentPadding = 16.dp,
                             headerContent = { Text(room.name, style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             onPrimaryActionClick = { onOpen(room.id) }) {
-                            RoomShapeIcon(room.icon, size = 100.dp, modifier = Modifier.fillMaxWidth(), critical = room.safety == RoomSafety.Critical)
+                            RoomShapeIcon(room.icon, size = 100.dp, modifier = Modifier.fillMaxWidth(), critical = room.safety == RoomSafety.Critical, knownIcon = room.knownIcon)
                         }
                     }
+                    item(span = { GridItemSpan(maxLineSpan) }) { footerContent?.invoke() }
                 }
             }
         }
