@@ -23,6 +23,11 @@ import coil.compose.AsyncImage
 import com.composables.icons.lucide.ImageOff
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
+import com.composables.icons.lucide.TriangleAlert
+import dragger.QuimiaDragger
+import shapeIcon.QuimiaShapeIcon
+import theme.QuimiaTextStyles
+import androidx.compose.ui.text.style.TextAlign
 import com.quimia.android.BuildConfig
 import com.quimia.android.data.auth.*
 import com.quimia.android.data.catalog.*
@@ -93,6 +98,8 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
                 .any { it?.kind == GenericErrorKind.SessionExpired }) onSessionExpired()
     }
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.dismissNotice() } }
+    var rescan by rememberSaveable { mutableStateOf(false) }
+    if (rescan) CatalogBarcodeScannerSheet(onDismiss = { rescan = false }, onBarcode = { code -> rescan = false; scope.launch { controller.findBarcode(code) } })
     val canSave = state.shelfReady && !state.shelfLoading
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
         initialQuery = initialQuery, products = state.products.map { it.catalogProduct() },
@@ -129,7 +136,9 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
                     state.saveError?.let { CatalogError(it) { scope.launch { controller.save(listOf(product.id)) } } }
                     state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
                 })
-        } ?: CatalogDetailStatus(state.detailLoading, state.detailError, controller::closeDetail, state.lookupBarcode) {
+        } ?: if (state.lookupBarcode != null && state.detailError?.kind == GenericErrorKind.ContentUnavailable) {
+            BarcodeNotFoundSheet(state.lookupBarcode!!, controller::closeDetail) { controller.closeDetail(); rescan = true }
+        } else CatalogDetailStatus(state.detailLoading, state.detailError, controller::closeDetail, state.lookupBarcode) {
             scope.launch { controller.retryDetail() }
         }
     }
@@ -166,6 +175,40 @@ private fun CatalogDetailStatus(loading: Boolean, error: CatalogProblem?, close:
             barcode?.let { Text("Código lido: $it", style = Typography.bodyMedium, color = tokens.textPrimary) }
             if (loading) CatalogLoading("Carregando detalhes…")
             error?.let { CatalogError(it, retry) }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BarcodeNotFoundSheet(code: String, close: () -> Unit, rescan: () -> Unit) {
+    val tokens = quimiaColorTokens()
+    ModalBottomSheet(onDismissRequest = close, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = 326.dp,
+        shape = RoundedCornerShape(40.dp), containerColor = tokens.surfaceBase,
+        scrimColor = CatalogModalScrimColor, dragHandle = null) {
+        HideSystemNavigationBar()
+        Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.fillMaxWidth().height(27.dp), contentAlignment = Alignment.Center) { QuimiaDragger(height = 3.dp, width = 91.dp) }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Escanear rótulo", style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
+                    Text("Aponte a câmera para o rótulo do seu produto para achá-lo", style = QuimiaTextStyles.medium16, color = tokens.foregroundSubtle)
+                }
+                QuimiaIconButton(icon = Lucide.X, containerColor = tokens.secondary, contentDescription = "Fechar", onClick = close)
+            }
+            Column(Modifier.fillMaxWidth().heightIn(min = 322.dp).padding(top = 25.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                QuimiaShapeIcon(size = 79.dp, icon = Lucide.TriangleAlert, containerColor = tokens.surfaceBackground)
+                Text("Não foi possível encontrar o produto.", style = QuimiaTextStyles.medium16,
+                    color = tokens.foregroundPrimary, textAlign = TextAlign.Center)
+                Text("Código lido: $code. Por favor, tente novamente.", style = QuimiaTextStyles.medium16,
+                    color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
+                QuimiaButton(text = "Escanear novamente", modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    iconSize = 0, espacamento = 0, containerColor = tokens.secondary,
+                    textColor = tokens.foregroundPrimary, onClick = rescan)
+            }
         }
     }
 }
