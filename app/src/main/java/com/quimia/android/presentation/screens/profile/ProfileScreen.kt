@@ -63,6 +63,7 @@ fun ProfileScreen(
     birthDate: String = "", onDetailsChange: ((ProfileDetails) -> Unit)? = null,
     onLogout: () -> Unit = {}, initialPhotoVisible: Boolean = false, initialBirthDateVisible: Boolean = false,
     saveRemote: (suspend (ProfileDetails) -> Unit)? = null,
+    savePhotoRemote: (suspend (android.net.Uri) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -75,23 +76,25 @@ fun ProfileScreen(
     var draftBirthDate by rememberSaveable { mutableStateOf(birthDate) }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) try {
-            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            onPhotoUriChange(uri.toString())
-            photoVisible = false
-        } catch (_: SecurityException) { message = "Não foi possível salvar o acesso à foto. Escolha outra imagem." }
+        if (uri != null && !saving) {
+            if (savePhotoRemote != null) scope.launch {
+                saving = true; message = null
+                try { savePhotoRemote(uri); photoVisible = false }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { message = if (error is IllegalArgumentException) error.message else authErrorMessage(error) }
+                finally { saving = false }
+            } else try {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                onPhotoUriChange(uri.toString()); photoVisible = false
+            } catch (_: SecurityException) { message = "Não foi possível acessar a foto." }
+        }
     }
     fun openEditor() {
         draftName = displayName; draftEmail = email; draftBirthDate = birthDate
         message = null; editVisible = true
     }
     val onPhoto = {
-        if (saveRemote != null) {
-            message = "A API ainda não oferece envio de fotos da galeria. Sua foto atual foi mantida."
-        } else {
-        if (!editVisible) openEditor()
-        message = null; photoVisible = true
-        }
+        if (!saving) { if (!editVisible) openEditor(); message = null; photoVisible = true }
     }
     BackHandler(enabled = editVisible || photoVisible) {
         if (!saving) { if (photoVisible) photoVisible = false else editVisible = false }
@@ -121,8 +124,8 @@ fun ProfileScreen(
         onDismissRequest = { message = null }, text = { Text(message.orEmpty()) },
         confirmButton = { androidx.compose.material3.TextButton(onClick = { message = null }) { Text("Entendi") } })
     if (photoVisible) ProfilePhotoSheet(displayName, photo, message,
-        onDismiss = { photoVisible = false; message = null },
-        onChoose = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+        onDismiss = { if (!saving) { photoVisible = false; message = null } },
+        onChoose = { if (!saving) photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
     if (birthDateVisible) BirthDateSheet(draftBirthDate, onDismiss = { birthDateVisible = false },
         onSave = { draftBirthDate = it; birthDateVisible = false })
 }
