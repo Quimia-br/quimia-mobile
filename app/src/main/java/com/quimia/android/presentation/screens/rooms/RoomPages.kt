@@ -117,7 +117,7 @@ internal fun RoomForm(
 
 @Composable
 internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClose: () -> Unit, onProductActions: (String) -> Unit,
-    apiAssessment: (@Composable () -> Unit)? = null, onAddProducts: (() -> Unit)? = null, statusContent: (@Composable () -> Unit)? = null) {
+    apiAssessment: (@Composable () -> Unit)? = null, onAddProducts: (() -> Unit)? = null, onEdit: (() -> Unit)? = null, onDelete: (() -> Unit)? = null, statusContent: (@Composable () -> Unit)? = null) {
     val tokens = quimiaColorTokens()
     val preview = LocalInspectionMode.current
     val safety = if (preview || apiAssessment != null) room.safety else RoomSafety.NotEvaluated
@@ -157,6 +157,10 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                                     containerColor = if (safety == RoomSafety.Safe) tokens.success else tokens.surfaceBase,
                                     iconColor = if (safety == RoomSafety.Critical) tokens.error else tokens.foregroundPrimary) })
                             statusContent?.invoke()
+                            if (onEdit != null && onDelete != null) Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                QuimiaButton(text = "Editar cômodo", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onEdit)
+                                QuimiaButton(text = "Excluir", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onDelete)
+                            }
                             onAddProducts?.let { add -> QuimiaButton(text = "Adicionar produtos", iconSize = 0, espacamento = 0,
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).height(48.dp), onClick = add) }
                             if (apiAssessment == null && safety == RoomSafety.Critical && noticeVisible) Box(Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(16.dp), contentAlignment = Alignment.Center) {

@@ -17,6 +17,7 @@ import retrofit2.http.*
 @Serializable internal data class ApiRoom(val id: Int, val nome: String, val icone: String,
     val avaliacao: RoomAssessment, val produtos: List<ApiCatalogProduct>)
 @Serializable internal data class CreateRoomRequest(val nome: String, val icone: String, val produtoIds: List<Int>)
+@Serializable internal data class EditRoomRequest(val nome: String, val icone: String)
 @Serializable internal data class AddRoomProductsRequest(val produtoIds: List<Int>)
 internal class RoomRejected(val code: String, val status: Int) : Exception()
 
@@ -29,6 +30,8 @@ internal interface RoomsApi {
         @Body body: AddRoomProductsRequest): ApiRoom
     @DELETE("api/v1/comodos/{id}/produtos/{productId}") suspend fun remove(@Header("Authorization") bearer: String,
         @Path("id") id: Int, @Path("productId") productId: Int): Response<Unit>
+    @PATCH("api/v1/comodos/{id}") suspend fun edit(@Header("Authorization") bearer: String, @Path("id") id: Int, @Body body: EditRoomRequest): ApiRoom
+    @DELETE("api/v1/comodos/{id}") suspend fun delete(@Header("Authorization") bearer: String, @Path("id") id: Int): Response<Unit>
     @GET("api/v1/estante/produtos") suspend fun shelf(@Header("Authorization") bearer: String,
         @Query("page") page: Int, @Query("size") size: Int): CatalogPage<ApiCatalogProduct>
 }
@@ -39,6 +42,8 @@ internal interface RoomsDataSource {
     suspend fun create(user: String, name: String, icon: String, ids: List<Int>): ApiRoom
     suspend fun add(user: String, id: Int, ids: List<Int>): ApiRoom
     suspend fun remove(user: String, id: Int, productId: Int)
+    suspend fun edit(user: String, id: Int, name: String, icon: String): ApiRoom
+    suspend fun delete(user: String, id: Int)
 }
 internal class RoomsRepository(private val api: RoomsApi, private val sessions: AuthRepository) : RoomsDataSource {
     private suspend fun <T> authenticated(user: String, request: suspend (String) -> T): T = try {
@@ -98,6 +103,20 @@ internal class RoomsRepository(private val api: RoomsApi, private val sessions: 
         if (!response.isSuccessful) throw HttpException(response)
         if (response.code() != 204) throw CatalogContractException()
     }
+    override suspend fun edit(user: String, id: Int, name: String, icon: String) = authenticated(user) { bearer ->
+        val normalized = normalizeRoomName(name)
+        require(normalized.isNotBlank() && normalized.length <= 100 && icon.isNotBlank())
+        api.edit(bearer, id, EditRoomRequest(normalized, icon)).also { room ->
+            validateApiRoom(room)
+            if (room.id != id || room.nome != normalized || room.icone != icon) throw CatalogContractException()
+        }
+    }
+    override suspend fun delete(user: String, id: Int) = authenticated(user) { bearer ->
+        val response = api.delete(bearer, id)
+        if (!response.isSuccessful) throw HttpException(response)
+        if (response.code() != 204) throw CatalogContractException()
+    }
+
 }
 internal fun normalizeRoomName(name: String) = name.trim().replace(Regex("\\s+"), " ")
 internal fun validateRoomPage(page: CatalogPage<ApiRoomSummary>, expected: Int) {

@@ -20,6 +20,8 @@ class RoomsControllerTest {
         var detailCall: suspend () -> ApiRoom = { room() }
         var removeCall: suspend () -> Unit = {}
         var addCall: suspend () -> ApiRoom = { room() }
+        var deleteCall: suspend () -> Unit = {}
+        var editCall: suspend (String, String) -> ApiRoom = { name, icon -> room().copy(nome = name, icone = icon) }
         val users = mutableListOf<String>()
         override suspend fun list(user: String, query: String, page: Int): CatalogPage<ApiRoomSummary> { users += user; return listCall(query, page) }
         override suspend fun shelf(user: String) = products
@@ -27,6 +29,27 @@ class RoomsControllerTest {
         override suspend fun create(user: String, name: String, icon: String, ids: List<Int>) = createCall()
         override suspend fun add(user: String, id: Int, ids: List<Int>) = addCall()
         override suspend fun remove(user: String, id: Int, productId: Int) = removeCall()
+        override suspend fun edit(user: String, id: Int, name: String, icon: String) = editCall(name, icon)
+        override suspend fun delete(user: String, id: Int) = deleteCall()
+    }
+    @Test fun `edit and delete reflect server confirmation and retain detail on failure`() = runBlocking {
+        val source = Source(); val controller = RoomsController(source, "user")
+        controller.open(4)
+        source.editCall = { _, _ -> throw IOException() }
+        controller.edit("Cozinha", RoomIcon.Refrigerator)
+        assertEquals("Banheiro", controller.state.value.detail?.nome)
+        assertNotNull(controller.state.value.mutationError)
+        source.editCall = { name, icon -> room().copy(nome = name, icone = icon) }
+        controller.edit("  Cozinha  ", RoomIcon.Refrigerator)
+        assertEquals("Cozinha", controller.state.value.detail?.nome)
+        source.deleteCall = { throw IOException() }
+        controller.delete()
+        assertEquals(RoomsStage.Detail, controller.state.value.stage)
+        assertNotNull(controller.state.value.mutationError)
+        source.deleteCall = {}
+        controller.delete()
+        assertEquals(RoomsStage.List, controller.state.value.stage)
+        assertNull(controller.state.value.detail)
     }
     @Test fun `draft follows API minimum maximum ownership and name rules`() {
         assertNotNull(apiRoomValidation("Banheiro", RoomIcon.Toilet, listOf(7), listOf(7, 8)))

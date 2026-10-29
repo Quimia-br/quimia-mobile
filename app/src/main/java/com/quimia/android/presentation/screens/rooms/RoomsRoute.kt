@@ -2,10 +2,10 @@ package com.quimia.android.presentation.screens.rooms
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -55,6 +55,11 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     var reload by remember { mutableIntStateOf(0) }
     var action by remember(userId) { mutableStateOf<CatalogProduct?>(null) }
     var information by remember(userId) { mutableStateOf<CatalogProduct?>(null) }
+    var editing by remember(userId) { mutableStateOf(false) }
+    var deleting by remember(userId) { mutableStateOf(false) }
+    var editName by remember(userId) { mutableStateOf("") }
+    var editIcon by remember(userId) { mutableStateOf(RoomIcon.Toilet) }
+    var iconMenu by remember { mutableStateOf(false) }
     var removal by remember(userId) { mutableStateOf<CatalogProduct?>(null) }
     fun createDraft(seed: Int? = null) {
         draftName = ""; draftIcon = null; selected = listOfNotNull(seed); validation = null
@@ -169,6 +174,8 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                 RoomDetails(room.uiRoom(), room.produtos.map { it.catalogProduct() }, controller::showList,
                     onProductActions = { id -> if (!state.busy) action = room.produtos.find { it.id.toString() == id }?.catalogProduct() },
                     apiAssessment = { ApiRoomAssessment(room) },
+                    onEdit = { if (!state.busy) { controller.clearMutationError(); editName = room.nome; editIcon = room.uiRoom().icon; editing = true } },
+                    onDelete = { if (!state.busy) { controller.clearMutationError(); deleting = true } },
                     onAddProducts = { selected = emptyList(); validation = null; scope.launch { controller.prepareAdd() } },
                     statusContent = {
                         RoomsNotice(state.notice) { controller.notice(null) }
@@ -183,6 +190,36 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             }
         }
     }
+    if (editing) AlertDialog(
+        onDismissRequest = { if (!state.busy) { editing = false; controller.clearMutationError() } },
+        containerColor = tokens.surfaceBase,
+        title = { Text("Editar cômodo", color = tokens.textPrimary) },
+        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(value = editName, onValueChange = { editName = it.take(100) }, label = { Text("Nome") }, singleLine = true)
+            Box {
+                TextButton(onClick = { iconMenu = true }, enabled = !state.busy) { Text("Ícone: ${editIcon.label}", color = tokens.textPrimary) }
+                DropdownMenu(expanded = iconMenu, onDismissRequest = { iconMenu = false }) {
+                    RoomIcon.entries.forEach { icon -> DropdownMenuItem(text = { Text(icon.label) }, onClick = { editIcon = icon; iconMenu = false }) }
+                }
+            }
+            state.mutationError?.let { Text(it.message, color = tokens.textPrimary) }
+        } },
+        confirmButton = { TextButton(enabled = !state.busy && editName.isNotBlank(), onClick = { scope.launch {
+            controller.edit(editName, editIcon)
+            if (controller.state.value.mutationError == null) editing = false
+        } }) { Text(if (state.busy) "Salvando…" else "Salvar", color = tokens.textPrimary) } },
+        dismissButton = { TextButton(enabled = !state.busy, onClick = { editing = false; controller.clearMutationError() }) { Text("Cancelar", color = tokens.textPrimary) } })
+    if (deleting) AlertDialog(
+        onDismissRequest = { if (!state.busy) { deleting = false; controller.clearMutationError() } },
+        containerColor = tokens.surfaceBase,
+        title = { Text("Excluir cômodo?", color = tokens.textPrimary) },
+        text = { Column { Text("Os produtos continuam na sua estante.", color = tokens.textSecondary)
+            state.mutationError?.let { Text(it.message, color = tokens.textPrimary) } } },
+        confirmButton = { TextButton(enabled = !state.busy, onClick = { scope.launch {
+            controller.delete()
+            if (controller.state.value.mutationError == null) deleting = false
+        } }) { Text(if (state.busy) "Excluindo…" else "Excluir", color = tokens.textPrimary) } },
+        dismissButton = { TextButton(enabled = !state.busy, onClick = { deleting = false; controller.clearMutationError() }) { Text("Cancelar", color = tokens.textPrimary) } })
     action?.let { product -> ShelfActionsPanel(product, onDismiss = { action = null }, showMixtures = false,
         onMixtures = {}, onInformation = { action = null; information = product }, onRemove = { action = null; removal = product }) }
     information?.let { ShelfProductInformation(it, onDismiss = { information = null }) }

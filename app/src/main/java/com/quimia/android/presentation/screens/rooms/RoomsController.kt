@@ -153,6 +153,34 @@ internal class RoomsController(private val source: RoomsDataSource, private val 
         } catch (error: Exception) { mutable.update { it.copy(mutationError = roomsProblem(error)) }
         } finally { mutable.update { it.copy(busy = false) }; mutationLock.unlock() }
     }
+    suspend fun edit(name: String, icon: RoomIcon) {
+        if (!mutationLock.tryLock()) return
+        try {
+            val room = state.value.detail ?: return
+            val normalized = normalizeRoomName(name)
+            if (normalized.isBlank() || normalized.length > 100) { notice("Informe um nome de até 100 caracteres."); return }
+            mutable.update { it.copy(busy = true, mutationError = null) }
+            val updated = source.edit(user, room.id, normalized, icon.apiCode)
+            validateApiRoom(updated)
+            if (updated.id != room.id) throw CatalogContractException()
+            mutable.update { it.copy(detail = updated, notice = "Cômodo atualizado.") }
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (error: Exception) { mutable.update { it.copy(mutationError = roomsProblem(error)) }
+        } finally { mutable.update { it.copy(busy = false) }; mutationLock.unlock() }
+    }
+    suspend fun delete() {
+        if (!mutationLock.tryLock()) return
+        try {
+            val room = state.value.detail ?: return
+            mutable.update { it.copy(busy = true, mutationError = null) }
+            source.delete(user, room.id)
+            detailRevision++
+            mutable.update { it.copy(stage = RoomsStage.List, detail = null, detailId = null, notice = "Cômodo excluído.") }
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (error: Exception) { mutable.update { it.copy(mutationError = roomsProblem(error)) }
+        } finally { mutable.update { it.copy(busy = false) }; mutationLock.unlock() }
+    }
+    fun clearMutationError() { mutable.update { it.copy(mutationError = null) } }
     fun notice(message: String?) { mutable.update { it.copy(notice = message) } }
 }
 
