@@ -25,6 +25,7 @@ import checkBox.QuimiaCheckBox
 import com.composables.icons.lucide.*
 import com.quimia.android.R
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
+import com.quimia.android.presentation.screens.catalog.CatalogImage
 import image.QuimiaImage
 import shapeIcon.QuimiaShapeIcon
 import theme.QuimiaTextStyles
@@ -53,10 +54,11 @@ internal val RoomIcon.drawable: Int? get() = when (this) {
 internal fun RoomShapeIcon(
     icon: RoomIcon, size: Dp, modifier: Modifier = Modifier,
     critical: Boolean = false, onBase: Boolean = false,
+    knownIcon: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
-    QuimiaShapeIcon(size = size, modifier = modifier, icon = icon.vector,
-        iconPainter = icon.drawable?.takeUnless { icon == RoomIcon.Toilet }?.let { painterResource(it) }, iconSize = 24.dp,
+    QuimiaShapeIcon(size = size, modifier = modifier, icon = if (knownIcon) icon.vector else Lucide.CircleHelp,
+        iconPainter = icon.drawable?.takeUnless { !knownIcon || icon == RoomIcon.Toilet }?.let { painterResource(it) }, iconSize = 24.dp,
         containerColor = when { critical -> tokens.error; onBase -> tokens.surfaceBase; else -> tokens.surfaceBackground },
         iconColor = if (critical) tokens.white else tokens.foregroundPrimary)
 }
@@ -80,14 +82,17 @@ internal fun RoomProductCard(
     ) {
         Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.SpaceBetween) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (selectable) QuimiaAvatar(size = 45.dp, photo = painterResource(product.logoRes), contentDescription = null)
+                if (selectable) {
+                    if (product.remote) CatalogImage(product, logo = true, modifier = Modifier.size(45.dp))
+                    else QuimiaAvatar(size = 45.dp, photo = painterResource(product.logoRes), contentDescription = null)
+                }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text(product.name, style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(product.category, style = QuimiaTextStyles.medium15, color = tokens.foregroundSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             Box(Modifier.fillMaxWidth().then(if (selectable) Modifier.height(144.dp) else Modifier.weight(1f).padding(vertical = 24.dp)), contentAlignment = Alignment.Center) {
-                QuimiaImage(painter = painterResource(if (critical && product.id.startsWith("squeeze")) R.drawable.room_product_critical_figma else product.imageRes),
+                if (product.remote) CatalogImage(product, modifier = Modifier.size(131.dp)) else QuimiaImage(painter = painterResource(if (critical && product.id.startsWith("squeeze")) R.drawable.room_product_critical_figma else product.imageRes),
                     contentDescription = product.name, modifier = Modifier.requiredSize(131.dp),
                     backgroundColor = if (critical) tokens.secondary else tokens.surfaceBase,
                     contentScale = ContentScale.Crop, shape = RoundedCornerShape(0.dp))

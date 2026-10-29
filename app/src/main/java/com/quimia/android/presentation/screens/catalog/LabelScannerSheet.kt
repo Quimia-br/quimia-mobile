@@ -46,7 +46,11 @@ import theme.quimiaContrastOutline
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
+internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit, onBarcode: ((String) -> Unit)? = null) {
+    if (onBarcode != null) {
+        if (visible) CatalogBarcodeScannerSheet(onDismiss, onBarcode)
+        return
+    }
     val context = LocalContext.current
     var imageUri by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingCameraUri by rememberSaveable { mutableStateOf<String?>(null) }
@@ -94,11 +98,13 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit) {
                     onClose = onDismiss,
                     onChooseImage = {
                         error = null
+                        imageUri = null
                         runCatching {
                             picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         }.onFailure { error = "Não foi possível abrir a galeria. Tente novamente." }
                     },
                     onConfigureCamera = {
+                        imageUri = null
                         runCatching {
                             val directory = File(context.cacheDir, "label-images").apply { mkdirs() }
                             val photo = File.createTempFile("label-", ".jpg", directory)
@@ -129,6 +135,7 @@ internal fun LabelScannerContent(
     onImageError: () -> Unit = {},
     previewImage: Painter? = null,
     showDragHandle: Boolean = true,
+    barcodeMode: Boolean = false,
 ) {
     HideSystemNavigationBar()
     val tokens = quimiaColorTokens()
@@ -148,9 +155,9 @@ internal fun LabelScannerContent(
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text("Escanear rótulo", style = Typography.titleLarge, color = tokens.textPrimary)
+                Text(if (barcodeMode) "Escanear código de barras" else "Escanear rótulo", style = Typography.titleLarge, color = tokens.textPrimary)
                 Spacer(Modifier.height(4.dp))
-                Text("Aponte a câmera para\no rótulo do seu produto\npara achá-lo",
+                Text(if (barcodeMode) "Fotografe o código de barras do produto para buscá-lo no catálogo." else "Aponte a câmera para\no rótulo do seu produto\npara achá-lo",
                     style = Typography.bodyMedium, color = tokens.textSecondary)
             }
             QuimiaIconButton(

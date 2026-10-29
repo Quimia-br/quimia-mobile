@@ -45,6 +45,7 @@ import com.composables.icons.lucide.Minus
 import com.composables.icons.lucide.TriangleAlert
 import com.composables.icons.lucide.X
 import com.quimia.android.presentation.screens.catalog.CatalogProduct
+import com.quimia.android.presentation.screens.catalog.CatalogImage
 import com.quimia.android.R
 import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
 import com.quimia.android.presentation.screens.catalog.CatalogDescriptionCard
@@ -65,7 +66,7 @@ internal val ShelfRemovalColor = Color(0xFFFF2B6B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, previewBackground: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+internal fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp, previewBackground: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     val tokens = quimiaColorTokens()
     if (LocalInspectionMode.current) {
         ShelfOverlayPreview(Alignment.BottomCenter, background = previewBackground) {
@@ -129,7 +130,7 @@ internal fun ShelfActionsPanel(
 }
 
 @Composable
-internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> Unit) {
+internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> Unit, extraContent: (@Composable () -> Unit)? = null) {
     val tokens = quimiaColorTokens()
     val clipboard = LocalClipboardManager.current
     ShelfFloatingPanel(onDismiss) {
@@ -143,7 +144,7 @@ internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> U
         Spacer(Modifier.height(34.dp))
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 147.dp, height = 172.dp).clip(RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center) {
-            QuimiaImage(
+            if (product.remote) CatalogImage(product, detail = true, modifier = Modifier.fillMaxSize()) else QuimiaImage(
                 painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes),
                 contentDescription = product.name,
                 modifier = Modifier.fillMaxSize().then(if (product.id.startsWith("squeeze")) Modifier.graphicsLayer {
@@ -156,6 +157,7 @@ internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> U
         }
         Spacer(Modifier.height(20.dp))
         CatalogDescriptionCard(description = product.description)
+        extraContent?.invoke()
         if (product.barcode.isNotBlank()) {
             Spacer(Modifier.height(20.dp))
             QuimiaListItem(
@@ -172,11 +174,13 @@ internal fun ShelfProductInformation(product: CatalogProduct, onDismiss: () -> U
 }
 
 @Composable
-internal fun ShelfRemoveConfirmation(product: CatalogProduct, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+internal fun ShelfRemoveConfirmation(product: CatalogProduct, onDismiss: () -> Unit, onConfirm: () -> Unit,
+    busy: Boolean = false, statusContent: (@Composable () -> Unit)? = null) {
     ShelfConfirmation(
         title = "Tem certeza que quer remover\n${product.name}?",
         description = "Todas as misturas com esse produto serão apagadas",
-        destructive = true, action = "Remover", onDismiss = onDismiss, onConfirm = onConfirm,
+        destructive = true, action = if (busy) "Removendo…" else "Remover", onDismiss = onDismiss, onConfirm = onConfirm,
+        busy = busy, statusContent = statusContent,
     )
 }
 
@@ -213,6 +217,7 @@ internal fun ShelfNoRoomConfirmation(onDismiss: () -> Unit, onCreate: () -> Unit
 private fun ShelfConfirmation(
     title: String, description: String?, destructive: Boolean, action: String,
     onDismiss: () -> Unit, onConfirm: () -> Unit,
+    busy: Boolean = false, statusContent: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
     val confirmation: @Composable () -> Unit = {
@@ -234,17 +239,18 @@ private fun ShelfConfirmation(
                             color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
                     }
                 }
+                statusContent?.invoke()
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     QuimiaButton(
                         modifier = Modifier.weight(1f).height(43.dp), text = "Cancelar", iconSize = 0, espacamento = 0,
                         textStyle = ShelfBodyStyle.copy(fontSize = 16.sp), containerColor = tokens.secondary,
-                        textColor = tokens.foregroundPrimary, onClick = onDismiss,
+                        textColor = tokens.foregroundPrimary, enabled = !busy, onClick = onDismiss,
                     )
                     QuimiaButton(
                         modifier = Modifier.weight(1f).height(43.dp), text = action, iconSize = 0, espacamento = 0,
                         textStyle = ShelfBodyStyle.copy(fontSize = 16.sp),
                         containerColor = if (destructive) ShelfRemovalColor else tokens.primary,
-                        textColor = if (destructive) tokens.white else tokens.foregroundPrimary, onClick = onConfirm,
+                        textColor = if (destructive) tokens.white else tokens.foregroundPrimary, enabled = !busy, onClick = onConfirm,
                     )
                 }
             }
@@ -253,7 +259,7 @@ private fun ShelfConfirmation(
     if (LocalInspectionMode.current) {
         ShelfOverlayPreview(Alignment.Center, content = confirmation)
     } else {
-        Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Dialog(onDismissRequest = { if (!busy) onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
             HideSystemNavigationBar()
             val window = (LocalView.current.parent as? DialogWindowProvider)?.window
             SideEffect { window?.setDimAmount(0.08f) }
