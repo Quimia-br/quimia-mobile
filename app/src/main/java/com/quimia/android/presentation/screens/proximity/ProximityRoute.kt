@@ -27,6 +27,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import nav.QuimiaNav
+import com.quimia.android.presentation.screens.errors.*
 import theme.LightTokens
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
@@ -71,6 +72,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     var hasMore by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var errorKind by remember { mutableStateOf(GenericErrorKind.Unknown) }
     var notice by remember { mutableStateOf<String?>(null) }
     var job by remember { mutableStateOf<Job?>(null) }
     var revision by remember { mutableIntStateOf(0) }
@@ -90,7 +92,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                     total = result.totalItens; nextPage = page + 1; hasMore = nextPage < result.totalPaginas
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { if (revision == requestRevision) error = authErrorMessage(failure) }
+            catch (failure: Exception) { if (revision == requestRevision) { errorKind = apiErrorKind(failure, auth.session.value == SessionState.SignedOut); error = authErrorMessage(failure) } }
             finally { if (revision == requestRevision) loading = false }
         }
     }
@@ -185,7 +187,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             }
         }
     }
-    if (listVisible) ModalBottomSheet(onDismissRequest = { listVisible = false },
+    if (listVisible && error == null) ModalBottomSheet(onDismissRequest = { listVisible = false },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = tokens.surfaceBackground) {
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 600.dp), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { Text("Pontos de ${if (type == "compra") "compra" else "descarte"}", style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary) }
@@ -221,6 +223,13 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             if (!showSaved && hasMore && !loading && error == null) item { TextButton(onClick = { load(false) }) { Text("Carregar mais") } }
         }
     }
+    if (listVisible && error != null) GenericErrorScreen(errorKind,
+        onClose = { listVisible = false }, description = if (errorKind == GenericErrorKind.Unknown) error.orEmpty() else errorKind.description,
+        onAction = { action -> when (action) {
+            GenericErrorAction.Retry -> load(reset = points.isEmpty())
+            GenericErrorAction.SignIn -> onSessionExpired()
+            GenericErrorAction.Home -> onMenuItemSelected(0)
+        } })
     if (editing) NearbyAddressSheet(onDismiss = { editing = false }, onSave = { editing = false; if (registered) load() },
         initialAddress = address?.let { NearbyAddress(it.cep, it.estado, "", it.bairro, it.rua.orEmpty(), it.numero.toString(), it.complemento.orEmpty()) },
         saveRemote = { value ->
