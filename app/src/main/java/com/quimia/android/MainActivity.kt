@@ -39,7 +39,7 @@ import com.quimia.android.presentation.screens.auth.password.LoginPassSuccesScre
 import com.quimia.android.presentation.screens.auth.registration.Cadastro1Screen
 import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeRoute
-import com.quimia.android.presentation.screens.catalog.CatalogScreen
+import com.quimia.android.presentation.screens.catalog.CatalogRoute
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
 import com.quimia.android.presentation.screens.shelf.ShelfScreen
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
@@ -277,12 +277,16 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             authViewModel.logout()
                         },
                     ) else when (selectedMainTab) {
-                        1 -> CatalogScreen(
+                        1 -> CatalogRoute(
+                            userId = sessionUid.orEmpty(),
                             initialQuery = homeSearch,
                             onMenuItemSelected = onMainTabSelected,
                             onAiClick = { showKemi = true },
-                            initialSavedProductIds = savedProductIds,
-                            onSavedProductIdsChange = { savedProductIds = it },
+                            onSessionExpired = {
+                                selectedMainTab = 0; showProfile = false; showMixtures = false
+                                navigateAuth(AuthDestination.Login); authViewModel.logout()
+                                authNotice = "Sua sessão expirou. Entre novamente para continuar."
+                            },
                         )
                         2 -> ShelfScreen(
                             savedIds = savedProductIds,

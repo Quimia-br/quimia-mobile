@@ -104,11 +104,24 @@ fun CatalogScreen(
     initialSelectedProductIds: List<String> = emptyList(),
     initialBannerVisible: Boolean = true,
     initialQuery: String = "",
+    products: List<CatalogProduct>? = null,
+    onQueryChange: ((String) -> Unit)? = null,
+    onSaveProducts: ((List<String>) -> Unit)? = null,
+    onProductDetails: ((CatalogProduct) -> Unit)? = null,
+    saving: Boolean = false,
+    canSave: Boolean = true,
+    saveMessage: String? = null,
+    onDismissSaveMessage: () -> Unit = {},
+    statusContent: (@Composable () -> Unit)? = null,
+    footerContent: (@Composable () -> Unit)? = null,
+    onBarcode: ((String) -> Unit)? = null,
+    saveMessageSuccess: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
-    val voiceInput = rememberVoiceInput { query = it }
+    fun changeQuery(value: String) { query = value.take(100); onQueryChange?.invoke(query) }
+    val voiceInput = rememberVoiceInput { changeQuery(it) }
     var bannerVisible by rememberSaveable { mutableStateOf(initialBannerVisible) }
     var showLabelScanner by rememberSaveable { mutableStateOf(false) }
     var savedIds by remember(initialSavedProductIds) { mutableStateOf(initialSavedProductIds.toSet()) }
@@ -122,12 +135,34 @@ fun CatalogScreen(
             successMessage = null
         }
     }
-    val filtered = remember(query, previewItemLimit) {
-        sampleCatalogProducts.take(previewItemLimit).filter {
+    val filtered = remember(products, query, previewItemLimit) {
+        products ?: sampleCatalogProducts.take(previewItemLimit).filter {
             it.name.contains(query.trim(), ignoreCase = true) || it.category.contains(query.trim(), ignoreCase = true)
         }
     }
-    val showBanner = successMessage != null || (bannerVisible && selectedIds.isEmpty())
+    LaunchedEffect(savedIds) { if (onSaveProducts != null) selectedIds = selectedIds - savedIds }
+    var selectionQuery by remember { mutableStateOf(query) }
+    LaunchedEffect(query) { if (selectionQuery != query) { selectedIds = emptySet(); selectionQuery = query } }
+    val bannerMessage = saveMessage ?: successMessage
+    val showBanner = bannerMessage != null || (bannerVisible && selectedIds.isEmpty())
+    fun save(ids: List<String>) {
+        if (onSaveProducts != null) onSaveProducts(ids)
+        else {
+            savedIds = savedIds + ids
+            onSavedProductIdsChange(savedIds.toList())
+            successMessage = "Produto(s) adicionado(s) com sucesso"
+            selectedIds = emptySet()
+        }
+    }
+    fun showDetails(product: CatalogProduct) {
+        if (onProductDetails != null) onProductDetails(product) else detailProduct = product
+    }
+    fun select(id: String) {
+        if (saving || id in savedIds) return
+        if (id in selectedIds) selectedIds = selectedIds - id
+        else if (selectedIds.size < 50) selectedIds = selectedIds + id
+        else dialogMessage = "Selecione até 50 produtos por vez."
+    }
 
     Box(
         modifier = modifier
@@ -157,10 +192,10 @@ fun CatalogScreen(
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             if (showBanner) {
                 CatalogBanner(
-                    message = successMessage ?: "Clique e segure nos\nprodutos para selecionar",
-                    success = successMessage != null,
+                    message = bannerMessage ?: "Clique e segure nos\nprodutos para selecionar",
+                    success = bannerMessage != null && saveMessageSuccess,
                     onDismiss = {
-                        if (successMessage != null) successMessage = null else bannerVisible = false
+                        if (saveMessage != null) onDismissSaveMessage() else if (successMessage != null) successMessage = null else bannerVisible = false
                     },
                 )
             }
@@ -175,7 +210,7 @@ fun CatalogScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 QuimiaSearchBar(
-                    value = query, onValueChange = { query = it }, modifier = Modifier.weight(1f).height(60.dp),
+                    value = query, onValueChange = { changeQuery(it) }, modifier = Modifier.weight(1f).height(60.dp),
                     placeholder = "Pesquisar", icon = Lucide.Mic,
                     iconDescription = "Pesquisar por voz", onClick = voiceInput,
                     horizontalPadding = 16.dp, verticalPadding = 12.dp,
@@ -196,7 +231,8 @@ fun CatalogScreen(
                     },
                 )
             }
-            if (filtered.isEmpty()) {
+            statusContent?.invoke()
+            if (products == null && filtered.isEmpty()) {
                 Text(
                     "Nenhum produto encontrado",
                     modifier = Modifier.fillMaxWidth().padding(32.dp),
@@ -215,17 +251,12 @@ fun CatalogScreen(
                                         filtered.drop(index).take(2).forEach { paired ->
                                             ProductCard(
                                                 paired, paired.id in savedIds,
-                                                onSave = {
-                                                    val wasSaved = paired.id in savedIds
-                                                    val nextSavedIds = if (wasSaved) savedIds - paired.id else savedIds + paired.id
-                                                    savedIds = nextSavedIds
-                                                    onSavedProductIdsChange(nextSavedIds.toList())
-                                                    if (!wasSaved) successMessage = "Produto adicionado com sucesso"
-                                                },
-                                                onInfo = { detailProduct = paired },
+                                                onSave = { save(listOf(paired.id)) },
+                                                onInfo = { showDetails(paired) },
+                                                saving = saving, canSave = canSave,
                                                 selected = paired.id in selectedIds,
                                                 selectionMode = selectedIds.isNotEmpty(),
-                                                onLongSelect = { selectedIds = if (paired.id in selectedIds) selectedIds - paired.id else selectedIds + paired.id },
+                                                onLongSelect = { select(paired.id) },
                                                 modifier = Modifier.width(pairWidth), compact = true,
                                             )
                                         }
@@ -233,17 +264,12 @@ fun CatalogScreen(
                                 } else {
                                     ProductCard(
                                         product, product.id in savedIds,
-                                        onSave = {
-                                            val wasSaved = product.id in savedIds
-                                            val nextSavedIds = if (wasSaved) savedIds - product.id else savedIds + product.id
-                                            savedIds = nextSavedIds
-                                            onSavedProductIdsChange(nextSavedIds.toList())
-                                            if (!wasSaved) successMessage = "Produto adicionado com sucesso"
-                                        },
-                                        onInfo = { detailProduct = product },
+                                        onSave = { save(listOf(product.id)) },
+                                        onInfo = { showDetails(product) },
+                                        saving = saving, canSave = canSave,
                                         selected = product.id in selectedIds,
                                         selectionMode = selectedIds.isNotEmpty(),
-                                        onLongSelect = { selectedIds = if (product.id in selectedIds) selectedIds - product.id else selectedIds + product.id },
+                                        onLongSelect = { select(product.id) },
                                         modifier = Modifier.fillMaxWidth(), compact = false,
                                     )
                                 }
@@ -252,6 +278,7 @@ fun CatalogScreen(
                     }
                 }
             }
+            footerContent?.invoke()
             Spacer(Modifier.height(24.dp))
         }
 
@@ -285,20 +312,16 @@ fun CatalogScreen(
                         modifier = Modifier.size(48.dp), icon = Lucide.X,
                         contentDescription = "Cancelar seleção", size = QuimiaIconButtonSize.Medium,
                         containerColor = tokens.secondary, iconColor = tokens.textPrimary,
-                        onClick = { selectedIds = emptySet() },
+                        onClick = { if (!saving) selectedIds = emptySet() },
                     )
                     QuimiaButton(
                         modifier = Modifier.weight(1f).height(48.dp),
-                        text = "Guardar todos (${selectedIds.size})",
+                        text = if (saving) "Guardando…" else "Guardar todos (${selectedIds.size})",
+                        enabled = canSave && !saving,
                         textStyle = Typography.labelLarge, containerColor = tokens.primary,
                         textColor = tokens.foregroundPrimary,
                         iconSize = 0, espacamento = 0,
-                        onClick = {
-                            savedIds = savedIds + selectedIds
-                            onSavedProductIdsChange(savedIds.toList())
-                            successMessage = "Produtos adicionados com sucesso"
-                            selectedIds = emptySet()
-                        },
+                        onClick = { save(selectedIds.toList()) },
                     )
                 }
             }
@@ -308,6 +331,7 @@ fun CatalogScreen(
     LabelScannerSheet(
         visible = showLabelScanner,
         onDismiss = { showLabelScanner = false },
+        onBarcode = onBarcode,
     )
 
     detailProduct?.let { product ->
@@ -382,6 +406,8 @@ private fun ProductCard(
     onLongSelect: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean,
+    saving: Boolean = false,
+    canSave: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
@@ -409,13 +435,7 @@ private fun ProductCard(
     ) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                QuimiaImage(
-                    painter = painterResource(product.logoRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    shape = CircleShape,
-                    backgroundColor = tokens.surfaceBackground,
-                )
+                CatalogImage(product, logo = true, modifier = Modifier.size(48.dp))
                 Column(Modifier.weight(1f).padding(start = 10.dp)) {
                     Text(
                         product.name, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -430,14 +450,7 @@ private fun ProductCard(
                 modifier = Modifier.fillMaxWidth().height(if (compact) 230.dp else 202.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                QuimiaImage(
-                    painter = painterResource(product.imageRes),
-                    contentDescription = product.name,
-                    modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp),
-                    contentScale = ContentScale.Fit,
-                    shape = RoundedCornerShape(12.dp),
-                    backgroundColor = tokens.surfaceBase,
-                )
+                CatalogImage(product, modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp))
                 QuimiaIconButton(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).size(34.dp),
                     icon = Lucide.Info,
@@ -450,10 +463,10 @@ private fun ProductCard(
             }
             QuimiaButton(
                 modifier = Modifier.fillMaxWidth().height(44.dp),
-                text = if (saved) "Guardado" else "Guardar",
+                text = if (saved) "Guardado" else if (saving) "Guardando…" else "Guardar",
                 textStyle = Typography.bodyLarge,
                 containerColor = tokens.secondary, textColor = tokens.foregroundDisabled,
-                iconSize = 0, espacamento = 0, onClick = onSave,
+                iconSize = 0, espacamento = 0, enabled = canSave && !saving && !saved, onClick = onSave,
             )
         }
     }
@@ -461,11 +474,14 @@ private fun ProductCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CatalogProductDetailsSheet(
+internal fun CatalogProductDetailsSheet(
     product: CatalogProduct,
     saved: Boolean,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
+    saving: Boolean = false,
+    canSave: Boolean = true,
+    statusContent: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -485,7 +501,7 @@ private fun CatalogProductDetailsSheet(
             saved = saved,
             onDismiss = onDismiss,
             onSave = onSave,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(), saving = saving, canSave = canSave, statusContent = statusContent,
         )
     }
 }
@@ -497,6 +513,9 @@ private fun CatalogProductDetailsContent(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
+    saving: Boolean = false,
+    canSave: Boolean = true,
+    statusContent: (@Composable () -> Unit)? = null,
 ) {
     HideSystemNavigationBar()
     val tokens = quimiaColorTokens()
@@ -525,13 +544,7 @@ private fun CatalogProductDetailsContent(
                 )
             }
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                QuimiaImage(
-                    painter = painterResource(product.detailImageRes),
-                    contentDescription = product.name,
-                    modifier = Modifier.fillMaxWidth().height(212.dp).padding(vertical = 16.dp),
-                    contentScale = ContentScale.Fit,
-                    backgroundColor = tokens.surfaceBase,
-                )
+                CatalogImage(product, detail = true, modifier = Modifier.fillMaxWidth().height(212.dp).padding(vertical = 16.dp))
                 CatalogDescriptionCard(description = product.description)
                 if (product.barcode.isNotBlank()) {
                     Spacer(Modifier.height(16.dp))
@@ -551,10 +564,12 @@ private fun CatalogProductDetailsContent(
                     )
                 }
             }
+            statusContent?.invoke()
             Spacer(Modifier.height(16.dp))
             QuimiaButton(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                text = if (saved) "Guardado" else "Guardar",
+                text = if (saved) "Guardado" else if (saving) "Guardando…" else "Guardar",
+                enabled = canSave && !saving && !saved,
                 textStyle = Typography.bodyLarge,
                 containerColor = tokens.primary,
                 textColor = tokens.foregroundPrimary,

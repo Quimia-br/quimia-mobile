@@ -12,6 +12,9 @@ data class CatalogProduct(
     @param:DrawableRes val detailImageRes: Int = imageRes,
     val description: String = "Descrição não disponível para este produto.",
     val barcode: String = "",
+    val photoUrl: String? = null,
+    val brandLogoUrl: String? = null,
+    val remote: Boolean = false,
 )
 
 private val mrMusculo = CatalogProduct(
