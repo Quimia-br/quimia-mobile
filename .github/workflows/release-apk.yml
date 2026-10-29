@@ -31,6 +31,7 @@ jobs:
     env:
       ANDROID_VERSION_NAME: ${{ inputs.version_name || github.ref_name }}
       ANDROID_VERSION_CODE: ${{ inputs.version_code || github.run_number }}
+      MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
 
     steps:
       - name: Checkout
