@@ -46,7 +46,8 @@ internal fun ApiCatalogProduct.catalogProduct() = CatalogProduct(id.toString(), 
         "desengraxante" -> "Desengraxante"; "alvejante" -> "Alvejante"; "aromatizante" -> "Aromatizante"
         "outro" -> "Outro"; else -> tipo
     }, 0, 0, description = descricao?.takeIf { it.isNotBlank() } ?: "Descrição não informada.",
-    barcode = codBarras.orEmpty(), photoUrl = catalogImageUrl(fotoUrl), brandLogoUrl = catalogImageUrl(marca?.logoUrl), remote = true)
+    barcode = codBarras.orEmpty(), photoUrl = catalogImageUrl(fotoUrl), brandLogoUrl = catalogImageUrl(marca?.logoUrl), remote = true,
+    brandName = marca?.nome)
 
 internal fun catalogImageUrl(value: String?): String? = value?.takeIf { url ->
     runCatching { URI(url).let { it.scheme.equals("https", true) && !it.host.isNullOrBlank() && it.userInfo == null } }.getOrDefault(false)

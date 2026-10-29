@@ -41,7 +41,7 @@ import com.quimia.android.presentation.screens.auth.registration.Cadastro2Screen
 import com.quimia.android.presentation.screens.home.HomeRoute
 import com.quimia.android.presentation.screens.catalog.CatalogRoute
 import com.quimia.android.presentation.screens.proximity.ProximityScreen
-import com.quimia.android.presentation.screens.shelf.ShelfScreen
+import com.quimia.android.presentation.screens.shelf.ShelfRoute
 import com.quimia.android.presentation.screens.rooms.QuimiaRoom
 import com.quimia.android.presentation.screens.rooms.RoomListSaver
 import com.quimia.android.presentation.screens.rooms.RoomsScreen
@@ -288,19 +288,16 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                                 authNotice = "Sua sessão expirou. Entre novamente para continuar."
                             },
                         )
-                        2 -> ShelfScreen(
-                            savedIds = savedProductIds,
-                            onSavedIdsChange = { savedProductIds = it },
-                            favoriteIds = favoriteProductIds,
-                            onFavoriteIdsChange = { favoriteProductIds = it },
+                        2 -> ShelfRoute(
+                            userId = sessionUid.orEmpty(),
                             onMenuItemSelected = onMainTabSelected,
                             onAddProduct = { selectedMainTab = 1 },
                             onAiClick = { showKemi = true },
-                            onMixProduct = { openMixtures(it) },
-                            onViewMixtures = { openMixtures(it, history = true) },
-                            onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
-                            rooms = rooms,
-                            onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
+                            onSessionExpired = {
+                                selectedMainTab = 0; showProfile = false; showMixtures = false
+                                navigateAuth(AuthDestination.Login); authViewModel.logout()
+                                authNotice = "Sua sessão expirou. Entre novamente para continuar."
+                            },
                         )
                         4 -> RoomsScreen(
                             rooms = rooms, onRoomsChange = { rooms = it }, savedProductIds = savedProductIds,

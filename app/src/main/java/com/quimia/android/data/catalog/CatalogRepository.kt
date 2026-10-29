@@ -10,7 +10,7 @@ import retrofit2.http.*
     val totalItens: Long, val totalPaginas: Int)
 @Serializable internal data class CatalogBrand(val id: Int, val nome: String, val logoUrl: String? = null)
 @Serializable internal data class ApiCatalogProduct(val id: Int, val nome: String, val tipo: String,
-    val descricao: String? = null, val codBarras: String? = null, val fotoUrl: String? = null, val marca: CatalogBrand? = null)
+    val descricao: String? = null, val codBarras: String? = null, val fotoUrl: String? = null, val marca: CatalogBrand? = null, val favorito: Boolean = false)
 @Serializable internal data class BarcodeRequest(val codBarras: String)
 @Serializable internal data class SaveCatalogRequest(val produtoIds: List<Int>)
 @Serializable internal data class SavedCatalogItem(val produtoId: Int, val nome: String? = null, val status: String)
