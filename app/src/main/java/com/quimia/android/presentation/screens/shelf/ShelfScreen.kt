@@ -95,6 +95,7 @@ internal fun ShelfScreen(
     onQueryChange: (String) -> Unit = {},
     onTabChange: (Boolean) -> Unit = {},
     onSortChange: (ShelfSort?) -> Unit = {},
+    onApiFavorite: ((String, Boolean) -> Unit)? = null,
     onUnavailable: (String) -> Unit = {},
     onApiActions: ((CatalogProduct) -> Unit)? = null,
     onApiRoom: ((String) -> Unit)? = null,
@@ -208,13 +209,13 @@ internal fun ShelfScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         ShelfSort.entries.take(3).forEach { item ->
                             ShelfFilterChip(item, sort == item, Modifier.weight(if (item == ShelfSort.Alphabetical) 1.37f else 1f)) {
-                                if (apiProducts != null && item != ShelfSort.Alphabetical) onUnavailable("Esta ordenação ainda não está disponível.")
+                                if (apiProducts != null && tab == ShelfTab.Substances && item != ShelfSort.Alphabetical) onUnavailable("Esta ordenação ainda não está disponível.")
                                 else { sort = if (sort == item) null else item; onSortChange(sort) }
                             }
                         }
                     }
                     ShelfFilterChip(ShelfSort.Oldest, sort == ShelfSort.Oldest, Modifier.width(97.dp)) {
-                        if (apiProducts != null) onUnavailable("A ordenação por data de salvamento ainda não está disponível.")
+                        if (apiProducts != null && tab == ShelfTab.Substances) onUnavailable("Esta ordenação ainda não está disponível para substâncias.")
                         else { sort = if (sort == ShelfSort.Oldest) null else ShelfSort.Oldest; onSortChange(sort) }
                     }
                 }
@@ -248,7 +249,7 @@ internal fun ShelfScreen(
                         if (product.id !in expandedIds) onApiExpand(product.id)
                         expandedIds = if (product.id in expandedIds) expandedIds - product.id else expandedIds + product.id
                     },
-                    onFavorite = { if (apiProducts != null) onUnavailable("Favoritos indisponíveis no momento.")
+                    onFavorite = { if (apiProducts != null) onApiFavorite?.invoke(product.id, product.id !in favoriteIds)
                         else onFavoriteIdsChange(if (product.id in favoriteIds) favoriteIds - product.id else (favoriteIds + product.id).distinct()) },
                     onActions = { if (onApiActions != null) onApiActions(product) else actionId = product.id }, onRoom = {
                         if (onApiRoom != null) onApiRoom(product.id) else {
