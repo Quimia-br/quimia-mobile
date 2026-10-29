@@ -21,7 +21,7 @@ internal fun authRegistrationBirthDateError(value: String, today: BirthDate = Bi
     val date = BirthDate.parse(value) ?: return "Informe uma data de nascimento válida."
     val beforeBirthday = today.month < date.month || (today.month == date.month && today.day < date.day)
     val age = today.year - date.year - if (beforeBirthday) 1 else 0
-    return if (age < 18) "O cadastro exige idade mínima de 18 anos." else null
+    return if (age < 16) "O cadastro exige idade mínima de 16 anos." else null
 }
 
 internal fun authRegistrationError(value: RegistrationDetails): String? = authNameError(value.name)
