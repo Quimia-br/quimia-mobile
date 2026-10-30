@@ -183,6 +183,9 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                     QuimiaChip(label = label, selected = type == value, centerContent = true, modifier = Modifier.weight(1f), onClick = { type = value })
                 }
             }
+            toast.QuimiaToastHost(when { savingPoint -> "Salvando ponto…"; loading -> "Carregando pontos…"; else -> null },
+                modifier = Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = 91.dp),
+                type = toast.QuimiaToastType.Loading)
             if (error != null) TextButton(modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
                 onClick = { showSaved = false; listVisible = true }) { Text("Não foi possível carregar os pontos. Tentar novamente", color = tokens.foregroundPrimary) }
             points.find { it.id == selectedPoint }?.takeIf { it.latitude != null && it.longitude != null }?.let { point ->

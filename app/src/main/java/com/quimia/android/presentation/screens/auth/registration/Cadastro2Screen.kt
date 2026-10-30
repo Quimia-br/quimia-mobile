@@ -46,7 +46,8 @@ fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSk
                 visualTransformation = PostalCodeVisualTransformation,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             if (lookup.state.loading || lookup.state.error != null) PostalLookupNotice(lookup)
-            PostalCityFields(address)
+            PostalReadOnlyInput(address?.street.orEmpty(), "Rua")
+                    PostalCityFields(address)
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 Box(Modifier.weight(1.9f)) { PostalReadOnlyInput(address?.district.orEmpty(), "Bairro") }
                 Box(Modifier.weight(1f)) { QuimiaInput(number, { number = it }, label = "Nº", placeholder = "100", showClearButton = false,

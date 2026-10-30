@@ -55,10 +55,9 @@ private fun HomeMixture.severityLabel(): String? = severidade?.takeIf { it.isNot
 
 @Composable
 internal fun HomeLoading(message: String) {
-    com.quimia.android.presentation.components.LoadingSkeleton(
-        if (message.contains("perfil")) com.quimia.android.presentation.components.SkeletonLayout.Lines
-        else com.quimia.android.presentation.components.SkeletonLayout.History, message)
-
+    if (theme.LocalQuimiaSkeleton.current) com.quimia.android.presentation.components.LoadingSkeleton(
+        com.quimia.android.presentation.components.SkeletonLayout.History, message)
+    else toast.QuimiaToastHost(message, modifier = Modifier.padding(16.dp), type = toast.QuimiaToastType.Loading)
 }
 
 @Composable

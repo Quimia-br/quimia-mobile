@@ -92,10 +92,12 @@ internal fun MixtureIngredientImage(
 internal fun MixtureSlot(ingredient: MixtureIngredient?, index: Int, enabled: Boolean,
     onChoose: () -> Unit, onRemove: () -> Unit, modifier: Modifier = Modifier, filledHeight: Boolean = false) {
     val tokens = quimiaColorTokens()
+    val tablet = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+    val slotHeight = if (tablet) 400.dp else 351.dp
     val shape = RoundedCornerShape(24.dp)
     if (ingredient == null) {
         Surface(onClick = { if (enabled) onChoose() }, enabled = enabled,
-            modifier = modifier.quimiaResize().height(if (filledHeight) 351.dp else 285.dp), shape = shape,
+            modifier = modifier.quimiaResize().height(if (filledHeight) slotHeight else if (tablet) 340.dp else 285.dp), shape = shape,
             color = tokens.brandSecondary.copy(alpha = 0.10f),
             border = androidx.compose.foundation.BorderStroke(2.dp, tokens.brandSecondary)) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -104,7 +106,7 @@ internal fun MixtureSlot(ingredient: MixtureIngredient?, index: Int, enabled: Bo
                     contentDescription = "Adicionar item ${index + 1}", onClick = { if (enabled) onChoose() })
             }
         }
-    } else Surface(modifier = modifier.height(351.dp), shape = shape, color = tokens.surfaceBase, border = quimiaContrastBorder()) {
+    } else Surface(modifier = modifier.height(slotHeight), shape = shape, color = tokens.surfaceBase, border = quimiaContrastBorder()) {
         Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.fillMaxWidth().height(24.dp), contentAlignment = Alignment.CenterEnd) {
@@ -112,7 +114,7 @@ internal fun MixtureSlot(ingredient: MixtureIngredient?, index: Int, enabled: Bo
                     iconColor = tokens.foregroundDisabled, size = QuimiaIconButtonSize.Small, iconSize = 24.dp,
                     contentDescription = "Remover ${ingredient.name}", onClick = { if (enabled) onRemove() })
             }
-            MixtureIngredientImage(ingredient, Modifier.widthIn(max = 109.5.dp).fillMaxWidth().weight(1f), selectedSlot = true)
+            MixtureIngredientImage(ingredient, Modifier.widthIn(max = if (tablet) 170.dp else 109.5.dp).fillMaxWidth().weight(1f), selectedSlot = true)
             QuimiaButton(text = "Alterar", modifier = Modifier.fillMaxWidth().height(43.dp), enabled = enabled,
                 containerColor = tokens.secondary, textColor = tokens.foregroundPrimary, textStyle = QuimiaTextStyles.medium16,
                 iconSize = 0, espacamento = 0, onClick = onChoose)

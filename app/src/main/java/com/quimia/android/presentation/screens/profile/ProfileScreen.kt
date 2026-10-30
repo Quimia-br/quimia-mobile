@@ -74,19 +74,39 @@ fun ProfileScreen(
     var draftName by rememberSaveable { mutableStateOf(displayName) }
     var draftBirthDate by rememberSaveable { mutableStateOf(birthDate) }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmLogout by rememberSaveable { mutableStateOf(false) }
+    var cameraUri by rememberSaveable { mutableStateOf<String?>(null) }
+    fun savePhoto(uri: android.net.Uri, persist: Boolean) {
+        if (saving) return
+        if (savePhotoRemote != null) scope.launch {
+            saving = true; message = null
+            try { savePhotoRemote(uri); photoVisible = false }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { message = if (error is IllegalArgumentException) error.message else authErrorMessage(error) }
+            finally { saving = false }
+        } else try {
+            if (persist) context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            onPhotoUriChange(uri.toString()); photoVisible = false
+        } catch (_: SecurityException) { message = "Não foi possível acessar a foto." }
+    }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null && !saving) {
-            if (savePhotoRemote != null) scope.launch {
-                saving = true; message = null
-                try { savePhotoRemote(uri); photoVisible = false }
-                catch (cancelled: CancellationException) { throw cancelled }
-                catch (error: Exception) { message = if (error is IllegalArgumentException) error.message else authErrorMessage(error) }
-                finally { saving = false }
-            } else try {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                onPhotoUriChange(uri.toString()); photoVisible = false
-            } catch (_: SecurityException) { message = "Não foi possível acessar a foto." }
-        }
+        uri?.let { savePhoto(it, true) }
+    }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured ->
+        if (captured) cameraUri?.let { savePhoto(android.net.Uri.parse(it), false) }
+    }
+    fun openCamera() {
+        if (saving) return
+        try {
+            val directory = java.io.File(context.cacheDir, "label-images").apply { mkdirs() }
+            val file = java.io.File.createTempFile("profile-", ".jpg", directory)
+            val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.label-images", file)
+            cameraUri = uri.toString()
+            camera.launch(uri)
+        } catch (_: Exception) { message = "Não foi possível abrir a câmera. Você pode escolher uma foto da galeria." }
+    }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) openCamera() else message = "Permita o acesso à câmera ou escolha uma foto da galeria."
     }
     fun openEditor() {
         draftName = displayName; draftBirthDate = birthDate
@@ -117,14 +137,20 @@ fun ProfileScreen(
             }
         },
     ) else ProfilePreferencesScreen(displayName, email, preferences, onPreferencesChange, onBack,
-        photo = photo, onEdit = ::openEditor, onPhoto = onPhoto, onLogout = onLogout)
+        photo = photo, onEdit = ::openEditor, onPhoto = onPhoto, onLogout = { confirmLogout = true })
 
     if (!editVisible && message != null) androidx.compose.material3.AlertDialog(
         onDismissRequest = { message = null }, text = { Text(message.orEmpty()) },
         confirmButton = { androidx.compose.material3.TextButton(onClick = { message = null }) { Text("Entendi") } })
-    if (photoVisible) ProfilePhotoSheet(displayName, photo, message,
+    if (photoVisible) ProfilePhotoSheet(displayName, photo, message, saving = saving,
         onDismiss = { if (!saving) { photoVisible = false; message = null } },
-        onChoose = { if (!saving) photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+        onChoose = { if (!saving) photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+        onCamera = { if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) openCamera()
+            else cameraPermission.launch(android.Manifest.permission.CAMERA) })
+    if (confirmLogout) ProfileLogoutConfirmation(onDismiss = { confirmLogout = false }, onConfirm = { confirmLogout = false; onLogout() })
+    if (saving) Box(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), contentAlignment = Alignment.TopCenter) {
+        toast.QuimiaToastHost("Salvando perfil…", type = QuimiaToastType.Loading)
+    }
     if (birthDateVisible) BirthDateSheet(draftBirthDate, onDismiss = { birthDateVisible = false },
         onSave = { draftBirthDate = it; birthDateVisible = false })
 }
@@ -208,6 +234,13 @@ private fun ProfilePreferencesScreen(
                     ProfileFontCard(preferences, onPreferencesChange, Modifier.weight(1f))
                 }
             }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Efeitos sonoros", Modifier.weight(1f), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
+                QuimiaSwitch(checked = preferences.soundEffects,
+                    onCheckedChange = { onPreferencesChange(preferences.copy(soundEffects = it)) },
+                    contentDescription = "Ativar efeitos sonoros")
+            }
             QuimiaButton(text = "Sair", modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                 .padding(top = if (quimiaHighContrastEnabled()) 18.dp else 8.dp)
                 .then(if (accessibleLayout) Modifier.heightIn(min = 48.dp) else Modifier.height(43.dp)),
@@ -282,8 +315,8 @@ private fun ProfileEditScreen(
 }
 
 @Composable
-private fun ProfilePhotoSheet(name: String, photo: Painter?, message: String?, onDismiss: () -> Unit, onChoose: () -> Unit) {
-    val content: @Composable ColumnScope.() -> Unit = { ProfilePhotoContent(name, photo, message, onDismiss, onChoose) }
+private fun ProfilePhotoSheet(name: String, photo: Painter?, message: String?, onDismiss: () -> Unit, onChoose: () -> Unit, onCamera: () -> Unit = {}, saving: Boolean = false) {
+    val content: @Composable ColumnScope.() -> Unit = { ProfilePhotoContent(name, photo, message, onDismiss, onChoose, onCamera, saving) }
     if (LocalInspectionMode.current) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Surface(Modifier.widthIn(max = 594.dp).fillMaxWidth().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
             shape = RoundedCornerShape(40.dp), color = quimiaColorTokens().surfaceBase, shadowElevation = 12.dp, border = quimiaContrastBorder()) {
@@ -294,15 +327,13 @@ private fun ProfilePhotoSheet(name: String, photo: Painter?, message: String?, o
         showDragHandle = false, showCloseButton = false, sheetMaxWidth = 594.dp, contentHeight = null,
         modifier = Modifier.statusBarsPadding().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
         contentPadding = PaddingValues(start = 32.dp, top = 32.dp, end = 32.dp, bottom = 27.dp),
-        shape = RoundedCornerShape(40.dp), scrimColor = Color.Transparent, content = content)
+        shape = RoundedCornerShape(40.dp), scrimColor = Color.Black.copy(alpha = .08f), content = content)
 }
 
 @Composable
-private fun ProfilePhotoContent(name: String, photo: Painter?, message: String?, onDismiss: () -> Unit, onChoose: () -> Unit) {
+private fun ProfilePhotoContent(name: String, photo: Painter?, message: String?, onDismiss: () -> Unit, onChoose: () -> Unit, onCamera: () -> Unit = {}, saving: Boolean = false) {
     HideSystemNavigationBar()
     val tokens = quimiaColorTokens()
-    QuimiaDragger(height = 3.dp, width = 91.dp)
-    Spacer(Modifier.height(10.dp))
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         QuimiaMainTitle(title = "Alterar foto de\nperfil", modifier = Modifier.weight(1f))
         QuimiaIconButton(icon = Lucide.X, contentDescription = "Fechar alteração de foto",
@@ -315,9 +346,34 @@ private fun ProfilePhotoContent(name: String, photo: Painter?, message: String?,
             QuimiaAvatar(size = portraitSize, photo = photo, initials = profileInitials(name), contentDescription = "Foto selecionada")
         }
     }
-    if (message != null) QuimiaToast(message = message, type = QuimiaToastType.Error)
+    toast.QuimiaToastHost(if (saving) "Enviando foto…" else message, type = if (saving) QuimiaToastType.Loading else QuimiaToastType.Error)
     Spacer(Modifier.height(10.dp))
-    QuimiaButton(text = "Escolher da galeria", modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
-        iconLeftVector = Lucide.Upload, iconSize = 20, espacamento = 10, fillTextWidth = true,
-        containerColor = tokens.secondary, textStyle = QuimiaTextStyles.medium16.copy(textAlign = TextAlign.Center), onClick = onChoose)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        QuimiaButton(text = "Escolher da galeria", modifier = Modifier.weight(1f).heightIn(min = 54.dp),
+            iconSize = 0, espacamento = 0, fillTextWidth = true,
+            containerColor = tokens.secondary, textStyle = QuimiaTextStyles.medium16.copy(textAlign = TextAlign.Center), onClick = onChoose)
+        QuimiaIconButton(icon = Lucide.Camera, size = QuimiaIconButtonSize.Large, iconSize = 24.dp,
+            containerColor = tokens.secondary, contentDescription = "Tirar foto de perfil", onClick = onCamera)
+    }
+}
+
+@Composable
+private fun ProfileLogoutConfirmation(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    val tokens = quimiaColorTokens()
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
+            Column(Modifier.widthIn(max = 400.dp).padding(horizontal = 32.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                shapeIcon.QuimiaShapeIcon(size = 76.dp, icon = Lucide.TriangleAlert, containerColor = tokens.surfaceBackground)
+                Text("Tem certeza que quer sair da sua conta?", style = QuimiaTextStyles.medium16,
+                    color = tokens.foregroundPrimary, textAlign = TextAlign.Center)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    QuimiaButton(text = "Sair", modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = onConfirm)
+                    QuimiaButton(text = "Cancelar", modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        iconSize = 0, espacamento = 0, onClick = onDismiss)
+                }
+            }
+        }
+    }
 }

@@ -41,7 +41,7 @@ internal data class PostalLookupState(val postalCode: String, val loading: Boole
 internal fun postalLookupState(code: String, result: PostalLookupResult): PostalLookupState = when (result) {
     is PostalLookupResult.Found -> if (result.address.postalCode != code) PostalLookupState(code, error = "A consulta retornou outro CEP. Tente novamente.")
         else PostalLookupState(code, address = result.address, error = if (result.address.complete) null
-            else "Este CEP não informa o bairro. Informe um CEP mais específico; os dados não serão preenchidos manualmente.")
+            else "Este CEP não informa a rua ou o bairro. Informe um CEP mais específico; os dados não serão preenchidos manualmente.")
     PostalLookupResult.NotFound -> PostalLookupState(code, error = "CEP não encontrado. Confira os 8 dígitos.")
     PostalLookupResult.Unavailable -> PostalLookupState(code, error = "Não foi possível consultar o CEP. Confira a conexão e tente novamente.")
     PostalLookupResult.InvalidResponse -> PostalLookupState(code, error = "O serviço de CEP retornou dados inválidos. Tente novamente.")

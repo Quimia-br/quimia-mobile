@@ -51,10 +51,10 @@ internal fun MixturePicker(
     }
     if (LocalInspectionMode.current) {
         Box(Modifier.fillMaxSize().background(CatalogModalScrimColor).statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), contentAlignment = Alignment.BottomCenter) {
-            Surface(Modifier.widthIn(max = 560.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder()) { content() }
+            Surface(Modifier.widthIn(max = 840.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder()) { content() }
         }
     } else ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 840.dp,
         containerColor = tokens.secondary, scrimColor = CatalogModalScrimColor, shape = RoundedCornerShape(40.dp), dragHandle = null) {
         HideSystemNavigationBar()
         content()
@@ -100,7 +100,7 @@ internal fun MixturePickerContent(
             Text(if (substanceTab) "Sua estante ainda não tem substâncias." else "Guarde produtos na estante para selecionar uma mistura.",
                 style = QuimiaTextStyles.medium16, color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
             if (!substanceTab) QuimiaButton(text = "Ir para catálogo", onClick = onOpenCatalog, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0)
-        } else LazyVerticalGrid(GridCells.Fixed(2), modifier = Modifier.weight(1f),
+        } else LazyVerticalGrid(GridCells.Adaptive(140.dp), modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(candidates, key = { it.key }) { item ->
                 val unavailable = item.key == other?.key

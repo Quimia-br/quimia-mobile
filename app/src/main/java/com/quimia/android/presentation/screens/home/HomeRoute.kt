@@ -25,7 +25,7 @@ import theme.quimiaColorTokens
 @Composable
 internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick: () -> Unit,
     onFindDropOffClick: () -> Unit, onMixturesClick: () -> Unit, onShelfClick: () -> Unit,
-    onMenuItemSelected: (Int) -> Unit, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
+    onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit = {}, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
     val context = LocalContext.current.applicationContext
     val auth = remember(context) { AuthRepositoryProvider.get(context) }
     val session by auth.session.collectAsStateWithLifecycle()
@@ -33,6 +33,10 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     val controller = remember(userId, repository) { HomeController(repository, userId) }
     var pointLoading by remember(userId) { mutableStateOf(true) }
     var pointLabel by remember(userId) { mutableStateOf("Carregando…") }
+    var lastPoint by remember(userId) { mutableStateOf<HomeSavedPoint?>(null) }
+    var pointCoordinate by remember(userId) { mutableStateOf<com.quimia.android.presentation.screens.proximity.NearbyCoordinate?>(null) }
+    val pointRepository = remember(auth) { com.quimia.android.data.proximity.ProximityRepository(
+        AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, com.quimia.android.data.proximity.ProximityApi::class.java), auth) }
     val state by controller.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val owner = LocalLifecycleOwner.current
@@ -41,7 +45,15 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
         scope.launch { controller.refresh() }
         scope.launch {
             pointLoading = true
-            try { pointLabel = repository.lastPoint(userId)?.nome ?: "Não cadastrado" }
+            try {
+                val point = repository.lastPoint(userId)
+                lastPoint = point; pointLabel = point?.nome.orEmpty()
+                pointCoordinate = point?.latitude?.let { lat -> point.longitude?.let { lng -> com.quimia.android.presentation.screens.proximity.NearbyCoordinate(lat, lng) } }?.takeIf { it.isValid() }
+                if (point != null && pointCoordinate == null) {
+                    val full = pointRepository.saved(userId).firstOrNull { it.id == point.id }
+                    pointCoordinate = full?.latitude?.let { lat -> full.longitude?.let { lng -> com.quimia.android.presentation.screens.proximity.NearbyCoordinate(lat, lng) } }?.takeIf { it.isValid() }
+                }
+            }
             catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { pointLabel = "Não foi possível carregar" }
             finally { pointLoading = false }
@@ -68,7 +80,8 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
         onSearch = onSearch, onAvatarClick = onAvatarClick, onFindDropOffClick = onFindDropOffClick,
         onMixturesClick = onMixturesClick, onShelfClick = onShelfClick, onMixClick = onMixturesClick,
-        onMenuItemSelected = onMenuItemSelected, dropOffDescription = pointLabel, dropOffLoading = false,
+        onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick, dropOffDescription = pointLabel, dropOffLoading = false,
+        dropOffMap = lastPoint?.let { point -> { HomePointMap(point.id, point.nome, pointCoordinate, onFindDropOffClick) } },
         profileStatus = {
             if (!screenLoading) state.profileError?.let { HomeLoadError(it, "seu perfil", ::refresh) }
         }, historyContent = {

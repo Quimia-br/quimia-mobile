@@ -1,6 +1,22 @@
 package toast
 
 import motion.quimiaEnter
+import motion.LocalQuimiaMotionEnabled
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.BoxWithConstraints
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import feedback.LocalQuimiaSound
+import feedback.QuimiaSound
 import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
@@ -40,7 +56,7 @@ import theme.RadiusFull
 import theme.quimiaColorTokens
 import theme.quimiaContrastBorder
 
-enum class QuimiaToastType { Info, Success, Warning, Error }
+enum class QuimiaToastType { Info, Success, Warning, Error, Loading }
 
 @Composable
 fun QuimiaToast(
@@ -54,43 +70,70 @@ fun QuimiaToast(
     leadingIcon: ImageVector? = null,
     description: String? = null,
     statusIconContainerColor: Color? = null,
+    animateEntrance: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
+    val motion = LocalQuimiaMotionEnabled.current
+    val sound = LocalQuimiaSound.current
+    var visible by remember(message) { mutableStateOf(true) }
+    var closing by remember(message) { mutableStateOf(false) }
+    val latestDismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(closing, message) {
+        if (closing) { if (motion) delay(180); latestDismiss?.invoke() }
+    }
+    val dismiss: () -> Unit = {
+        if (!closing) {
+            closing = true; visible = false
+        }
+    }
+    LaunchedEffect(message, type) {
+        when (type) {
+            QuimiaToastType.Success -> sound(QuimiaSound.Success)
+            QuimiaToastType.Error -> sound(QuimiaSound.Error)
+            else -> Unit
+        }
+    }
     val accent = when (type) {
-        QuimiaToastType.Info -> tokens.foregroundPrimary
+        QuimiaToastType.Info, QuimiaToastType.Loading -> tokens.foregroundPrimary
         QuimiaToastType.Success -> tokens.success
         QuimiaToastType.Warning -> tokens.warning
         QuimiaToastType.Error -> tokens.error
     }
     val iconTheme = when (type) {
-        QuimiaToastType.Info -> QuimiaShapeIconTheme.Secondary
+        QuimiaToastType.Info, QuimiaToastType.Loading -> QuimiaShapeIconTheme.Secondary
         QuimiaToastType.Success -> QuimiaShapeIconTheme.Success
         QuimiaToastType.Warning -> QuimiaShapeIconTheme.Warning
         QuimiaToastType.Error -> QuimiaShapeIconTheme.Critical
     }
     val statusIcon = leadingIcon ?: when (type) {
-        QuimiaToastType.Info -> Lucide.Info
+        QuimiaToastType.Info, QuimiaToastType.Loading -> Lucide.Info
         QuimiaToastType.Success -> Lucide.Check
         QuimiaToastType.Warning -> Lucide.TriangleAlert
         QuimiaToastType.Error -> Lucide.X
     }
 
+    AnimatedVisibility(visible = visible, modifier = modifier, enter = fadeIn(tween(if (motion) 180 else 0)),
+        exit = fadeOut(tween(if (motion) 180 else 0)) + slideOutVertically(tween(if (motion) 180 else 0)) { -it / 4 }) {
     Surface(
-        modifier = modifier.quimiaEnter().quimiaSkeleton(32.dp).fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
-        shape = RoundedCornerShape(RadiusFull.dp),
+        modifier = Modifier.widthIn(max = 600.dp).then(if (animateEntrance) Modifier.quimiaEnter() else Modifier).quimiaSkeleton(32.dp).fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+        shape = RoundedCornerShape(32.dp),
         color = containerColor ?: tokens.surfaceBase,
         contentColor = tokens.textPrimary,
         border = quimiaContrastBorder(),
     ) {
+        BoxWithConstraints {
+        val compact = maxWidth < 340.dp
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            QuimiaShapeIcon(
-                size = QuimiaShapeIconSize.Small.value,
+            if (type == QuimiaToastType.Loading) Box(Modifier.size(if (compact) 40.dp else 50.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(Modifier.size(24.dp), color = tokens.foregroundPrimary, strokeWidth = 2.dp)
+            } else QuimiaShapeIcon(
+                size = if (compact) 40.dp else QuimiaShapeIconSize.Small.value,
                 icon = statusIcon,
                 theme = iconTheme,
                 containerColor = statusIconContainerColor,
@@ -111,16 +154,13 @@ fun QuimiaToast(
                         style = QuimiaTextStyles.medium14,
                     )
                 }
-            }
-
-            if (actionLabel != null && onAction != null) {
-                TextButton(onClick = onAction) {
+                if (actionLabel != null && onAction != null) TextButton(onClick = onAction) {
                     Text(text = actionLabel, color = accent)
                 }
             }
 
             if (onDismiss != null) {
-                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = dismiss, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = Lucide.X,
                         contentDescription = "Fechar aviso",
@@ -130,6 +170,27 @@ fun QuimiaToast(
                 }
             }
         }
+        }
+    }
+    }
+}
+
+/** Keeps the previous notice mounted until its exit animation has finished. */
+@Composable
+fun QuimiaToastHost(message: String?, modifier: Modifier = Modifier, type: QuimiaToastType = QuimiaToastType.Info,
+    description: String? = null, onDismiss: (() -> Unit)? = null) {
+    var retained by remember { mutableStateOf(message) }
+    var retainedType by remember { mutableStateOf(type) }
+    var retainedDescription by remember { mutableStateOf(description) }
+    val motion = LocalQuimiaMotionEnabled.current
+    LaunchedEffect(message, type, description) {
+        if (message != null) { retained = message; retainedType = type; retainedDescription = description }
+    }
+    AnimatedVisibility(visible = message != null, modifier = modifier,
+        enter = fadeIn(tween(if (motion) 220 else 0)) + slideInVertically(tween(if (motion) 220 else 0)) { -it / 4 },
+        exit = fadeOut(tween(if (motion) 180 else 0)) + slideOutVertically(tween(if (motion) 180 else 0)) { -it / 4 }) {
+        retained?.let { QuimiaToast(it, type = retainedType, description = retainedDescription,
+            onDismiss = onDismiss, animateEntrance = false) }
     }
 }
 

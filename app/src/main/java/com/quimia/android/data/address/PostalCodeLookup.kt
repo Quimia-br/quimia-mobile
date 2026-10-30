@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 
 data class PostalAddress(val postalCode: String, val state: String, val city: String, val district: String, val street: String) {
-    val complete: Boolean get() = state in PostalStates && city.isNotBlank() && district.isNotBlank()
+    val complete: Boolean get() = state in PostalStates && city.isNotBlank() && district.isNotBlank() && street.isNotBlank()
 }
 
 sealed interface PostalLookupResult {

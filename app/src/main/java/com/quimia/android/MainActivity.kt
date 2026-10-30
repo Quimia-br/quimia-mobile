@@ -1,5 +1,8 @@
 package com.quimia.android
 
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.padding
+
 import motion.quimiaContent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -99,7 +102,9 @@ class MainActivity : ComponentActivity() {
                 QuimiaTheme(darkTheme = dark, highContrast = preferences.theme == ProfileTheme.HighContrast,
                     useDyslexicFont = preferences.dyslexicFont) {
                     HideSystemNavigationBar()
-                    QuimiaApp(preferences) { preferences = it; store.save(it) }
+                    com.quimia.android.presentation.system.QuimiaSoundProvider(preferences.soundEffects) {
+                        QuimiaApp(preferences) { preferences = it; store.save(it) }
+                    }
                 }
             }
         }
@@ -320,7 +325,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             onMenuItemSelected = onMainTabSelected,
                             onFindDropOffClick = { selectedMainTab = 3 },
                             onShelfClick = { selectedMainTab = 2 },
-                            onMixturesClick = { openMixtures() },
+                            onMixturesClick = { openMixtures() }, onAiClick = { showKemi = true },
                             onProfileLoaded = { profile ->
                                 displayName = profile.nome; profileEmail = profile.email; photoUri = profile.fotoUrl
                                 birthDate = com.quimia.android.presentation.auth.displayBirthDate(profile.dataNasc)
@@ -423,15 +428,20 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
             }
         }
     }
-    if (authBusy || choosingGoogle) androidx.compose.material3.AlertDialog(
-        onDismissRequest = {}, confirmButton = {},
-        properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-        text = { androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
-            androidx.compose.material3.CircularProgressIndicator(Modifier.size(24.dp))
-            Text(if (choosingGoogle) "Abrindo acesso Google…" else authBusyLabel)
-        } },
-    )
+    androidx.activity.compose.BackHandler(enabled = authBusy || choosingGoogle) { }
+    if (authBusy || choosingGoogle) androidx.compose.ui.window.Dialog(
+        onDismissRequest = {}, properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false, dismissOnBackPress = false, dismissOnClickOutside = false),
+    ) {
+        com.quimia.android.presentation.system.HideSystemNavigationBar()
+        val progressWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        SideEffect { progressWindow?.setDimAmount(0f) }
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),
+            contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
+            toast.QuimiaToast(message = if (choosingGoogle) "Abrindo acesso Google…" else authBusyLabel,
+                type = toast.QuimiaToastType.Loading)
+        }
+    }
     if (!authBusy && sessionProblem != null) AlertDialog(
         onDismissRequest = {}, title = { Text("Não foi possível conferir sua sessão") },
         text = { Text(sessionProblem.orEmpty()) },

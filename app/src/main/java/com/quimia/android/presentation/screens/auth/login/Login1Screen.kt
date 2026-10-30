@@ -8,6 +8,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,11 @@ fun Login1Screen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     val emailFocus = remember { FocusRequester() }
+    var emailFocused by remember { mutableStateOf(false) }
+    var passwordFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val imeVisible = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+    LaunchedEffect(imeVisible) { if (!imeVisible) focusManager.clearFocus() }
     val emailError = authEmailError(email)
     val passwordError = authLoginPasswordError(password)
     AuthScreenLayout(modifier, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footerHorizontalPadding = 35.5.dp, footer = {
@@ -38,14 +46,17 @@ fun Login1Screen(
         QuimiaMainTitle(title = "Seja bem-vindo de volta!\nFaça login abaixo")
         Spacer(Modifier.height(34.dp))
         QuimiaInput(email, { email = it }, label = "E-mail", placeholder = "exemplo@quimia.com",
-            modifier = Modifier.focusRequester(emailFocus), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.focusRequester(emailFocus).onFocusChanged { emailFocused = it.isFocused }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             error = emailError.takeIf { email.isNotEmpty() })
         Spacer(Modifier.height(18.dp))
-        AuthPasswordInput(password, { password = it }, "Senha", passwordError.takeIf { password.isNotEmpty() })
+        AuthPasswordInput(password, { password = it }, "Senha", passwordError.takeIf { password.isNotEmpty() },
+            modifier = Modifier.onFocusChanged { passwordFocused = it.isFocused })
         Text("Esqueci a senha", color = quimiaColorTokens().foregroundPrimary, style = QuimiaTextStyles.medium16,
             modifier = Modifier.clickable(role = Role.Button, onClick = onForgotPassword).padding(top = 8.dp))
         Spacer(Modifier.height(56.dp))
-        AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
+        AnimatedVisibility(!emailFocused && !passwordFocused) {
+            AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
+        }
     }
 }
 

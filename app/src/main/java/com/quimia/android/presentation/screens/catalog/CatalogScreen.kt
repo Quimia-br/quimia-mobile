@@ -1,5 +1,7 @@
 package com.quimia.android.presentation.screens.catalog
 
+import theme.QuimiaTextStyles
+
 import motion.quimiaContent
 import com.quimia.android.presentation.components.SearchEmptyState
 import motion.QuimiaExpand
@@ -375,36 +377,8 @@ fun CatalogScreen(
 
 @Composable
 private fun CatalogBanner(message: String, success: Boolean, onDismiss: () -> Unit) {
-    val tokens = quimiaColorTokens()
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp)
-            .quimiaSkeleton(40.dp).clip(RoundedCornerShape(40.dp)).background(tokens.surfaceBase)
-            .quimiaContrastOutline(RoundedCornerShape(40.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        QuimiaShapeIcon(
-            size = 52.dp,
-            icon = if (success) Lucide.Check else Lucide.Info,
-            containerColor = if (success) tokens.success else tokens.surfaceBackground,
-            iconSize = 22.dp,
-        )
-        Text(
-            message,
-            modifier = Modifier.weight(1f),
-            style = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
-            color = tokens.textPrimary,
-        )
-        QuimiaIconButton(
-            icon = Lucide.X,
-            size = QuimiaIconButtonSize.Small,
-            iconSize = 20.dp,
-            containerColor = tokens.surfaceBase,
-            contentDescription = "Fechar aviso",
-            onClick = onDismiss,
-        )
-    }
+    toast.QuimiaToast(message = message, type = if (success) toast.QuimiaToastType.Success else toast.QuimiaToastType.Info,
+        modifier = Modifier.padding(16.dp), onDismiss = onDismiss)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -425,6 +399,7 @@ private fun ProductCard(
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
     val outline = resolveCatalogProductOutline(tokens, quimiaHighContrastEnabled(), selectionMode, selected)
+        ?: if (saved && !selectionMode) CatalogProductOutline(tokens.success, 2.dp) else null
     val interactions = remember { MutableInteractionSource() }
     val pressed by interactions.collectIsPressedAsState()
     QuimiaCard(
@@ -468,20 +443,13 @@ private fun ProductCard(
                 contentAlignment = Alignment.Center,
             ) {
                 CatalogImage(product, modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp))
-                QuimiaReveal(saved, Modifier.align(Alignment.TopEnd).padding(top = 12.dp)) { Box(
-                    Modifier.size(28.dp)
-                        .quimiaSkeleton(100.dp).clip(CircleShape).background(tokens.success),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Lucide.Check, contentDescription = null, modifier = Modifier.size(17.dp), tint = theme.LightTokens.foregroundPrimary)
-                }
-                }
                 QuimiaIconButton(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).size(34.dp),
-                    icon = Lucide.Info,
+                    icon = if (saved) Lucide.Check else Lucide.Info,
                     size = QuimiaIconButtonSize.Small,
                     iconSize = 18.dp,
-                    containerColor = tokens.secondary,
+                    containerColor = if (saved) tokens.success else tokens.secondary,
+                    iconColor = if (saved) theme.LightTokens.foregroundPrimary else tokens.foregroundPrimary,
                     contentDescription = "Informações sobre ${product.name}",
                     onClick = onInfo,
                 )
@@ -501,7 +469,11 @@ private fun CatalogSaveAction(
 ) {
     val tokens = quimiaColorTokens()
     QuimiaStateContent(target = saved, modifier = modifier) { isSaved ->
-    if (isSaved) {
+    if (isSaved && !detail) {
+        Box(Modifier.fillMaxSize().quimiaSkeleton(8.dp).semantics { stateDescription = "Produto já adicionado à sua estante" }, contentAlignment = Alignment.Center) {
+            Text("Esse produto já está na sua estante", style = QuimiaTextStyles.medium14, color = tokens.foregroundSubtle)
+        }
+    } else if (isSaved) {
         Surface(
             modifier = Modifier.fillMaxSize().quimiaSkeleton(1000.dp).semantics { stateDescription = "Produto já adicionado à sua estante" },
             shape = CircleShape,

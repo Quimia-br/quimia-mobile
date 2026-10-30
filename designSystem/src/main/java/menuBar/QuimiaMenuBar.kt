@@ -54,7 +54,7 @@ import theme.quimiaHighContrastEnabled
 import theme.quimiaContrastOutline
 
 fun resolveQuimiaMenuBarIconColor(tokens: QuimiaColorTokens, highContrast: Boolean) =
-    if (highContrast) DarkTokens.foregroundSubtle else tokens.foregroundSubtle
+    if (highContrast || tokens.surfaceBackground == DarkTokens.surfaceBackground) tokens.white else tokens.foregroundSubtle
 
 val QuimiaMenuBarHeight = 84.dp
 val QuimiaMenuBarBottomSpacing = 16.dp
@@ -96,6 +96,7 @@ fun QuimiaMenuBar(
     fab: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
+    val sound = feedback.LocalQuimiaSound.current
     val iconColor = resolveQuimiaMenuBarIconColor(tokens, quimiaHighContrastEnabled())
     val icons = items ?: listOf(
         Lucide.House,
@@ -127,6 +128,8 @@ fun QuimiaMenuBar(
             )
             Row(Modifier.fillMaxWidth().selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
             icons.forEachIndexed { index, element ->
+                val itemIconColor = if (index == selectedIndex && (quimiaHighContrastEnabled() || tokens.surfaceBackground == DarkTokens.surfaceBackground))
+                    theme.LightTokens.foregroundPrimary else iconColor
                 val interactions = remember(index) { MutableInteractionSource() }
                 val pressed by interactions.collectIsPressedAsState()
                 Box(
@@ -136,6 +139,7 @@ fun QuimiaMenuBar(
                         .quimiaPress(pressed)
                         .clip(CircleShape)
                         .selectable(selected = index == selectedIndex, role = Role.Tab, interactionSource = interactions, indication = null) {
+                            if (index != selectedIndex) sound(feedback.QuimiaSound.Tap)
                             onItemSelected(index)
                         },
                     contentAlignment = Alignment.Center,
@@ -144,13 +148,13 @@ fun QuimiaMenuBar(
                         is ImageVector -> Icon(
                             imageVector = element,
                             contentDescription = labels.getOrNull(index),
-                            tint = iconColor,
+                            tint = itemIconColor,
                             modifier = Modifier.size(30.dp),
                         )
                         is Int -> Icon(
                             painter = painterResource(element),
                             contentDescription = labels.getOrNull(index),
-                            tint = iconColor,
+                            tint = itemIconColor,
                             modifier = Modifier.size(30.dp),
                         )
                     }

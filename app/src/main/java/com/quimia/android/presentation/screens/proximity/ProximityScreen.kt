@@ -121,9 +121,9 @@ fun ProximityScreen(
                         },
                     )
                 }
-                if (message != null) QuimiaToast(
+                toast.QuimiaToastHost(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 75.dp),
-                    message = message.orEmpty(), type = QuimiaToastType.Success, onDismiss = { message = null },
+                    message = message, type = QuimiaToastType.Success, onDismiss = { message = null },
                 )
             }
         }

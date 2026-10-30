@@ -17,7 +17,8 @@ import retrofit2.http.Query
     val resultado: String, val severidade: String? = null, val descricaoRisco: String? = null,
     val consultadoEm: String? = null, val dosagem: HomeDose? = null)
 
-@Serializable internal data class HomeSavedPoint(val id: Int, val nome: String, val tipo: String)
+@Serializable internal data class HomeSavedPoint(val id: Int, val nome: String, val tipo: String,
+    val latitude: Double? = null, val longitude: Double? = null)
 
 internal interface HomeApi {
     @GET("api/v1/pontos/salvos/ultimo") suspend fun lastPoint(@Header("Authorization") bearer: String, @Query("tipo") type: String): HomeSavedPoint

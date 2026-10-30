@@ -88,10 +88,9 @@ internal fun RoomForm(
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val columns = roomGridColumns(maxWidth.value)
                     if (products.isEmpty() && showEmpty) {
-                        Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            QuimiaListItem(title = "Sua estante está vazia", subtitle = "Guarde produtos no Catálogo para associá-los a um cômodo.")
-                            QuimiaButton(text = "Abrir Catálogo", iconSize = 0, espacamento = 0, onClick = onOpenCatalog)
-                        }
+                        states.QuimiaEmptyState(icon = Lucide.GalleryVerticalEnd, title = "Sua estante está vazia",
+                            description = "Guarde produtos no Catálogo para usá-los neste cômodo.", buttonLabel = "Explorar catálogo",
+                            onButtonClick = onOpenCatalog, modifier = Modifier.padding(vertical = 16.dp))
                     } else {
                         Column {
                             products.chunked(columns).forEach { row ->

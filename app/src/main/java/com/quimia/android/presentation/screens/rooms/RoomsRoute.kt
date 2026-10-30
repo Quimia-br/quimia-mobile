@@ -249,7 +249,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
 
 @Composable
 private fun RoomsNotice(message: String?, dismiss: () -> Unit) {
-    message?.let { QuimiaToast(message = it, type = QuimiaToastType.Info, modifier = Modifier.padding(16.dp), onDismiss = dismiss) }
+    toast.QuimiaToastHost(message = message, type = QuimiaToastType.Info, modifier = Modifier.padding(16.dp), onDismiss = dismiss)
 }
 
 @Composable

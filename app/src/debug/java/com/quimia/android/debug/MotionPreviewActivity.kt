@@ -27,13 +27,16 @@ class MotionPreviewActivity : ComponentActivity() {
         val startingTab = intent.getIntExtra("tab", 0).coerceIn(0, 4)
         val skeleton = intent.getBooleanExtra("skeleton", false)
         val dark = intent.getBooleanExtra("dark", false)
+        val loginPreview = intent.getBooleanExtra("login", false)
+        val mixturePreview = intent.getBooleanExtra("mixture", false)
+        val empty = intent.getBooleanExtra("empty", false)
         setContent {
             QuimiaTheme(darkTheme = dark) {
                 HideSystemNavigationBar()
                 var tab by remember { mutableIntStateOf(startingTab) }
-                var saved by remember { mutableStateOf(sampleCatalogProducts.take(2).map { it.id }) }
+                var saved by remember { mutableStateOf(if (empty) emptyList<String>() else sampleCatalogProducts.take(4).map { it.id }) }
                 var favorites by remember { mutableStateOf(emptyList<String>()) }
-                var rooms by remember { mutableStateOf(previewRooms) }
+                var rooms by remember { mutableStateOf(if (empty) emptyList<QuimiaRoom>() else previewRooms) }
                 var profile by remember { mutableStateOf(false) }
                 var preferences by remember { mutableStateOf(ProfilePreferences()) }
                 var chat by remember { mutableStateOf(false) }
@@ -42,6 +45,10 @@ class MotionPreviewActivity : ComponentActivity() {
                 QuimiaNavigationMotion(tab) {
                     CompositionLocalProvider(LocalQuimiaSkeleton provides skeleton) {
                         when {
+                            loginPreview -> com.quimia.android.presentation.screens.auth.login.Login1Screen()
+                            mixturePreview -> com.quimia.android.presentation.screens.mixtures.MixturesScreen(
+                                remember { com.quimia.android.presentation.screens.mixtures.MixtureController() }, saved,
+                                onClose = {}, onOpenCatalog = { tab = 1 })
                             chat -> KemiScreen(controller, onClose = { chat = false }, displayName = "Gustavo",
                                 responder = { delay(1600); KemiReply.Answer("Esta é uma prévia de movimento. Aqui você pode conferir a entrada da mensagem e a rolagem do chat.") })
                             profile -> ProfileScreen("Gustavo Sousa", "preview@example.com", preferences, { preferences = it }, {}, {},
@@ -55,7 +62,7 @@ class MotionPreviewActivity : ComponentActivity() {
                             tab == 4 -> RoomsScreen(rooms, { rooms = it }, saved, onMenuItemSelected = navigate,
                                 onAiClick = { chat = true }, onOpenCatalog = { tab = 1 })
                             else -> HomeScreen(onMenuItemSelected = navigate, onAvatarClick = { profile = true },
-                                onShelfClick = { tab = 2 }, onMixturesClick = { chat = true }, onFindDropOffClick = { tab = 3 })
+                                onAiClick = { chat = true }, onShelfClick = { tab = 2 }, onMixturesClick = { chat = true }, onFindDropOffClick = { tab = 3 })
                         }
                     }
                 }

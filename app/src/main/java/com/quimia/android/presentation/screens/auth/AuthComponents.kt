@@ -62,7 +62,7 @@ internal fun AuthScreenLayout(
 @Composable
 internal fun AuthPrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
     QuimiaButton(text = text, onClick = onClick, enabled = enabled, modifier = modifier.fillMaxWidth().height(58.dp),
-        textColor = theme.LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
+        containerColor = quimiaColorTokens().primary, textColor = theme.LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
 }
 
 @Composable
@@ -76,9 +76,9 @@ internal fun AuthFooterLink(prefix: String, action: String, onClick: () -> Unit)
 }
 
 @Composable
-internal fun AuthPasswordInput(value: String, onValueChange: (String) -> Unit, label: String, error: String? = null, showVisibilityWhenEmpty: Boolean = false, placeholder: String = "123456") {
+internal fun AuthPasswordInput(value: String, onValueChange: (String) -> Unit, label: String, error: String? = null, showVisibilityWhenEmpty: Boolean = false, placeholder: String = "123456", modifier: Modifier = Modifier) {
     var visible by rememberSaveable { mutableStateOf(false) }
-    QuimiaInput(value = value, onValueChange = onValueChange, label = label, placeholder = placeholder, error = error,
+    QuimiaInput(value = value, onValueChange = onValueChange, label = label, placeholder = placeholder, error = error, modifier = modifier,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = if (visible) Lucide.EyeOff else Lucide.Eye,

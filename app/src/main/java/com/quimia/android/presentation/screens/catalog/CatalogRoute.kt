@@ -154,23 +154,13 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
 
 @Composable
 internal fun CatalogLoading(message: String) {
-    if (message.startsWith("Carregando") || message.startsWith("Conferindo")) {
-        val layout = when {
-            message.contains("detalhe") -> com.quimia.android.presentation.components.SkeletonLayout.Detail
-            message.contains("resumo") || message.contains("socorros") -> com.quimia.android.presentation.components.SkeletonLayout.Lines
-            message.contains("misturas") -> com.quimia.android.presentation.components.SkeletonLayout.History
-            else -> com.quimia.android.presentation.components.SkeletonLayout.Grid
-        }
-        com.quimia.android.presentation.components.LoadingSkeleton(layout, message)
-        return
-    }
-    val tokens = quimiaColorTokens()
-    Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = tokens.primary)
-        Text(message, style = Typography.bodyMedium, color = tokens.textPrimary)
-    }
+    if (theme.LocalQuimiaSkeleton.current) {
+        com.quimia.android.presentation.components.LoadingSkeleton(
+            if (message.contains("socorros") || message.contains("resumo")) com.quimia.android.presentation.components.SkeletonLayout.Lines
+            else com.quimia.android.presentation.components.SkeletonLayout.Grid, message)
+    } else toast.QuimiaToastHost(message, modifier = Modifier.padding(16.dp), type = toast.QuimiaToastType.Loading)
 }
+
 @Composable
 internal fun CatalogError(problem: CatalogProblem, retry: () -> Unit) {
     val tokens = quimiaColorTokens()

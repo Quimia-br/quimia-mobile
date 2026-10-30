@@ -36,6 +36,7 @@ data class ProfilePreferences(
     val theme: ProfileTheme = ProfileTheme.Light,
     val textSizeStep: Int = 0,
     val dyslexicFont: Boolean = false,
+    val soundEffects: Boolean = true,
 ) {
     val textScale: Float get() = 1f + textSizeStep.coerceIn(0, 2) * .2f
 }

@@ -157,7 +157,8 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
     val address = lookup.state.address
     val tokens = quimiaColorTokens()
     Surface(Modifier.fillMaxSize(), color = tokens.surfaceBackground) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().statusBarsPadding().imePadding()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().imePadding()) {
             Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
                 QuimiaIconButton(icon = Lucide.ChevronLeft, containerColor = tokens.secondary,
@@ -168,19 +169,22 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 Text("Alterar endereço", style = QuimiaTextStyles.medium24, color = tokens.textPrimary)
                 Spacer(Modifier.height(31.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                    if (error != null) QuimiaToast(message = error.orEmpty(), type = QuimiaToastType.Error, onDismiss = { error = null })
+                    toast.QuimiaToastHost(error, type = QuimiaToastType.Error, onDismiss = { error = null })
+                    toast.QuimiaToastHost(if (saving) "Salvando endereço…" else null, type = QuimiaToastType.Loading)
                     QuimiaInput(value = normalizedPostalCode(postalCode), onValueChange = { postalCode = normalizedPostalCode(it); error = null },
                         label = "CEP", placeholder = "00000-000", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         visualTransformation = PostalCodeVisualTransformation,
                         trailingIcon = if (postalCode.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { postalCode = "" })
                     if (lookup.state.loading || lookup.state.error != null) PostalLookupNotice(lookup)
+                    PostalReadOnlyInput(address?.street.orEmpty(), "Rua")
                     PostalCityFields(address)
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         Column(Modifier.weight(.65f)) {
                             PostalReadOnlyInput(address?.district.orEmpty(), "Bairro")
                         }
                         Column(Modifier.weight(.35f)) {
-                            QuimiaInput(value = number, onValueChange = { number = it; error = null }, label = "Nº",
+                            QuimiaInput(value = number, onValueChange = { number = it.filter(Char::isDigit).take(10); error = null }, label = "Nº",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 trailingIcon = if (number.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { number = "" })
                         }
                     }
@@ -193,7 +197,7 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Cancelar", textStyle = QuimiaTextStyles.medium16,
                     iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = close)
                 QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = if (saving) "Salvando…" else "Salvar", textStyle = QuimiaTextStyles.medium16,
-                    iconSize = 0, espacamento = 0, enabled = !saving && lookup.state.ready && number.isNotBlank(), onClick = {
+                    iconSize = 0, espacamento = 0, enabled = !saving && lookup.state.ready && number.toIntOrNull()?.let { it > 0 } == true && complement.length <= 255, onClick = {
                         val resolved = address ?: return@QuimiaButton
                         val value = NearbyAddress(postalCode, resolved.state, resolved.city, resolved.district, resolved.street, number.trim(), complement.trim())
                         error = value.validationError()
@@ -211,6 +215,8 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
             }
         }
     }
+}
+
 }
 
 @Composable

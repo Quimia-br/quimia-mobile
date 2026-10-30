@@ -115,8 +115,8 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                 aid.dataAtualizacaoFds?.let { Text("Atualização da FDS: $it", style = Typography.bodySmall, color = quimiaColorTokens().textSecondary) }
             }
         }, statusContent = {
-            state.notice?.let { QuimiaToast(modifier = Modifier.padding(16.dp), message = it, type = QuimiaToastType.Info,
-                onDismiss = { controller.notice(null) }) }
+            toast.QuimiaToastHost(modifier = Modifier.padding(16.dp), message = state.notice, type = QuimiaToastType.Info,
+                onDismiss = { controller.notice(null) })
 
             if (!screenLoading && state.loading && (if (state.substancesTab) state.substances.isEmpty() else state.products.isEmpty()))
                 CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando produtos…")

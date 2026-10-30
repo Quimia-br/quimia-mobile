@@ -25,10 +25,11 @@ fun Modifier.quimiaPress(pressed: Boolean, pressedScale: Float = QuimiaMotion.Pr
 
 /** Uses the same interaction for touch feedback and click semantics. No separate gesture detector. */
 fun Modifier.quimiaClickable(enabled: Boolean = true, role: Role? = null, onClickLabel: String? = null, onClick: () -> Unit): Modifier = composed {
+    val sound = feedback.LocalQuimiaSound.current
     val interactions = remember { MutableInteractionSource() }
     val pressed by interactions.collectIsPressedAsState()
     quimiaPress(pressed, QuimiaMotion.CardPressScale).clickable(enabled = enabled, role = role, onClickLabel = onClickLabel,
-        interactionSource = interactions, indication = LocalIndication.current, onClick = onClick)
+        interactionSource = interactions, indication = LocalIndication.current, onClick = { sound(feedback.QuimiaSound.Tap); onClick() })
 }
 
 /** Feedback for a newly selected favorite; existing selections never pulse on screen entry. */
@@ -71,7 +72,7 @@ fun Modifier.quimiaResize(): Modifier = composed {
 fun quimiaAnimatedColor(target: Color): Color = animateColorAsState(target,
     QuimiaMotion.tweenSpec(LocalQuimiaMotionEnabled.current), label = "selectionColor").value
 
-/** Body-only transition: content remains visible and navigation never belongs to this layer. */
+/** Dissolves only the screen content. The persistent navigation stays outside this layer. */
 fun Modifier.quimiaContent(key: Any? = Unit): Modifier = composed {
     val enabled = LocalQuimiaMotionEnabled.current && !LocalQuimiaSkeleton.current
     val progress = remember(key, enabled) { Animatable(if (enabled) 0f else 1f) }
@@ -79,8 +80,7 @@ fun Modifier.quimiaContent(key: Any? = Unit): Modifier = composed {
         if (enabled) progress.animateTo(1f, QuimiaMotion.tweenSpec(true, QuimiaMotion.Entrance)) else progress.snapTo(1f)
     }
     graphicsLayer {
-        alpha = .92f + .08f * progress.value
-        translationY = (1f - progress.value) * 8.dp.toPx()
+        alpha = progress.value
     }
 }
 

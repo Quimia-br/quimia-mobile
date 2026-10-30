@@ -190,8 +190,8 @@ internal fun RoomList(
                     if (query.isNotBlank()) SearchEmptyState(title = "Não foi possível encontrar\no cômodo") else {
                     QuimiaEmptyState(fillAvailableSpace = false, icon = Lucide.Bath,
                         title = "Seus cômodos ficam aqui",
-                        description = "Cadastre um cômodo e organize os produtos da sua estante.")
-                    QuimiaButton(text = "Cadastrar cômodo", iconSize = 0, espacamento = 0, onClick = onCreate)
+                        description = "Cadastre um cômodo e organize os produtos da sua estante.",
+                        buttonLabel = "Cadastrar cômodo", onButtonClick = onCreate)
                     }
                 } else LazyVerticalGrid(columns = GridCells.Fixed(columns),
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp,
