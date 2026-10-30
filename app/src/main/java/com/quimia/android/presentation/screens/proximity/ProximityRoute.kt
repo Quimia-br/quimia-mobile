@@ -233,7 +233,11 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                 Text(error.orEmpty(), color = tokens.foregroundPrimary)
                 TextButton(onClick = { load(reset = points.isEmpty()) }) { Text("Tentar novamente") }
             }
-            if (!loading && error == null && (if (showSaved) saved.isEmpty() else points.isEmpty())) item { Text(if (showSaved) "Nenhum ponto salvo." else "Nenhum ponto encontrado para este filtro.", color = tokens.foregroundPrimary) }
+            if (!loading && error == null && (if (showSaved) saved.isEmpty() else points.isEmpty())) item {
+                states.QuimiaEmptyState(icon = Lucide.MapPin,
+                    title = if (showSaved) "Nenhum ponto salvo" else "Nenhum ponto encontrado",
+                    description = if (showSaved) "Salve pontos no mapa para encontrá-los aqui." else "Experimente outra região ou filtro.")
+            }
             items(if (showSaved) saved else points, key = { it.id }) { point ->
                 Surface(shape = RoundedCornerShape(28.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

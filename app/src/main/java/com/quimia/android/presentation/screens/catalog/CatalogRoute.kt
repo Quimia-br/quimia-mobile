@@ -113,15 +113,13 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
         onSaveProducts = { ids -> scope.launch { controller.save(ids.mapNotNull(String::toIntOrNull)) } },
         onProductDetails = { product -> if (!screenLoading) scope.launch { controller.openDetail(product.id.toInt()) } },
         saving = state.savingIds.isNotEmpty(), canSave = canSave,
+        showEmpty = !screenLoading && !state.loading && !state.shelfLoading && state.error == null,
         saveMessage = state.notice, saveMessageSuccess = state.noticeSuccess, onDismissSaveMessage = controller::dismissNotice,
         onBarcode = { code -> scope.launch { controller.findBarcode(code) } },
         statusContent = {
             if (!screenLoading) {
             if (state.loading && state.products.isEmpty()) CatalogLoading("Carregando produtos…")
             state.error?.let { CatalogError(it) { scope.launch { controller.search() } } }
-            if (!state.loading && state.error == null && state.products.isEmpty()) {
-                Text("Nenhum produto encontrado", Modifier.padding(24.dp), color = quimiaColorTokens().textSecondary)
-            }
             if (state.shelfLoading && !state.loading && state.products.isEmpty()) com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Lines, "Conferindo os produtos da sua estante")
             state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
             state.saveError?.let { CatalogError(it) { scope.launch { controller.retrySave() } } }

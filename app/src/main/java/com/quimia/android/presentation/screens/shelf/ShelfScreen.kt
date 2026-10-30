@@ -2,6 +2,7 @@ package com.quimia.android.presentation.screens.shelf
 
 import motion.quimiaContent
 import motion.QuimiaExpand
+import com.quimia.android.presentation.components.SearchEmptyState
 import motion.quimiaClickable
 import motion.quimiaSelectionFeedback
 import androidx.compose.foundation.background
@@ -225,6 +226,9 @@ internal fun ShelfScreen(
             }
             item { statusContent?.invoke() }
             if (showEmpty && ((tab == ShelfTab.Products && products.isEmpty()) || (tab == ShelfTab.Substances && substances.isEmpty()))) item {
+                if (query.isNotBlank()) SearchEmptyState(
+                    title = if (tab == ShelfTab.Substances) "Não foi possível encontrar\na substância" else "Não foi possível encontrar\no produto",
+                ) else
                 QuimiaEmptyState(
                     modifier = Modifier.padding(top = 24.dp), fillAvailableSpace = false,
                     title = if (tab == ShelfTab.Substances) "Nenhuma substância informada" else "Nenhum produto encontrado",

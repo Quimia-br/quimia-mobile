@@ -2,6 +2,7 @@ package com.quimia.android.presentation.screens.rooms
 
 import motion.quimiaContent
 import motion.QuimiaExpand
+import com.quimia.android.presentation.components.SearchEmptyState
 import motion.quimiaClickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -186,10 +187,12 @@ internal fun RoomList(
             BoxWithConstraints(Modifier.weight(1f)) {
                 val columns = roomGridColumns(maxWidth.value)
                 if (showEmpty && visibleRooms.isEmpty()) Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (query.isNotBlank()) SearchEmptyState(title = "Não foi possível encontrar\no cômodo") else {
                     QuimiaEmptyState(fillAvailableSpace = false, icon = Lucide.Bath,
-                        title = if (query.isBlank()) "Seus cômodos ficam aqui" else "Nenhum cômodo encontrado",
-                        description = if (query.isBlank()) "Cadastre um cômodo e organize os produtos da sua estante." else "Experimente pesquisar outro nome.")
+                        title = "Seus cômodos ficam aqui",
+                        description = "Cadastre um cômodo e organize os produtos da sua estante.")
                     QuimiaButton(text = "Cadastrar cômodo", iconSize = 0, espacamento = 0, onClick = onCreate)
+                    }
                 } else LazyVerticalGrid(columns = GridCells.Fixed(columns),
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp,
                         bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + QuimiaFABSize + 40.dp),

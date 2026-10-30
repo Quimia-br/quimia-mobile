@@ -1,6 +1,7 @@
 package com.quimia.android.presentation.screens.catalog
 
 import motion.quimiaContent
+import com.quimia.android.presentation.components.SearchEmptyState
 import motion.QuimiaExpand
 import motion.QuimiaReveal
 import motion.QuimiaStateContent
@@ -130,6 +131,7 @@ fun CatalogScreen(
     footerContent: (@Composable () -> Unit)? = null,
     onBarcode: ((String) -> Unit)? = null,
     saveMessageSuccess: Boolean = true,
+    showEmpty: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
@@ -159,7 +161,7 @@ fun CatalogScreen(
     var selectionQuery by remember { mutableStateOf(query) }
     LaunchedEffect(query) { if (selectionQuery != query) { selectedIds = emptySet(); selectionQuery = query } }
     val bannerMessage = saveMessage ?: successMessage
-    val showBanner = bannerMessage != null || (bannerVisible && selectedIds.isEmpty())
+    val showBanner = bannerMessage != null || (bannerVisible && selectedIds.isEmpty() && filtered.isNotEmpty())
     fun save(ids: List<String>) {
         if (onSaveProducts != null) onSaveProducts(ids)
         else {
@@ -247,12 +249,8 @@ fun CatalogScreen(
                 )
             }
             statusContent?.invoke()
-            if (products == null && filtered.isEmpty()) {
-                Text(
-                    "Nenhum produto encontrado",
-                    modifier = Modifier.fillMaxWidth().padding(32.dp),
-                    style = Typography.bodyMedium, color = tokens.textSecondary,
-                )
+            if (showEmpty && filtered.isEmpty()) {
+                SearchEmptyState()
             } else {
                 BoxWithConstraints(Modifier.fillMaxWidth().padding(24.dp)) {
                     val gap = 16.dp
@@ -695,6 +693,12 @@ private fun CatalogSinglePreview() {
 @Composable
 private fun CatalogListPreview() {
     QuimiaTheme(darkTheme = false) { CatalogScreen(initialBannerVisible = false) }
+}
+
+@Preview(name = "Catálogo · pesquisa sem resultados", group = "Estados", widthDp = 360, heightDp = 805, showSystemUi = true)
+@Composable
+private fun CatalogSearchEmptyPreview() {
+    QuimiaTheme(darkTheme = false) { CatalogScreen(initialQuery = "Produto inexistente") }
 }
 
 @Preview(name = "Catálogo · produtos guardados · claro", widthDp = 360, heightDp = 805, showSystemUi = true)
