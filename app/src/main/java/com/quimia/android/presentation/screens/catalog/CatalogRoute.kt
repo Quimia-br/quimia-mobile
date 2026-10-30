@@ -44,7 +44,7 @@ internal fun ApiCatalogProduct.catalogProduct() = CatalogProduct(id.toString(), 
     when (tipo) {
         "limpeza_geral" -> "Limpeza geral"; "desinfetante" -> "Desinfetante"; "desincrustante" -> "Desincrustante"
         "desengraxante" -> "Desengraxante"; "alvejante" -> "Alvejante"; "aromatizante" -> "Aromatizante"
-        "outro" -> "Outro"; else -> tipo
+        "outro" -> "Outro"; else -> tipo?.takeIf { it.isNotBlank() } ?: "Tipo não informado"
     }, 0, 0, description = descricao?.takeIf { it.isNotBlank() } ?: "Descrição não informada.",
     barcode = codBarras.orEmpty(), photoUrl = catalogImageUrl(fotoUrl), brandLogoUrl = catalogImageUrl(marca?.logoUrl), remote = true,
     brandName = marca?.nome)

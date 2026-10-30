@@ -65,6 +65,24 @@ class CatalogRepositoryTest {
         assertEquals("/api/v1/estante/produtos", request.path)
         assertEquals("""{"produtoIds":[7,8,9]}""", request.body.readUtf8())
     }
+    @Test fun `API product with null type does not discard the catalog page or shelf`() = runBlocking {
+        val withoutType = """{"id":113,"nome":"Alvejante Profissional","tipo":null,"descricao":null,"codBarras":"0909934821609","fotoUrl":null,"marca":{"id":54,"nome":"Dias","logoUrl":null}}"""
+        response(page(items = "$product,$withoutType", total = 2))
+        val result = repository.products("u1", "", 0, 20)
+        assertEquals(listOf(7, 113), result.itens.map { it.id })
+        assertNull(result.itens.last().tipo)
+        response(page(items = "$product,$withoutType", size = 50, total = 2))
+        assertEquals(setOf(7, 113), repository.savedIds("u1"))
+    }
+
+    @Test fun `missing type also works in product details and barcode lookup`() = runBlocking {
+        val withoutType = """{"id":113,"nome":"Alvejante Profissional","tipo":null,"codBarras":"0909934821609"}"""
+        response(withoutType)
+        assertEquals(113, repository.detail("u1", 113).id)
+        response(withoutType)
+        assertEquals(113, repository.barcode("u1", "0909934821609").id)
+    }
+
     @Test fun `malformed success cannot confirm saving`() = runBlocking {
         response("""{"itens":[{"produtoId":7,"nome":"Produto real","status":"ok"}]}""")
         assertTrue(runCatching { repository.save("u1", listOf(7)) }.exceptionOrNull() is CatalogContractException)

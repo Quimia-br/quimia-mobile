@@ -128,6 +128,18 @@ class CatalogControllerTest {
         assertFalse(controller.state.value.detailOpen)
         assertNull(controller.state.value.detail)
     }
+    @Test fun `products without classification stay visible without inventing a product type`() = runBlocking {
+        val source = Source().apply { load = { _, _ -> page(listOf(first, second.copy(tipo = null))) } }
+        val controller = CatalogController(source, "user")
+        controller.search()
+        assertFalse(controller.state.value.loading)
+        assertNull(controller.state.value.error)
+        assertEquals(listOf(1, 2), controller.state.value.products.map { it.id })
+        assertEquals("Tipo não informado", controller.state.value.products.last().catalogProduct().category)
+        assertEquals("Tipo não informado", second.copy(tipo = " ").catalogProduct().category)
+        assertEquals("Outro", second.copy(tipo = "outro").catalogProduct().category)
+    }
+
     @Test fun `missing data is error and remote products never use sample photos`() = runBlocking {
         val source = Source().apply { load = { _, _ -> page(listOf(first.copy(nome = ""))) } }
         val controller = CatalogController(source, "user"); controller.search()
