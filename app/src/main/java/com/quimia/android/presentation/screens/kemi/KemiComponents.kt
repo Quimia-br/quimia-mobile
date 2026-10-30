@@ -1,4 +1,6 @@
 package com.quimia.android.presentation.screens.kemi
+import motion.quimiaEnter
+import motion.quimiaTypingDot
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -86,7 +88,7 @@ internal fun KemiWelcome(displayName: String?, modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun KemiMessageBubble(message: KemiMessage, now: Long, copied: Boolean = false, onCopy: () -> Unit) {
+internal fun KemiMessageBubble(message: KemiMessage, now: Long, copied: Boolean = false, animateEntry: Boolean = false, onCopy: () -> Unit) {
     val tokens = quimiaColorTokens()
     val user = message.role == KemiRole.User
     val foreground = if (user) LightTokens.foregroundPrimary else tokens.foregroundPrimary
@@ -94,7 +96,7 @@ internal fun KemiMessageBubble(message: KemiMessage, now: Long, copied: Boolean 
         Surface(color = if (user) tokens.primary else tokens.surfaceBase,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp,
                 bottomEnd = if (user) 4.dp else 32.dp, bottomStart = if (user) 32.dp else 4.dp),
-            modifier = Modifier.widthIn(max = 257.dp)) {
+            modifier = Modifier.widthIn(max = 257.dp).then(if (animateEntry) Modifier.quimiaEnter(key = message.id) else Modifier)) {
             Column(Modifier.padding(16.dp)) {
                 Text(message.text, style = QuimiaTextStyles.medium14, color = foreground)
                 Row(Modifier.align(Alignment.End), verticalAlignment = Alignment.CenterVertically,
@@ -117,9 +119,9 @@ internal fun KemiPendingBubble() {
     val tokens = quimiaColorTokens()
     Surface(color = tokens.surfaceBase,
         shape = RoundedCornerShape(32.dp, 32.dp, 32.dp, 4.dp),
-        modifier = Modifier.semantics { contentDescription = "Kemi está respondendo"; liveRegion = LiveRegionMode.Polite }) {
+        modifier = Modifier.quimiaEnter().semantics { contentDescription = "Kemi está respondendo"; liveRegion = LiveRegionMode.Polite }) {
         Row(Modifier.padding(24.dp), horizontalArrangement = Arrangement.spacedBy(3.976.dp)) {
-            repeat(3) { Box(Modifier.size(5.26.dp).background(tokens.onSecondary, CircleShape)) }
+            repeat(3) { index -> Box(Modifier.size(5.26.dp).quimiaTypingDot(index).background(tokens.onSecondary, CircleShape)) }
         }
     }
 }

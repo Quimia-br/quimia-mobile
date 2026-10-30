@@ -1,8 +1,8 @@
 package com.quimia.android.presentation.screens.home
+import motion.quimiaClickable
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -98,7 +98,7 @@ internal fun HomeApiHistoryCard(item: HomeMixture, onClick: () -> Unit) {
     QuimiaCard(title = "", showTitle = false, primaryActionLabel = null, secondaryActionLabel = null,
         layout = QuimiaCardLayout.Stacked, contentPadding = 24.dp,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp)
-            .clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button, onClickLabel = "Ver mistura salva", onClick = onClick)) {
+            .clip(RoundedCornerShape(24.dp)).quimiaClickable(role = Role.Button, onClickLabel = "Ver mistura salva", onClick = onClick)) {
         Text("${item.produtoA?.nome.orEmpty()} & ${item.produtoB?.nome.orEmpty()}", style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary)
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

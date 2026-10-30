@@ -148,7 +148,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = { onMenuItemSelected(0) })
         QuimiaSectionTitle(title = "Proximidade", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
             horizontalPadding = 32.dp, verticalPadding = 32.dp) {
-            QuimiaIconButton(icon = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+            QuimiaIconButton(icon = Lucide.ChevronDown, iconRotationDegrees = if (expanded) 180f else 0f,
                 modifier = Modifier.size(24.dp), containerColor = Color.Transparent, iconSize = 24.dp,
                 contentDescription = if (expanded) "Recolher endereço" else "Mostrar endereço", onClick = { expanded = !expanded })
         }

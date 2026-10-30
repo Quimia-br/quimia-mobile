@@ -1,6 +1,14 @@
 package com.quimia.android.presentation.screens.catalog
 
 import motion.quimiaContent
+import motion.QuimiaExpand
+import motion.QuimiaReveal
+import motion.QuimiaStateContent
+import motion.QuimiaMotion
+import motion.quimiaPress
+import motion.quimiaResize
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import theme.quimiaSkeleton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -197,7 +205,7 @@ fun CatalogScreen(
                 .verticalScroll(rememberScrollState()).quimiaContent()
         ) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-            if (showBanner) {
+            QuimiaExpand(showBanner) {
                 CatalogBanner(
                     message = bannerMessage ?: "Clique e segure nos\nprodutos para selecionar",
                     success = bannerMessage != null && saveMessageSuccess,
@@ -419,10 +427,14 @@ private fun ProductCard(
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
     val outline = resolveCatalogProductOutline(tokens, quimiaHighContrastEnabled(), selectionMode, selected)
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.collectIsPressedAsState()
     QuimiaCard(
         modifier = modifier
+            .quimiaPress(pressed, QuimiaMotion.CardPressScale)
             .clip(cardShape)
             .combinedClickable(
+                interactionSource = interactions, indication = androidx.compose.foundation.LocalIndication.current,
                 onClick = { if (selectionMode) onLongSelect() else onInfo() },
                 onLongClick = onLongSelect,
             ),
@@ -458,12 +470,13 @@ private fun ProductCard(
                 contentAlignment = Alignment.Center,
             ) {
                 CatalogImage(product, modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp))
-                if (saved) Box(
-                    Modifier.align(Alignment.TopEnd).padding(top = 12.dp).size(28.dp)
+                QuimiaReveal(saved, Modifier.align(Alignment.TopEnd).padding(top = 12.dp)) { Box(
+                    Modifier.size(28.dp)
                         .quimiaSkeleton(100.dp).clip(CircleShape).background(tokens.success),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Lucide.Check, contentDescription = null, modifier = Modifier.size(17.dp), tint = theme.LightTokens.foregroundPrimary)
+                }
                 }
                 QuimiaIconButton(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).size(34.dp),
@@ -489,9 +502,10 @@ private fun CatalogSaveAction(
     modifier: Modifier = Modifier, detail: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
-    if (saved) {
+    QuimiaStateContent(target = saved, modifier = modifier) { isSaved ->
+    if (isSaved) {
         Surface(
-            modifier = modifier.quimiaSkeleton(1000.dp).semantics { stateDescription = "Produto já adicionado à sua estante" },
+            modifier = Modifier.fillMaxSize().quimiaSkeleton(1000.dp).semantics { stateDescription = "Produto já adicionado à sua estante" },
             shape = CircleShape,
             color = tokens.success.copy(alpha = 0.12f).compositeOver(tokens.surfaceBase),
             border = androidx.compose.foundation.BorderStroke(1.dp, tokens.success.copy(alpha = if (quimiaHighContrastEnabled()) 1f else 0.4f)),
@@ -504,12 +518,13 @@ private fun CatalogSaveAction(
             }
         }
     } else QuimiaButton(
-        modifier = modifier,
+        modifier = Modifier.fillMaxSize(),
         text = if (saving) "Guardando…" else "Guardar", textStyle = Typography.bodyLarge,
         containerColor = if (detail) tokens.primary else tokens.secondary,
         textColor = if (detail) tokens.foregroundPrimary else tokens.foregroundDisabled,
-        iconSize = 0, espacamento = 0, enabled = canSave && !saving, onClick = onSave,
+        iconSize = 0, espacamento = 0, enabled = canSave && !saving && !saved, onClick = onSave,
     )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -621,6 +636,7 @@ internal fun CatalogDescriptionCard(description: String) {
     var canExpand by remember(description) { mutableStateOf(false) }
     QuimiaCard(
         title = "Descrição",
+        modifier = Modifier.quimiaResize(),
         primaryActionLabel = null,
         secondaryActionLabel = null,
         endIcon = null,
@@ -637,7 +653,7 @@ internal fun CatalogDescriptionCard(description: String) {
                 )
                 if (canExpand) {
                     QuimiaIconButton(
-                        icon = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                        icon = Lucide.ChevronDown, iconRotationDegrees = if (expanded) 180f else 0f,
                         size = QuimiaIconButtonSize.Small,
                         containerColor = tokens.surfaceBase,
                         contentDescription = if (expanded) "Recolher descrição" else "Expandir descrição completa",

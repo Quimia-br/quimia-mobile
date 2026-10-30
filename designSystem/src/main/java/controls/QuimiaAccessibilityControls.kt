@@ -1,6 +1,9 @@
 package controls
 
 import androidx.compose.animation.core.animateDpAsState
+import motion.QuimiaMotion
+import motion.LocalQuimiaMotionEnabled
+import motion.quimiaAnimatedColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,7 +27,9 @@ fun QuimiaSwitch(
     outline: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
-    val thumbOffset by animateDpAsState(if (checked) 26.323.dp else 0.dp, label = "QuimiaSwitchThumb")
+    val thumbOffset by animateDpAsState(if (checked) 26.323.dp else 0.dp,
+        animationSpec = QuimiaMotion.settleSpec(LocalQuimiaMotionEnabled.current), label = "QuimiaSwitchThumb")
+    val thumbColor = quimiaAnimatedColor(if (checked) tokens.primary else tokens.foregroundSubtle)
     Box(modifier.width(50.323.dp).height(48.dp)
         .semantics {
             if (contentDescription != null) this.contentDescription = contentDescription
@@ -34,7 +39,7 @@ fun QuimiaSwitch(
             indication = null, onValueChange = onCheckedChange), contentAlignment = Alignment.Center) {
         Box(Modifier.fillMaxWidth().height(24.dp).background(tokens.secondary, CircleShape)
             .then(if (outline || quimiaHighContrastEnabled()) Modifier.border(3.dp, tokens.borderFocus, CircleShape) else Modifier)) {
-            Box(Modifier.offset(x = thumbOffset).size(24.dp).background(if (checked) tokens.primary else tokens.foregroundSubtle, CircleShape))
+            Box(Modifier.offset(x = thumbOffset).size(24.dp).background(thumbColor, CircleShape))
         }
     }
 }

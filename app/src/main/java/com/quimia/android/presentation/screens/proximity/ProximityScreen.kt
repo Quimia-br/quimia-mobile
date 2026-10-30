@@ -1,4 +1,5 @@
 package com.quimia.android.presentation.screens.proximity
+import motion.QuimiaExpand
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,12 +82,12 @@ fun ProximityScreen(
             }
             QuimiaSectionTitle(title = "Proximidade", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
                 horizontalPadding = 32.dp, verticalPadding = 32.dp) {
-                QuimiaIconButton(icon = if (headerExpanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                QuimiaIconButton(icon = Lucide.ChevronDown, iconRotationDegrees = if (headerExpanded) 180f else 0f,
                     modifier = Modifier.size(24.dp), containerColor = Color.Transparent, iconSize = 24.dp,
                     contentDescription = if (headerExpanded) "Recolher endereço" else "Mostrar endereço",
                     onClick = { headerExpanded = !headerExpanded })
             }
-            if (headerExpanded) {
+            QuimiaExpand(headerExpanded) {
                 QuimiaListItem(
                     modifier = Modifier.padding(horizontal = 24.dp), title = "Casa", subtitle = address,
                     containerColor = tokens.surfaceBase, contentPadding = PaddingValues(24.dp), titleMaxLines = 1, subtitleMaxLines = 1,

@@ -1,6 +1,7 @@
 package shortCut
 
 import motion.quimiaPress
+import motion.QuimiaMotion
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.remember
@@ -90,7 +91,7 @@ fun QuimiaShortCut(
     Surface(
         interactionSource = motionInteractions,
         onClick = onClick,
-        modifier = componentModifier.quimiaPress(motionPressed).quimiaSkeleton(),
+        modifier = componentModifier.quimiaPress(motionPressed, QuimiaMotion.CardPressScale).quimiaSkeleton(),
         shape = shape,
         color = containerColor,
         border = quimiaContrastBorder(),

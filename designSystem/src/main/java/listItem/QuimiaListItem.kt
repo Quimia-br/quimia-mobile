@@ -1,6 +1,7 @@
 package listItem
 
 import theme.quimiaSkeleton
+import motion.quimiaClickable
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -138,7 +139,7 @@ fun QuimiaListItem(
             .clip(RoundedCornerShape(cornerRadius))
             .background(resolvedContainerColor)
             .quimiaContrastOutline(RoundedCornerShape(cornerRadius), quimiaHighContrastEnabled() && resolvedContainerColor != Color.Transparent)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.quimiaClickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(horizontalSpacing)

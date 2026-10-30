@@ -1,6 +1,7 @@
 package buttons
 
 import motion.quimiaPress
+import motion.quimiaRotation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.remember
@@ -60,6 +61,7 @@ fun QuimiaIconButton(
     contentDescription: String? = null,
     iconPainter: Painter? = null,
     contrastOutline: Boolean = size != QuimiaIconButtonSize.Icon,
+    iconRotationDegrees: Float = 0f,
 ) {
     val tokens = quimiaColorTokens()
 
@@ -79,10 +81,10 @@ fun QuimiaIconButton(
     ) {
         if (iconPainter != null) Icon(
             painter = iconPainter, contentDescription = contentDescription,
-            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize),
+            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize).quimiaRotation(iconRotationDegrees),
         ) else Icon(
             imageVector = icon, contentDescription = contentDescription,
-            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize),
+            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize).quimiaRotation(iconRotationDegrees),
         )
     }
 }

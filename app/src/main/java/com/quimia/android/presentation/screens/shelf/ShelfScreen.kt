@@ -1,10 +1,11 @@
 package com.quimia.android.presentation.screens.shelf
 
 import motion.quimiaContent
-import motion.quimiaResize
+import motion.QuimiaExpand
+import motion.quimiaClickable
+import motion.quimiaSelectionFeedback
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,7 +36,6 @@ import com.composables.icons.lucide.Bath
 import com.composables.icons.lucide.Atom
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronDown
-import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Menu
@@ -206,7 +206,7 @@ internal fun ShelfScreen(
                     )
                 }
             }
-            if (filtersVisible) item {
+            item(key = "shelf-filters") { QuimiaExpand(filtersVisible) {
                 Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         ShelfSort.entries.take(3).forEach { item ->
@@ -221,6 +221,7 @@ internal fun ShelfScreen(
                         else { sort = if (sort == ShelfSort.Oldest) null else ShelfSort.Oldest; onSortChange(sort) }
                     }
                 }
+            }
             }
             item { statusContent?.invoke() }
             if (showEmpty && ((tab == ShelfTab.Products && products.isEmpty()) || (tab == ShelfTab.Substances && substances.isEmpty()))) item {
@@ -331,9 +332,9 @@ private fun ShelfProductCard(
     QuimiaCard(
         title = product.name, showTitle = false, showDescription = false,
         primaryActionLabel = null, secondaryActionLabel = null,
-        modifier = modifier.quimiaResize(), contentPadding = 24.dp, sectionSpacing = 0.dp, endIcon = null,
+        modifier = modifier, contentPadding = 24.dp, sectionSpacing = 0.dp, endIcon = null,
     ) {
-        Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().quimiaClickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             if (product.remote) CatalogImage(product, modifier = Modifier.size(45.dp)) else QuimiaImage(
                 painter = painterResource(if (product.id.startsWith("squeeze")) R.drawable.shelf_mr_musculo_figma else product.detailImageRes), contentDescription = product.name,
                 modifier = Modifier.size(45.dp),
@@ -351,13 +352,13 @@ private fun ShelfProductCard(
                 )
             }
             QuimiaIconButton(
-                icon = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                icon = Lucide.ChevronDown, iconRotationDegrees = if (expanded) 180f else 0f,
                 size = QuimiaIconButtonSize.Medium, containerColor = tokens.surfaceBase,
                 iconColor = tokens.foregroundPrimary, contentDescription = if (expanded) "Recolher produto" else "Expandir produto",
                 onClick = onExpand,
             )
         }
-        if (expanded) {
+        QuimiaExpand(expanded) {
             Spacer(Modifier.height(32.dp))
             if (protectionContent != null) protectionContent()
             else QuimiaListItem(title = "Como se proteger?", subtitle = "Description")
@@ -378,18 +379,18 @@ private fun ShelfSubstanceCard(
     QuimiaCard(
         title = substance.name, showTitle = false, showDescription = false,
         primaryActionLabel = null, secondaryActionLabel = null, sectionSpacing = 0.dp, endIcon = null,
-        modifier = modifier.quimiaResize(), contentPadding = 24.dp,
+        modifier = modifier, contentPadding = 24.dp,
     ) {
-        Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().quimiaClickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             Text(substance.name, Modifier.weight(1f), style = ShelfBodyStyle, color = tokens.textPrimary)
             QuimiaIconButton(
-                icon = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                icon = Lucide.ChevronDown, iconRotationDegrees = if (expanded) 180f else 0f,
                 containerColor = tokens.surfaceBase, size = QuimiaIconButtonSize.Medium,
                 contentDescription = if (expanded) "Recolher substância" else "Expandir substância",
                 onClick = onExpand,
             )
         }
-        if (expanded) {
+        QuimiaExpand(expanded) {
             Spacer(Modifier.height(32.dp))
             CatalogDescriptionCard(substance.description)
             substance.cas?.takeIf { it.isNotBlank() }?.let { Text("CAS: $it", style = ShelfBodyStyle, color = tokens.textSecondary) }
@@ -414,7 +415,7 @@ private fun ShelfCardActions(
         val compact = maxWidth < 264.dp
         val icons: @Composable () -> Unit = {
             QuimiaIconButton(
-                modifier = if (favorite) Modifier.border(2.dp, ShelfFavoriteColor, CircleShape) else Modifier,
+                modifier = Modifier.quimiaSelectionFeedback(favorite).then(if (favorite) Modifier.border(2.dp, ShelfFavoriteColor, CircleShape) else Modifier),
                 icon = Lucide.Heart,
                 iconPainter = if (favorite) painterResource(R.drawable.figma_heart_filled) else null,
                 size = QuimiaIconButtonSize.Medium,

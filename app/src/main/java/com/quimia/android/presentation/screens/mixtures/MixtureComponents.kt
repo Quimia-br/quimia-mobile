@@ -1,4 +1,5 @@
 package com.quimia.android.presentation.screens.mixtures
+import motion.quimiaResize
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -94,7 +95,7 @@ internal fun MixtureSlot(ingredient: MixtureIngredient?, index: Int, enabled: Bo
     val shape = RoundedCornerShape(24.dp)
     if (ingredient == null) {
         Surface(onClick = { if (enabled) onChoose() }, enabled = enabled,
-            modifier = modifier.height(if (filledHeight) 351.dp else 285.dp), shape = shape,
+            modifier = modifier.quimiaResize().height(if (filledHeight) 351.dp else 285.dp), shape = shape,
             color = tokens.brandSecondary.copy(alpha = 0.10f),
             border = androidx.compose.foundation.BorderStroke(2.dp, tokens.brandSecondary)) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

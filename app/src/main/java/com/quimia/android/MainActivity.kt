@@ -258,7 +258,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     }
 
     when (authState) {
-        is AuthResult.Success -> {
+        is AuthResult.Success -> motion.QuimiaNavigationMotion(selectedMainTab) {
             Box(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().then(if (showKemi || showMixtures) Modifier.clearAndSetSemantics { } else Modifier)) {
                     if (showProfile) ProfileRoute(

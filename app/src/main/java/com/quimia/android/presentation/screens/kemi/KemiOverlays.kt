@@ -1,6 +1,8 @@
 package com.quimia.android.presentation.screens.kemi
 
 import android.view.WindowManager
+import motion.QuimiaMotion
+import motion.LocalQuimiaMotionEnabled
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -44,15 +46,17 @@ internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>,
     modifier: Modifier = Modifier) {
     if (panel == KemiPanel.Hidden) return
     val tokens = quimiaColorTokens()
+    val motionEnabled = LocalQuimiaMotionEnabled.current
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         val contentHeight = minOf(547.dp, (maxHeight - 84.dp).coerceAtLeast(240.dp))
         val density = LocalDensity.current
         val collapsedPx = with(density) { (contentHeight + 22.dp - 68.dp).toPx() }
-        val offset = remember { Animatable(if (panel == KemiPanel.Expanded) 0f else collapsedPx) }
+        val hiddenPx = with(density) { (contentHeight + 22.dp).toPx() }
+        val offset = remember { Animatable(if (motionEnabled) hiddenPx else if (panel == KemiPanel.Expanded) 0f else collapsedPx) }
         var dragging by remember { mutableStateOf(false) }
         var dragOffset by remember { mutableFloatStateOf(0f) }
-        LaunchedEffect(panel, collapsedPx) {
-            offset.animateTo(if (panel == KemiPanel.Expanded) 0f else collapsedPx)
+        LaunchedEffect(panel, collapsedPx, motionEnabled) {
+            offset.animateTo(if (panel == KemiPanel.Expanded) 0f else collapsedPx, QuimiaMotion.settleSpec(motionEnabled))
         }
         val dragState = rememberDraggableState { delta -> dragOffset = (dragOffset + delta).coerceIn(0f, collapsedPx) }
         Surface(modifier = Modifier.widthIn(max = 594.dp).fillMaxWidth()
@@ -70,7 +74,7 @@ internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>,
                             val expand = if (velocity < -300f) true else if (velocity > 300f) false else dragOffset < collapsedPx / 2
                             onPanelChange(if (expand) KemiPanel.Expanded else KemiPanel.Collapsed)
                             // Also settle when a gesture ends at the already-selected anchor.
-                            offset.animateTo(if (expand) 0f else collapsedPx)
+                            offset.animateTo(if (expand) 0f else collapsedPx, QuimiaMotion.settleSpec(motionEnabled))
                         })
                     .clickable(role = Role.Button, onClickLabel = "Expandir ou recolher histórico") {
                         onPanelChange(if (panel == KemiPanel.Expanded) KemiPanel.Collapsed else KemiPanel.Expanded)

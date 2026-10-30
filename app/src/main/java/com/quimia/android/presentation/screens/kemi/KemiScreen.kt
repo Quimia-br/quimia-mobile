@@ -134,14 +134,21 @@ fun KemiScreen(
                 KemiWelcome(displayName, Modifier.weight(1f).fillMaxWidth())
             } else {
                 val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+                var visibleConversation by remember { mutableStateOf<String?>(null) }
                 LaunchedEffect(state.current?.id, messages.size, state.pending) {
-                    listState.scrollToItem((messages.size + if (state.pending) 1 else 0) - 1)
+                    val last = (messages.size + if (state.pending) 1 else 0) - 1
+                    if (last >= 0) {
+                        if (visibleConversation != state.current?.id) listState.scrollToItem(last)
+                        else listState.animateScrollToItem(last)
+                        visibleConversation = state.current?.id
+                    }
                 }
                 LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp),
                     state = listState, contentPadding = PaddingValues(top = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Bottom)) {
                     items(messages, key = { it.id }) { message ->
-                        KemiMessageBubble(message, now, copied = message.id == copiedMessageId) {
+                        KemiMessageBubble(message, now, copied = message.id == copiedMessageId,
+                            animateEntry = message.id == messages.lastOrNull()?.id && !state.readOnly) {
                             clipboard.setText(AnnotatedString(message.text))
                             copiedMessageId = message.id
                             copied++
