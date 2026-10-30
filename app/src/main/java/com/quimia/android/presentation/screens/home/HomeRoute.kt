@@ -77,7 +77,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
             if (!state.historyLoading && state.historyError == null && state.history.isEmpty()) {
                 HomeEmptyHistory(onMixturesClick)
             }
-            state.history.forEachIndexed { index, item -> HomeApiHistoryCard(item, index) { selected = item } }
+            state.history.forEach { item -> HomeApiHistoryCard(item) { selected = item } }
             if (state.moreLoading) HomeLoading("Carregando mais misturas…")
             state.moreError?.let { HomeLoadError(it, "mais misturas") { scope.launch { controller.loadMore() } } }
             if (state.nextPage != null && !state.moreLoading && !state.historyLoading && state.historyError == null && state.moreError == null) {

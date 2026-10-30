@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.home
 
+import motion.quimiaContent
 import android.app.Activity
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.background
@@ -178,6 +179,7 @@ fun HomeScreen(
                     }
                 }
 
+                Column(Modifier.quimiaContent()) {
                 profileStatus?.invoke()
                 Spacer(modifier = Modifier.height(40.dp))
 
@@ -247,6 +249,7 @@ fun HomeScreen(
                     if (onMixClick != null) onMixClick() else unavailable("Misturar")
                 }
 
+                }
             }
 
             QuimiaMenuBarBackdrop(modifier = Modifier.align(Alignment.BottomCenter))

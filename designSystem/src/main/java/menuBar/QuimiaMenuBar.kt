@@ -1,8 +1,6 @@
 package menuBar
 
 import motion.quimiaAnimatedColor
-import motion.quimiaSelected
-import theme.quimiaSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -97,13 +95,13 @@ fun QuimiaMenuBar(
     val labels = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
     val interactionSource = remember { MutableInteractionSource() }
 
+    androidx.compose.runtime.CompositionLocalProvider(theme.LocalQuimiaSkeleton provides false) {
     Box(modifier = modifier.fillMaxWidth().height(if (fab == null) QuimiaMenuBarHeight else QuimiaMenuBarHeight + QuimiaFABSize + fabSpacing)) {
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(QuimiaMenuBarHeight)
-                .quimiaSkeleton(1000.dp)
                 .background(tokens.secondary, RoundedCornerShape(RadiusFull.dp))
                 .quimiaContrastOutline(RoundedCornerShape(RadiusFull.dp))
                 .padding(horizontal = 10.dp, vertical = 14.dp),
@@ -127,13 +125,13 @@ fun QuimiaMenuBar(
                             imageVector = element,
                             contentDescription = labels.getOrNull(index),
                             tint = iconColor,
-                            modifier = Modifier.size(30.dp).quimiaSelected(index == selectedIndex),
+                            modifier = Modifier.size(30.dp),
                         )
                         is Int -> Icon(
                             painter = painterResource(element),
                             contentDescription = labels.getOrNull(index),
                             tint = iconColor,
-                            modifier = Modifier.size(30.dp).quimiaSelected(index == selectedIndex),
+                            modifier = Modifier.size(30.dp),
                         )
                     }
                 }
@@ -144,6 +142,7 @@ fun QuimiaMenuBar(
                 modifier = Modifier.align(Alignment.TopEnd),
             ) { it() }
         }
+    }
     }
 }
 

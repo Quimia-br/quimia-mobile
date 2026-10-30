@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.proximity
 
+import motion.QuimiaExpand
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -151,7 +152,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                 modifier = Modifier.size(24.dp), containerColor = Color.Transparent, iconSize = 24.dp,
                 contentDescription = if (expanded) "Recolher endereço" else "Mostrar endereço", onClick = { expanded = !expanded })
         }
-        if (expanded) {
+        QuimiaExpand(visible = expanded) {
             QuimiaListItem(modifier = Modifier.padding(horizontal = 24.dp), title = "Casa",
                 subtitle = addressError ?: address?.let { listOfNotNull(it.rua, it.numero.toString(), it.bairro, it.estado).joinToString(" · ") }
                     ?: "Defina seu endereço de referência",

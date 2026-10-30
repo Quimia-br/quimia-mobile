@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.profile
 
+import motion.quimiaContent
 import theme.quimiaSkeleton
 import android.content.Intent
 import androidx.activity.compose.BackHandler
@@ -149,7 +150,7 @@ private fun ProfilePreferencesScreen(
     val tokens = quimiaColorTokens()
     val accessibleLayout = LocalDensity.current.fontScale > 1.1f || theme.quimiaDyslexicFontEnabled()
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
+        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).quimiaContent()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             QuimiaNav(showBackButton = true, showCloseButton = false, buttonColor = tokens.surfaceBase,
                 onBackClick = onBack)
@@ -256,7 +257,7 @@ private fun ProfileEditScreen(
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().imePadding()) {
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).quimiaContent()) {
                 Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
                 QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp), verticalArrangement = Arrangement.spacedBy(31.dp)) {

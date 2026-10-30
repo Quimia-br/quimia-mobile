@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.catalog
 
+import motion.quimiaContent
 import theme.quimiaSkeleton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -188,7 +189,7 @@ fun CatalogScreen(
         Column(
             modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth().fillMaxHeight()
                 .statusBarsPadding().navigationBarsPadding().padding(bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + 27.dp)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()).quimiaContent()
         ) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             if (showBanner) {
@@ -249,7 +250,7 @@ fun CatalogScreen(
                             if (index == 0 || index % 2 == 1 || layoutWidth < 240.dp) {
                                 if (index > 0 && layoutWidth >= 240.dp) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-                                        filtered.drop(index).take(2).forEachIndexed { pairIndex, paired ->
+                                        filtered.drop(index).take(2).forEach { paired ->
                                             ProductCard(
                                                 paired, paired.id in savedIds,
                                                 onSave = { save(listOf(paired.id)) },
@@ -258,7 +259,7 @@ fun CatalogScreen(
                                                 selected = paired.id in selectedIds,
                                                 selectionMode = selectedIds.isNotEmpty(),
                                                 onLongSelect = { select(paired.id) },
-                                                modifier = Modifier.width(pairWidth), compact = true, motionIndex = index + pairIndex,
+                                                modifier = Modifier.width(pairWidth), compact = true,
                                             )
                                         }
                                     }
@@ -271,7 +272,7 @@ fun CatalogScreen(
                                         selected = product.id in selectedIds,
                                         selectionMode = selectedIds.isNotEmpty(),
                                         onLongSelect = { select(product.id) },
-                                        modifier = Modifier.fillMaxWidth(), compact = false, motionIndex = index,
+                                        modifier = Modifier.fillMaxWidth(), compact = false,
                                     )
                                 }
                             }
@@ -409,7 +410,6 @@ private fun ProductCard(
     compact: Boolean,
     saving: Boolean = false,
     canSave: Boolean = true,
-    motionIndex: Int = 0,
 ) {
     val tokens = quimiaColorTokens()
     val cardShape = RoundedCornerShape(RadiusLarge.dp)
@@ -422,7 +422,6 @@ private fun ProductCard(
                 onLongClick = onLongSelect,
             ),
         title = product.name,
-        motionIndex = motionIndex,
         description = product.category,
         primaryActionLabel = null,
         secondaryActionLabel = null,
@@ -546,7 +545,7 @@ private fun CatalogProductDetailsContent(
                     iconColor = tokens.textPrimary,
                 )
             }
-            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).quimiaContent()) {
                 CatalogImage(product, detail = true, modifier = Modifier.fillMaxWidth().height(212.dp).padding(vertical = 16.dp))
                 CatalogDescriptionCard(description = product.description)
                 if (product.barcode.isNotBlank()) {

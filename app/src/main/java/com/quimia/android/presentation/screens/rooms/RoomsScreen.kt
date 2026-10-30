@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.rooms
 
+import motion.quimiaContent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -162,7 +163,7 @@ internal fun RoomList(
     }
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().height(240.dp).background(headerBackground))
-        Column(Modifier.align(Alignment.TopCenter).widthIn(max = 840.dp).fillMaxSize().statusBarsPadding()) {
+        Column(Modifier.align(Alignment.TopCenter).widthIn(max = 840.dp).fillMaxSize().statusBarsPadding().quimiaContent()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             QuimiaSectionTitle(title = "Cômodos", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
                 horizontalPadding = 32.dp, verticalPadding = 32.dp)

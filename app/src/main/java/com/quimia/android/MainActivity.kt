@@ -1,6 +1,6 @@
 package com.quimia.android
 
-import motion.quimiaEnter
+import motion.quimiaContent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -259,7 +259,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
 
     when (authState) {
         is AuthResult.Success -> {
-            Box(Modifier.fillMaxSize().quimiaEnter(key = currentScreen)) {
+            Box(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().then(if (showKemi || showMixtures) Modifier.clearAndSetSemantics { } else Modifier)) {
                     if (showProfile) ProfileRoute(
                         userId = sessionUid.orEmpty(), preferences = preferences,
@@ -374,7 +374,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         }
         else -> {
             authScreens.SaveableStateProvider(authDestination.name + if (authDestination == AuthDestination.GoogleDetails || authDestination == AuthDestination.GoogleAddress) googleDraft?.uid.orEmpty() else "") {
-                Box(Modifier.fillMaxSize().quimiaEnter(key = authDestination)) {
+                Box(Modifier.fillMaxSize().quimiaContent(key = authDestination)) {
                 when (authDestination) {
                     AuthDestination.Welcome -> LoginHomeScreen(onStart = { navigateAuth(AuthDestination.Login) })
                     AuthDestination.Login -> Login1Screen(

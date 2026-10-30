@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.rooms
 
+import motion.quimiaContent
 import theme.quimiaSkeleton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,7 +43,7 @@ internal fun RoomForm(
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
-            Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
+            Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).quimiaContent()) {
                 Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
                 QuimiaNav(showBackButton = true, onBackClick = onClose, onCloseClick = onClose)
                 Column(Modifier.fillMaxWidth().padding(24.dp)) {
@@ -129,7 +130,7 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
             Column(Modifier.fillMaxSize()) {
                 Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
                 QuimiaNav(showBackButton = true, onBackClick = onClose, onCloseClick = onClose)
-                LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                LazyColumn(modifier = Modifier.quimiaContent(), contentPadding = PaddingValues(bottom = 24.dp)) {
                     item {
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                             RoomShapeIcon(room.icon, 76.dp, critical = safety == RoomSafety.Critical, onBase = true, knownIcon = room.knownIcon)
@@ -212,7 +213,7 @@ internal fun RoomCreationResult(success: Boolean, name: String, onClose: () -> U
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             QuimiaNav(onCloseClick = onClose)
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).quimiaContent(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                     QuimiaFeedbackItem(isSuccess = success, iconError = Lucide.X, containerSize = 200.dp, iconSize = 41.311.dp)
                 }
