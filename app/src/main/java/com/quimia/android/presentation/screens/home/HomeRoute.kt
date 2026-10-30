@@ -61,7 +61,8 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     val photoUrl = homePhotoUrl(availableProfile?.fotoUrl)
     val photo = com.quimia.android.presentation.components.rememberProfilePhoto(userId, photoUrl)
     val avatarLoading = availableProfile == null || (photoUrl != null && (photo.state is AsyncImagePainter.State.Empty || photo.state is AsyncImagePainter.State.Loading))
-    val screenLoading = state.profileLoading || state.historyLoading || pointLoading
+    val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(
+        state.profileLoading || state.historyLoading || pointLoading, userId)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     HomeScreen(avatarLoading = avatarLoading, avatarInitials = availableProfile?.nome?.let(::profileInitials).orEmpty(),
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
@@ -73,6 +74,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
         }, historyContent = {
             if (screenLoading) HomeLoading("Carregando histórico…")
             else {
+            if (state.historyLoading && state.history.isEmpty()) HomeLoading("Carregando histórico…")
             state.historyError?.let { HomeLoadError(it, "o histórico", ::refresh) }
             if (!state.historyLoading && state.historyError == null && state.history.isEmpty()) {
                 HomeEmptyHistory(onMixturesClick)

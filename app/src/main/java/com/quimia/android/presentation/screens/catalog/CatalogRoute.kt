@@ -105,7 +105,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
     var rescan by rememberSaveable { mutableStateOf(false) }
     if (rescan) CatalogBarcodeScannerSheet(onDismiss = { rescan = false }, onBarcode = { code -> rescan = false; scope.launch { controller.findBarcode(code) } })
     val canSave = state.shelfReady && !state.shelfLoading
-    val screenLoading = state.loading || state.shelfLoading
+    val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading || state.shelfLoading, userId)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
         initialQuery = initialQuery, products = if (screenLoading) sampleCatalogProducts.take(5) else state.products.map { it.catalogProduct() },
@@ -117,11 +117,12 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
         onBarcode = { code -> scope.launch { controller.findBarcode(code) } },
         statusContent = {
             if (!screenLoading) {
+            if (state.loading && state.products.isEmpty()) CatalogLoading("Carregando produtos…")
             state.error?.let { CatalogError(it) { scope.launch { controller.search() } } }
             if (!state.loading && state.error == null && state.products.isEmpty()) {
                 Text("Nenhum produto encontrado", Modifier.padding(24.dp), color = quimiaColorTokens().textSecondary)
             }
-            if (state.shelfLoading && !state.loading) com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Lines, "Conferindo os produtos da sua estante")
+            if (state.shelfLoading && !state.loading && state.products.isEmpty()) com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Lines, "Conferindo os produtos da sua estante")
             state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
             state.saveError?.let { CatalogError(it) { scope.launch { controller.retrySave() } } }
             }

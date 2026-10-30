@@ -82,10 +82,11 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     LaunchedEffect(state.removedId) { if (state.removedId != null && removal?.id == state.removedId.toString()) removal = null }
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.notice(null) } }
     val products = state.products.map { it.catalogProduct() }
-    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides (state.loading || state.protection.values.any { it.loading })) {
+    val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading, userId)
+    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     ShelfScreen(favoriteIds = state.products.filter { it.favorito }.map { it.id.toString() }, savedIds = products.map { it.id }, onSavedIdsChange = {}, onMenuItemSelected = onMenuItemSelected,
         onAiClick = onAiClick, onAddProduct = onAddProduct, initialQuery = query, initialSubstancesTab = substancesTab,
-        apiProducts = if (state.loading) sampleCatalogProducts.take(4) else products, apiSubstances = if (state.loading) sampleShelfSubstances else state.substances.map { it.shelfSubstance() },
+        apiProducts = if (screenLoading) sampleCatalogProducts.take(4) else products, apiSubstances = if (screenLoading) sampleShelfSubstances else state.substances.map { it.shelfSubstance() },
         onQueryChange = { query = it; controller.setQuery(it) }, onTabChange = { substancesTab = it; controller.setTab(it) },
         onSortChange = { alphabetical = it == ShelfSort.Alphabetical; controller.setSort(it) },
         onApiFavorite = { id, favorite -> if (!favoriteBusy) { favoriteBusy = true; scope.launch {
@@ -102,7 +103,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         onSubstanceMixtures = { controller.notice("O histórico por substância ainda não está disponível.") },
         externalOverlay = action != null || removal != null || state.infoId != null || state.roomId != null || state.historyId != null,
         showEmpty = !state.loading && state.error == null,
-        protectionContent = if (state.loading) null else { id ->
+        protectionContent = if (screenLoading) null else { id ->
             LaunchedEffect(controller, id) { controller.protect(id.toInt()) }
             val protection = state.protection[id.toInt()]
             Text("Como se proteger?", style = Typography.titleMedium, color = quimiaColorTokens().textPrimary)
@@ -117,6 +118,8 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             state.notice?.let { QuimiaToast(modifier = Modifier.padding(16.dp), message = it, type = QuimiaToastType.Info,
                 onDismiss = { controller.notice(null) }) }
 
+            if (!screenLoading && state.loading && (if (state.substancesTab) state.substances.isEmpty() else state.products.isEmpty()))
+                CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando produtos…")
             state.error?.let { CatalogError(it) { reload++ } }
         }, footerContent = {
             if (state.moreLoading) CatalogLoading("Carregando mais produtos…")
