@@ -75,6 +75,7 @@ import kotlinx.coroutines.CancellationException
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        volumeControlStream = android.media.AudioManager.STREAM_MUSIC
         AnalyticsLogger.logEvent("APP_STARTED")
 
         WindowCompat.setDecorFitsSystemWindows(window, false)

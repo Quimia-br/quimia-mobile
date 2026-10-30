@@ -1,6 +1,7 @@
 package com.quimia.android.presentation.screens.profile
 
 import motion.quimiaContent
+import motion.quimiaResize
 import theme.quimiaSkeleton
 import android.content.Intent
 import androidx.activity.compose.BackHandler
@@ -237,6 +238,12 @@ private fun ProfilePreferencesScreen(
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("Efeitos sonoros", Modifier.weight(1f), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
+                if (preferences.soundEffects) {
+                    val sound = feedback.LocalQuimiaSound.current
+                    QuimiaIconButton(icon = Lucide.Volume2, containerColor = tokens.secondary,
+                        contentDescription = "Testar efeitos sonoros", clickSound = null,
+                        onClick = { sound(feedback.QuimiaSound.Success) })
+                }
                 QuimiaSwitch(checked = preferences.soundEffects,
                     onCheckedChange = { onPreferencesChange(preferences.copy(soundEffects = it)) },
                     contentDescription = "Ativar efeitos sonoros")
@@ -255,12 +262,12 @@ private fun ProfilePreferencesScreen(
 private fun ProfileTextCard(preferences: ProfilePreferences, onChange: (ProfilePreferences) -> Unit, modifier: Modifier) {
     val tokens = quimiaColorTokens()
     QuimiaCard(title = "Texto", description = "Acessibilidade", primaryActionLabel = null, secondaryActionLabel = null,
-        modifier = modifier.heightIn(min = if (quimiaHighContrastEnabled()) 168.dp else 158.dp), contentPadding = 24.dp,
+        modifier = modifier.quimiaResize().heightIn(min = if (quimiaHighContrastEnabled()) 168.dp else 158.dp), contentPadding = 24.dp,
         sectionSpacing = 10.dp, endIcon = null) {
         Text("Aa", style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary)
         Spacer(Modifier.height(10.dp))
         QuimiaTextSizeSlider(step = preferences.textSizeStep, onStepChange = { onChange(preferences.copy(textSizeStep = it)) },
-            modifier = Modifier.widthIn(max = 150.dp).fillMaxWidth())
+            modifier = Modifier.fillMaxWidth())
     }
 }
 

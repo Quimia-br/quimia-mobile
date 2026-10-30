@@ -23,4 +23,8 @@ object QuimiaMotion {
     /** Responsive settling, without a bouncing page or layout overshoot. */
     fun <T> settleSpec(enabled: Boolean): FiniteAnimationSpec<T> =
         if (enabled) spring(dampingRatio = 1f, stiffness = 650f) else snap()
+
+    /** A small elastic response for controls, never for the whole page. */
+    fun <T> controlSpec(enabled: Boolean): FiniteAnimationSpec<T> =
+        if (enabled) spring(dampingRatio = .82f, stiffness = 600f) else snap()
 }

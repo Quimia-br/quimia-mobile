@@ -19,7 +19,7 @@ import theme.LocalQuimiaSkeleton
 fun Modifier.quimiaPress(pressed: Boolean, pressedScale: Float = QuimiaMotion.PressScale): Modifier = composed {
     val enabled = LocalQuimiaMotionEnabled.current && !LocalQuimiaSkeleton.current
     val scale = animateFloatAsState(if (pressed && enabled) pressedScale else 1f,
-        if (pressed) QuimiaMotion.tweenSpec(enabled, QuimiaMotion.Quick) else QuimiaMotion.settleSpec(enabled), label = "press")
+        if (pressed) QuimiaMotion.tweenSpec(enabled, QuimiaMotion.Quick) else QuimiaMotion.controlSpec(enabled), label = "press")
     graphicsLayer { scaleX = scale.value; scaleY = scale.value }
 }
 

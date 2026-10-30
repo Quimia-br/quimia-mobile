@@ -1,20 +1,30 @@
 package toast
 
-import motion.quimiaEnter
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.dismiss
+import motion.QuimiaMotion
+import motion.quimiaResize
+import kotlin.math.abs
 import motion.LocalQuimiaMotionEnabled
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.tween
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import feedback.LocalQuimiaSound
 import feedback.QuimiaSound
 import theme.quimiaSkeleton
@@ -52,7 +62,6 @@ import shapeIcon.QuimiaShapeIcon
 import shapeIcon.QuimiaShapeIconSize
 import shapeIcon.QuimiaShapeIconTheme
 import theme.QuimiaTheme
-import theme.RadiusFull
 import theme.quimiaColorTokens
 import theme.quimiaContrastBorder
 
@@ -75,16 +84,49 @@ fun QuimiaToast(
     val tokens = quimiaColorTokens()
     val motion = LocalQuimiaMotionEnabled.current
     val sound = LocalQuimiaSound.current
-    var visible by remember(message) { mutableStateOf(true) }
+    val visibility = remember(message) { MutableTransitionState(!animateEntrance) }
     var closing by remember(message) { mutableStateOf(false) }
+    var dragging by remember(message) { mutableStateOf(false) }
+    var dragX by remember(message) { mutableFloatStateOf(0f) }
+    var swipeDirection by remember(message) { mutableFloatStateOf(0f) }
+    var widthPx by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current.density
+    val tracker = remember(message) { VelocityTracker() }
+    val canDismiss = onDismiss != null && type != QuimiaToastType.Loading && !theme.LocalQuimiaSkeleton.current
+    val targetX = if (closing && swipeDirection != 0f) swipeDirection * (widthPx + 32f * density) else dragX
+    val offsetX by key(message) { animateFloatAsState(targetX, animationSpec = when {
+        dragging -> snap()
+        closing -> QuimiaMotion.tweenSpec(motion, 220)
+        else -> QuimiaMotion.controlSpec(motion)
+    }, label = "toastSwipe") }
     val latestDismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(message) { visibility.targetState = true }
     LaunchedEffect(closing, message) {
-        if (closing) { if (motion) delay(180); latestDismiss?.invoke() }
+        if (closing) { if (motion) delay(220); latestDismiss?.invoke() }
     }
-    val dismiss: () -> Unit = {
-        if (!closing) {
-            closing = true; visible = false
+    val requestDismiss: () -> Unit = {
+        if (canDismiss && !closing) {
+            closing = true; dragging = false; visibility.targetState = false
         }
+    }
+    val swipeModifier = if (!canDismiss) Modifier else Modifier.pointerInput(message, canDismiss) {
+        detectHorizontalDragGestures(
+            onDragStart = { if (!closing) { tracker.resetTracking(); dragX = offsetX; dragging = true } },
+            onHorizontalDrag = { change, amount ->
+                if (!closing) {
+                    change.consume(); dragX += amount
+                    tracker.addPosition(change.uptimeMillis, Offset(dragX, 0f))
+                }
+            },
+            onDragEnd = {
+                dragging = false
+                if (!closing && shouldDismissToast(dragX, widthPx, tracker.calculateVelocity().x, density)) {
+                    swipeDirection = if (dragX >= 0f) 1f else -1f
+                    sound(QuimiaSound.Tap); requestDismiss()
+                } else if (!closing) dragX = 0f
+            },
+            onDragCancel = { if (!closing) { dragging = false; dragX = 0f } },
+        )
     }
     LaunchedEffect(message, type) {
         when (type) {
@@ -112,10 +154,18 @@ fun QuimiaToast(
         QuimiaToastType.Error -> Lucide.X
     }
 
-    AnimatedVisibility(visible = visible, modifier = modifier, enter = fadeIn(tween(if (motion) 180 else 0)),
-        exit = fadeOut(tween(if (motion) 180 else 0)) + slideOutVertically(tween(if (motion) 180 else 0)) { -it / 4 }) {
+    AnimatedVisibility(visibleState = visibility, modifier = modifier,
+        enter = fadeIn(QuimiaMotion.tweenSpec(motion, 180)) + slideInVertically(QuimiaMotion.tweenSpec(motion, 220)) { -it / 5 },
+        exit = fadeOut(QuimiaMotion.tweenSpec(motion, 180)) + shrinkVertically(QuimiaMotion.tweenSpec(motion, 220), shrinkTowards = Alignment.Top)) {
     Surface(
-        modifier = Modifier.widthIn(max = 600.dp).then(if (animateEntrance) Modifier.quimiaEnter() else Modifier).quimiaSkeleton(32.dp).fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+        modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth().quimiaResize().onSizeChanged { widthPx = it.width.toFloat() }
+            .then(swipeModifier).graphicsLayer {
+                translationX = offsetX
+                alpha = if (widthPx > 0f) (1f - abs(offsetX) / widthPx * .65f).coerceIn(.2f, 1f) else 1f
+            }.quimiaSkeleton(32.dp).semantics {
+                liveRegion = LiveRegionMode.Polite
+                if (canDismiss) dismiss { requestDismiss(); true }
+            },
         shape = RoundedCornerShape(32.dp),
         color = containerColor ?: tokens.surfaceBase,
         contentColor = tokens.textPrimary,
@@ -159,8 +209,8 @@ fun QuimiaToast(
                 }
             }
 
-            if (onDismiss != null) {
-                IconButton(onClick = dismiss, modifier = Modifier.size(40.dp)) {
+            if (canDismiss) {
+                IconButton(onClick = requestDismiss, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = Lucide.X,
                         contentDescription = "Fechar aviso",
@@ -179,16 +229,18 @@ fun QuimiaToast(
 @Composable
 fun QuimiaToastHost(message: String?, modifier: Modifier = Modifier, type: QuimiaToastType = QuimiaToastType.Info,
     description: String? = null, onDismiss: (() -> Unit)? = null) {
+    val visibility = remember { MutableTransitionState(false) }
     var retained by remember { mutableStateOf(message) }
     var retainedType by remember { mutableStateOf(type) }
     var retainedDescription by remember { mutableStateOf(description) }
     val motion = LocalQuimiaMotionEnabled.current
     LaunchedEffect(message, type, description) {
         if (message != null) { retained = message; retainedType = type; retainedDescription = description }
+        visibility.targetState = message != null
     }
-    AnimatedVisibility(visible = message != null, modifier = modifier,
-        enter = fadeIn(tween(if (motion) 220 else 0)) + slideInVertically(tween(if (motion) 220 else 0)) { -it / 4 },
-        exit = fadeOut(tween(if (motion) 180 else 0)) + slideOutVertically(tween(if (motion) 180 else 0)) { -it / 4 }) {
+    AnimatedVisibility(visibleState = visibility, modifier = modifier,
+        enter = fadeIn(QuimiaMotion.tweenSpec(motion, 180)) + slideInVertically(QuimiaMotion.tweenSpec(motion, 220)) { -it / 5 },
+        exit = fadeOut(QuimiaMotion.tweenSpec(motion, 180)) + shrinkVertically(QuimiaMotion.tweenSpec(motion, 220), shrinkTowards = Alignment.Top)) {
         retained?.let { QuimiaToast(it, type = retainedType, description = retainedDescription,
             onDismiss = onDismiss, animateEntrance = false) }
     }

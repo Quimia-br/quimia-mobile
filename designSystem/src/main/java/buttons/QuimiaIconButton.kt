@@ -62,6 +62,7 @@ fun QuimiaIconButton(
     iconPainter: Painter? = null,
     contrastOutline: Boolean = size != QuimiaIconButtonSize.Icon,
     iconRotationDegrees: Float = 0f,
+    clickSound: feedback.QuimiaSound? = feedback.QuimiaSound.Tap,
 ) {
     val tokens = quimiaColorTokens()
 
@@ -73,7 +74,7 @@ fun QuimiaIconButton(
     val motionPressed by motionInteractions.collectIsPressedAsState()
     IconButton(
         interactionSource = motionInteractions,
-        onClick = { sound(feedback.QuimiaSound.Tap); onClick() },
+        onClick = { clickSound?.let(sound); onClick() },
         modifier = modifier.quimiaPress(motionPressed).size(size.buttonSize).quimiaSkeleton(size.buttonSize).quimiaContrastOutline(CircleShape, contrastOutline && quimiaHighContrastEnabled()),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,

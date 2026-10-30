@@ -1,6 +1,17 @@
 package controls
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import theme.QuimiaTextStyles
+import feedback.LocalQuimiaSound
+import feedback.QuimiaSound
 import motion.QuimiaMotion
 import motion.LocalQuimiaMotionEnabled
 import motion.quimiaAnimatedColor
@@ -48,23 +59,60 @@ fun QuimiaSwitch(
 @Composable
 fun QuimiaTextSizeSlider(step: Int, onStepChange: (Int) -> Unit, modifier: Modifier = Modifier) {
     val tokens = quimiaColorTokens()
-    Column(modifier.height(29.dp)) {
-        Box(Modifier.fillMaxWidth().height(17.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxWidth().height(3.dp).background(tokens.borderPrimary, CircleShape))
-            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                Slider(value = step.coerceIn(0, 2).toFloat(), onValueChange = { onStepChange(it.roundToInt().coerceIn(0, 2)) },
-                    valueRange = 0f..2f, steps = 1,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 7.dp).height(17.dp).semantics {
-                        contentDescription = "Tamanho do texto"
-                        stateDescription = "${100 + step.coerceIn(0, 2) * 20} por cento"
-                    },
-                    thumb = { Box(Modifier.size(width = 28.dp, height = 17.dp).background(tokens.success, CircleShape)) },
-                    track = { Spacer(Modifier.fillMaxWidth().height(0.dp)) })
-            }
+    val motion = LocalQuimiaMotionEnabled.current
+    val sound = LocalQuimiaSound.current
+    val haptic = LocalHapticFeedback.current
+    var draft by remember { mutableFloatStateOf(step.coerceIn(0, 2).toFloat()) }
+    var scrubbing by remember { mutableStateOf(false) }
+    LaunchedEffect(step) { if (!scrubbing) draft = step.coerceIn(0, 2).toFloat() }
+    val position by animateFloatAsState(draft,
+        animationSpec = if (scrubbing) snap() else QuimiaMotion.controlSpec(motion), label = "textSizePosition")
+    val thumbWidth by animateDpAsState(if (scrubbing) 34.dp else 28.dp,
+        QuimiaMotion.controlSpec(motion), label = "textSizeThumbWidth")
+    val thumbHeight by animateDpAsState(if (scrubbing) 24.dp else 20.dp,
+        QuimiaMotion.controlSpec(motion), label = "textSizeThumbHeight")
+    fun commit(value: Float) {
+        if (!value.isFinite()) return
+        val selected = value.roundToInt().coerceIn(0, 2)
+        draft = selected.toFloat(); scrubbing = false
+        if (selected != step) {
+            onStepChange(selected)
+            sound(QuimiaSound.Selection)
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 19.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            repeat(3) { Box(Modifier.size(4.dp).background(tokens.borderPrimary, CircleShape)) }
+    }
+    Column(modifier.heightIn(min = 66.dp)) {
+        Slider(value = position, onValueChange = { draft = it; scrubbing = true },
+            onValueChangeFinished = { commit(draft) }, valueRange = 0f..2f, steps = 0,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).onPreviewKeyEvent { event ->
+                val direction = when (event.key) { Key.DirectionRight, Key.DirectionUp -> 1; Key.DirectionLeft, Key.DirectionDown -> -1; else -> 0 }
+                if (direction == 0) false else {
+                    if (event.type == KeyEventType.KeyDown) commit(step + direction.toFloat())
+                    true
+                }
+            }.clearAndSetSemantics {
+                contentDescription = "Tamanho do texto"
+                stateDescription = "${100 + draft.roundToInt().coerceIn(0, 2) * 20} por cento"
+                progressBarRangeInfo = ProgressBarRangeInfo(draft.coerceIn(0f, 2f), 0f..2f, 1)
+                setProgress { value -> commit(value); true }
+            },
+            thumb = {
+                Box(Modifier.size(thumbWidth, thumbHeight).background(tokens.success, CircleShape)
+                    .then(if (quimiaHighContrastEnabled()) Modifier.border(2.dp, tokens.foregroundPrimary, CircleShape) else Modifier))
+            }, track = {
+                Canvas(Modifier.fillMaxWidth().height(4.dp)) {
+                    val center = size.height / 2
+                    drawLine(tokens.borderPrimary, Offset(0f, center), Offset(size.width, center), 4.dp.toPx(), StrokeCap.Round)
+                    drawLine(tokens.success, Offset(0f, center), Offset(size.width * (position / 2).coerceIn(0f, 1f), center), 4.dp.toPx(), StrokeCap.Round)
+                    repeat(3) { index ->
+                        drawCircle(if (index <= draft.roundToInt()) tokens.success else tokens.foregroundSubtle,
+                            3.dp.toPx(), Offset(size.width * index / 2, center))
+                    }
+                }
+            })
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            repeat(3) { index -> Text("${100 + index * 20}%", style = QuimiaTextStyles.medium12,
+                color = if (index == draft.roundToInt()) tokens.foregroundPrimary else tokens.foregroundSubtle) }
         }
     }
 }
