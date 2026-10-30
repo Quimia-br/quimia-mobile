@@ -22,7 +22,8 @@ import java.util.UUID
 enum class MixtureIngredientKind { Product, Substance }
 
 @Serializable
-data class MixtureIngredient(val id: String, val name: String, val kind: MixtureIngredientKind) {
+data class MixtureIngredient(val id: String, val name: String, val kind: MixtureIngredientKind,
+    val photoUrl: String? = null, val remote: Boolean = false) {
     val key: String get() = "${kind.name}:$id"
 }
 
@@ -59,6 +60,7 @@ data class MixtureRequest(val id: String, val ingredients: List<MixtureIngredien
 sealed interface MixtureReply {
     data class Evaluated(val result: MixtureResult) : MixtureReply
     data class Failed(val kind: GenericErrorKind) : MixtureReply
+    data object Recorded : MixtureReply
 }
 typealias MixtureAnalyzer = suspend (MixtureRequest) -> MixtureReply
 

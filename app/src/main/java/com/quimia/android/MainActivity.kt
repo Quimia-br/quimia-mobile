@@ -61,8 +61,6 @@ import com.quimia.android.presentation.screens.kemi.KemiScreen
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.quimia.android.presentation.screens.auth.AuthDestination
 import com.quimia.android.presentation.screens.mixtures.*
-import com.quimia.android.presentation.screens.catalog.sampleCatalogProducts
-import com.quimia.android.presentation.screens.shelf.sampleShelfSubstances
 import kotlinx.coroutines.delay
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -192,7 +190,6 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val photo = photoPainter.takeUnless { photoUri == null || it.state is AsyncImagePainter.State.Error }
     var showProfile by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(false) }
     var homeSearch by rememberSaveable(sessionUid) { mutableStateOf("") }
-    var savedProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var roomToOpenId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
@@ -206,17 +203,10 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var showMixtures by rememberSaveable(sessionUid) { mutableStateOf(false) }
     var openMixtureHistory by rememberSaveable(sessionUid) { mutableStateOf(false) }
     var mixtureHistoryFilter by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
-    var demoMixtureIndex by rememberSaveable(sessionUid) { mutableStateOf(0) }
-    val mixtureStore = remember(sessionUid, sessionEmail) { MixtureHistoryStore(context, sessionUid.orEmpty(), sessionEmail) }
-    val mixtures = rememberSaveable(sessionUid, sessionEmail, saver = MixtureControllerSaver) {
-        MixtureController(MixtureState(history = mixtureStore.load()))
-    }
-    LaunchedEffect(mixtures.state.history) { if (sessionUid != null) mixtureStore.save(mixtures.state.history) }
+    var initialMixtureProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
+    var homeMixtureRevision by rememberSaveable(sessionUid) { mutableStateOf(0) }
     fun openMixtures(id: String? = null, history: Boolean = false) {
-        mixtures.cancel(); mixtures.closeResult()
-        val ingredient = sampleCatalogProducts.firstOrNull { it.id == id }?.mixtureIngredient()
-            ?: sampleShelfSubstances.firstOrNull { it.id == id }?.let { MixtureIngredient(it.id, it.name, MixtureIngredientKind.Substance) }
-        if (ingredient != null && !history) mixtures.startWith(ingredient)
+        initialMixtureProductId = if (history) null else id
         mixtureHistoryFilter = if (history) id else null
         openMixtureHistory = history
         showMixtures = true
@@ -292,7 +282,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         2 -> ShelfRoute(
                             userId = sessionUid.orEmpty(),
                             onMenuItemSelected = onMainTabSelected,
-                            onAddProduct = { selectedMainTab = 1 },
+                            onAddProduct = { selectedMainTab = 1 }, onMixProduct = { openMixtures(it) },
                             onAiClick = { showKemi = true },
                             onCreateRoom = { roomToOpenId = null; roomDraftProductId = it; selectedMainTab = 4 },
                             onOpenRoom = { roomDraftProductId = null; roomToOpenId = it; selectedMainTab = 4 },
@@ -325,7 +315,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             onMenuItemSelected = onMainTabSelected,
                             onFindDropOffClick = { selectedMainTab = 3 },
                             onShelfClick = { selectedMainTab = 2 },
-                            onMixturesClick = { openMixtures() }, onAiClick = { showKemi = true },
+                            onMixturesClick = { openMixtures() }, onAiClick = { showKemi = true }, mixtureRevision = homeMixtureRevision,
                             onProfileLoaded = { profile ->
                                 displayName = profile.nome; profileEmail = profile.email; photoUri = profile.fotoUrl
                                 birthDate = com.quimia.android.presentation.auth.displayBirthDate(profile.dataNasc)
@@ -338,18 +328,14 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         )
                     }
                 }
-                if (showMixtures) MixturesScreen(
-                    controller = mixtures, savedProductIds = savedProductIds,
-                    onClose = { showMixtures = false },
-                    onOpenCatalog = { showMixtures = false; selectedMainTab = 1 },
+                if (showMixtures) MixturesRoute(
+                    userId = sessionUid.orEmpty(), initialProductId = initialMixtureProductId,
                     initialHistory = openMixtureHistory, historyProductId = mixtureHistoryFilter,
-                    demonstration = true,
-                    analyzer = { request ->
-                        delay(800)
-                        val scenarios = listOf(MixtureRisk.Dangerous, MixtureRisk.Safe, MixtureRisk.Caution, MixtureRisk.Extreme)
-                        val risk = scenarios[demoMixtureIndex.mod(scenarios.size)]
-                        demoMixtureIndex = (demoMixtureIndex + 1).mod(scenarios.size)
-                        MixtureReply.Evaluated(MixtureResult(request.id, request.ingredients, risk, System.currentTimeMillis(), demonstration = true))
+                    onClose = { showMixtures = false }, onRecorded = { homeMixtureRevision++ },
+                    onOpenCatalog = { showMixtures = false; selectedMainTab = 1 },
+                    onSessionExpired = {
+                        showMixtures = false; showProfile = false; selectedMainTab = 0
+                        navigateAuth(AuthDestination.Login); authViewModel.logout()
                     },
                 )
                 if (showKemi) {

@@ -37,13 +37,19 @@ import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
 import theme.quimiaContrastBorder
 
-internal fun CatalogProduct.mixtureIngredient() = MixtureIngredient(id, name, MixtureIngredientKind.Product)
+internal fun CatalogProduct.mixtureIngredient() = MixtureIngredient(id, name, MixtureIngredientKind.Product, photoUrl, remote)
 
 @Composable
 internal fun MixtureIngredientImage(
     ingredient: MixtureIngredient, modifier: Modifier = Modifier,
     history: Boolean = false, unavailable: Boolean = false, selectedSlot: Boolean = false,
 ) {
+    if (ingredient.remote) {
+        com.quimia.android.presentation.screens.catalog.CatalogImage(
+            CatalogProduct(ingredient.id, ingredient.name, "", 0, 0, remote = true, photoUrl = ingredient.photoUrl),
+            modifier = modifier, detail = true, grayscale = unavailable)
+        return
+    }
     if (ingredient.kind == MixtureIngredientKind.Substance) {
         val tokens = quimiaColorTokens()
         if (history) {

@@ -25,7 +25,7 @@ import theme.quimiaColorTokens
 @Composable
 internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick: () -> Unit,
     onFindDropOffClick: () -> Unit, onMixturesClick: () -> Unit, onShelfClick: () -> Unit,
-    onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit = {}, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
+    onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit = {}, mixtureRevision: Int = 0, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
     val context = LocalContext.current.applicationContext
     val auth = remember(context) { AuthRepositoryProvider.get(context) }
     val session by auth.session.collectAsStateWithLifecycle()
@@ -65,6 +65,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
         if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) refresh()
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
+    LaunchedEffect(mixtureRevision) { if (mixtureRevision > 0) controller.refresh() }
     LaunchedEffect(state.profile) { state.profile?.let(onProfileLoaded) }
     LaunchedEffect(state.profileError, state.historyError, state.moreError) {
         if (listOf(state.profileError, state.historyError, state.moreError).contains(GenericErrorKind.SessionExpired)) onSessionExpired()

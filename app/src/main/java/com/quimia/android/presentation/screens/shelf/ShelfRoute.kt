@@ -52,7 +52,7 @@ internal fun firstAidText(aid: ShelfFirstAid): String {
 @Composable
 internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit,
     onAddProduct: () -> Unit, onSessionExpired: () -> Unit,
-    onCreateRoom: (String) -> Unit = {}, onOpenRoom: (String) -> Unit = {}) {
+    onCreateRoom: (String) -> Unit = {}, onOpenRoom: (String) -> Unit = {}, onMixProduct: (String) -> Unit = {}) {
     val context = LocalContext.current.applicationContext
     var query by rememberSaveable(userId) { mutableStateOf("") }
     var substancesTab by rememberSaveable(userId) { mutableStateOf(false) }
@@ -98,7 +98,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         onUnavailable = { controller.notice(it) }, onApiActions = { action = it },
         onApiRoom = { scope.launch { controller.showRoom(it.toInt()) } },
         onApiExpand = { if (!state.loading) scope.launch { controller.protect(it.toInt()) } },
-        onMixProduct = { controller.notice("Misturas indisponíveis no momento.") },
+        onMixProduct = onMixProduct,
         onSubstanceMix = { controller.notice("A mistura direta de substâncias ainda não está disponível.") },
         onSubstanceMixtures = { controller.notice("O histórico por substância ainda não está disponível.") },
         externalOverlay = action != null || removal != null || state.infoId != null || state.roomId != null || state.historyId != null,
