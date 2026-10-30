@@ -70,7 +70,7 @@ internal fun CatalogImage(product: CatalogProduct, modifier: Modifier = Modifier
         if (url != null && !failed) AsyncImage(model = url, contentDescription = if (logo) null else product.name,
             colorFilter = if (grayscale) androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }) else null,
             contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(), onLoading = { imageLoading = true }, onSuccess = { imageLoading = false }, onError = { failed = true; imageLoading = false })
-        if (url != null && imageLoading && !failed) com.quimia.android.presentation.components.SkeletonBlock(Modifier.fillMaxSize(), if (logo) 100 else 12)
+        if (!detail && url != null && imageLoading && !failed) com.quimia.android.presentation.components.SkeletonBlock(Modifier.fillMaxSize(), if (logo) 100 else 12)
         if (url == null || failed) Icon(Lucide.ImageOff, if (logo) "Marca sem imagem" else "Produto sem imagem disponível",
             modifier = Modifier.size(if (logo) 22.dp else 36.dp), tint = tokens.textSecondary)
     }
@@ -141,6 +141,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
                 onSave = { scope.launch { controller.save(listOf(product.id)) } },
                 saving = state.savingIds.isNotEmpty(), canSave = canSave,
                 statusContent = {
+                    state.detailError?.let { CatalogError(it) { scope.launch { controller.retryDetail() } } }
                     state.notice?.let { Text(it, style = Typography.bodyMedium, color = quimiaColorTokens().textPrimary) }
                     state.saveError?.let { CatalogError(it) { scope.launch { controller.save(listOf(product.id)) } } }
                     state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }

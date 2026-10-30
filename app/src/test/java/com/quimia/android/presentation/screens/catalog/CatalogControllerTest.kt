@@ -96,6 +96,38 @@ class CatalogControllerTest {
         controller.search(); CatalogController(source, "user-b").search()
         assertEquals(listOf("user-a", "user-b"), source.users)
     }
+    @Test fun `opening a listed product immediately shows its information while refreshing in the same sheet`() = runBlocking {
+        val listed = first.copy(descricao = "Descrição do produto", codBarras = "7891234567895")
+        val entered = CompletableDeferred<Unit>(); val answer = CompletableDeferred<ApiCatalogProduct>()
+        val source = Source().apply {
+            load = { _, _ -> page(listOf(listed)) }
+            detailLoad = { entered.complete(Unit); answer.await() }
+        }
+        val controller = CatalogController(source, "user"); controller.search()
+        val job = launch { controller.openDetail(1) }; entered.await()
+        assertTrue(controller.state.value.detailOpen)
+        assertEquals(listed, controller.state.value.detail)
+        val updated = listed.copy(descricao = "Descrição atualizada")
+        answer.complete(updated); job.join()
+        assertTrue(controller.state.value.detailOpen)
+        assertEquals(updated, controller.state.value.detail)
+        assertFalse(controller.state.value.detailLoading)
+    }
+    @Test fun `detail refresh failure and retry keep the displayed product instead of a loading sheet`() = runBlocking {
+        val source = Source().apply { detailLoad = { throw IOException() } }
+        val controller = CatalogController(source, "user"); controller.search(); controller.openDetail(1)
+        assertTrue(controller.state.value.detailOpen)
+        assertEquals(first, controller.state.value.detail)
+        assertNotNull(controller.state.value.detailError)
+        val entered = CompletableDeferred<Unit>(); val answer = CompletableDeferred<ApiCatalogProduct>()
+        source.detailLoad = { entered.complete(Unit); answer.await() }
+        val job = launch { controller.retryDetail() }; entered.await()
+        assertEquals(first, controller.state.value.detail)
+        assertNull(controller.state.value.detailError)
+        controller.closeDetail(); answer.complete(first); job.join()
+        assertFalse(controller.state.value.detailOpen)
+        assertNull(controller.state.value.detail)
+    }
     @Test fun `missing data is error and remote products never use sample photos`() = runBlocking {
         val source = Source().apply { load = { _, _ -> page(listOf(first.copy(nome = ""))) } }
         val controller = CatalogController(source, "user"); controller.search()
