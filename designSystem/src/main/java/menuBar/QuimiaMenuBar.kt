@@ -1,5 +1,6 @@
 package menuBar
 
+import motion.quimiaAnimatedColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -94,6 +95,7 @@ fun QuimiaMenuBar(
     val labels = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
     val interactionSource = remember { MutableInteractionSource() }
 
+    androidx.compose.runtime.CompositionLocalProvider(theme.LocalQuimiaSkeleton provides false) {
     Box(modifier = modifier.fillMaxWidth().height(if (fab == null) QuimiaMenuBarHeight else QuimiaMenuBarHeight + QuimiaFABSize + fabSpacing)) {
         Row(
             modifier = Modifier
@@ -112,7 +114,7 @@ fun QuimiaMenuBar(
                         .weight(1f)
                         .height(56.dp)
                         .clip(CircleShape)
-                        .background(if (index == selectedIndex) tokens.white else tokens.secondary)
+                        .background(quimiaAnimatedColor(if (index == selectedIndex) tokens.white else tokens.secondary))
                         .clickable(interactionSource = interactionSource, indication = null) {
                             onItemSelected(index)
                         },
@@ -140,6 +142,7 @@ fun QuimiaMenuBar(
                 modifier = Modifier.align(Alignment.TopEnd),
             ) { it() }
         }
+    }
     }
 }
 

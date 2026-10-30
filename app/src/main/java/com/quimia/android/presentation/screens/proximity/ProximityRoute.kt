@@ -1,8 +1,19 @@
 package com.quimia.android.presentation.screens.proximity
 
+import motion.QuimiaExpand
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import buttons.QuimiaIconButton
+import buttons.QuimiaIconButtonSize
+import com.composables.icons.lucide.*
+import listItem.QuimiaListItem
+import title.QuimiaSectionTitle
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -55,7 +66,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     var homeAttempt by remember { mutableIntStateOf(0) }
     val tokens = quimiaColorTokens()
     var type by rememberSaveable(userId) { mutableStateOf("descarte") }
-    var registered by rememberSaveable(userId) { mutableStateOf(false) }
+    val registered = false
     var expanded by rememberSaveable { mutableStateOf(false) }
     var address by remember(userId) { mutableStateOf<AuthAddress?>(null) }
     var addressError by remember { mutableStateOf<String?>(null) }
@@ -133,26 +144,23 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         catch (_: android.content.ActivityNotFoundException) { notice = "Nenhum aplicativo de mapas disponível neste aparelho." }
     }
     Column(Modifier.fillMaxSize().background(tokens.surfaceBackground).statusBarsPadding()) {
+        Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
         QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = { onMenuItemSelected(0) })
-        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Proximidade", Modifier.weight(1f), style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
-            TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Recolher" else "Endereço", color = tokens.foregroundPrimary) }
+        QuimiaSectionTitle(title = "Proximidade", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
+            horizontalPadding = 32.dp, verticalPadding = 32.dp) {
+            QuimiaIconButton(icon = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                modifier = Modifier.size(24.dp), containerColor = Color.Transparent, iconSize = 24.dp,
+                contentDescription = if (expanded) "Recolher endereço" else "Mostrar endereço", onClick = { expanded = !expanded })
         }
-        if (expanded) Surface(Modifier.padding(horizontal = 24.dp, vertical = 12.dp).fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Casa", style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
-                Text(addressError ?: address?.let { listOfNotNull(it.rua, it.numero.toString(), it.bairro, it.estado).joinToString(" · ") }
-                    ?: "Cadastre um endereço de referência", style = QuimiaTextStyles.medium14, color = tokens.foregroundSubtle)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TextButton(onClick = { editing = true }) { Text("Alterar endereço", color = tokens.foregroundPrimary) }
-                    if (addressError != null) TextButton(onClick = { scope.launch { loadAddress() } }) { Text("Tentar novamente") }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = registered, enabled = address != null && addressError == null, onCheckedChange = { registered = it })
-                    Text("Filtrar pelo endereço cadastrado", style = QuimiaTextStyles.medium14, color = tokens.foregroundPrimary)
-                }
-            }
+        QuimiaExpand(visible = expanded) {
+            QuimiaListItem(modifier = Modifier.padding(horizontal = 24.dp), title = "Casa",
+                subtitle = addressError ?: address?.let { listOfNotNull(it.rua, it.numero.toString(), it.bairro, it.estado).joinToString(" · ") }
+                    ?: "Defina seu endereço de referência",
+                titleMaxLines = 1, subtitleMaxLines = 1, containerColor = tokens.surfaceBase, contentPadding = PaddingValues(24.dp),
+                trailingContent = { QuimiaIconButton(icon = Lucide.Pencil, size = QuimiaIconButtonSize.Medium,
+                    containerColor = tokens.secondary, contentDescription = "Alterar endereço", onClick = { editing = true }) },
+                onClick = { editing = true })
+            Spacer(Modifier.height(16.dp))
         }
         Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp))) {
             ProximityMap(points.mapNotNull { point ->
@@ -160,7 +168,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                     ?.takeIf { it.isValid() } ?: return@mapNotNull null
                 NearbyPoint(point.id, point.nome, point.address, if (point.tipo == "descarte") NearbyCategory.Collection else NearbyCategory.Shopping,
                     "", 0f, 0f, coordinate)
-            }, selectedPoint, { selectedPoint = it; showSaved = false; listVisible = true }, bottomContentInset = 150.dp,
+            }, selectedPoint, { selectedPoint = it; showSaved = false; listVisible = false }, bottomContentInset = if (selectedPoint == null) 91.dp else 265.dp,
                 homeCoordinate = home, homeLabel = address?.let { "${it.rua.orEmpty()}, ${it.numero} · ${it.bairro}" }.orEmpty(),
                 onHomeUnavailable = {
                     when {
@@ -170,26 +178,55 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                         else -> { notice = homeError; homeAttempt++ }
                     }
                 })
-            Row(Modifier.align(Alignment.TopCenter).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("descarte" to "Descarte", "compra" to "Compra").forEach { (value, label) ->
                     QuimiaChip(label = label, selected = type == value, centerContent = true, modifier = Modifier.weight(1f), onClick = { type = value })
                 }
             }
-            Surface(Modifier.align(Alignment.BottomCenter).padding(16.dp).fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp), color = tokens.surfaceBackground, border = quimiaContrastBorder()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Pontos disponíveis no mapa e na lista.", style = QuimiaTextStyles.medium14, color = tokens.foregroundPrimary)
-                    QuimiaButton(text = if (loading) "Carregando pontos…" else if (error != null) "Ver erro e tentar novamente" else "Ver pontos (${total ?: 0})",
-                        textColor = LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0,
-                        modifier = Modifier.fillMaxWidth(), onClick = { showSaved = false; listVisible = true })
-                    TextButton(onClick = { showSaved = true; listVisible = true; scope.launch { loadSaved() } }) { Text("Pontos salvos", color = tokens.foregroundPrimary) }
+            if (error != null) TextButton(modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
+                onClick = { showSaved = false; listVisible = true }) { Text("Não foi possível carregar os pontos. Tentar novamente", color = tokens.foregroundPrimary) }
+            points.find { it.id == selectedPoint }?.takeIf { it.latitude != null && it.longitude != null }?.let { point ->
+                NearbyPointCard(point = NearbyPoint(point.id, point.nome, point.address,
+                    if (point.tipo == "descarte") NearbyCategory.Collection else NearbyCategory.Shopping, "", 0f, 0f,
+                    NearbyCoordinate(requireNotNull(point.latitude), requireNotNull(point.longitude))),
+                    saved = saved.any { it.id == point.id },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(start = 17.dp, end = 17.dp, bottom = 91.dp),
+                    onSave = {
+                        if (savedReady && !savingPoint) {
+                            savingPoint = true
+                            scope.launch {
+                                try {
+                                    if (saved.any { it.id == point.id }) repository.removePoint(userId, point.id)
+                                    else repository.savePoint(userId, point.id)
+                                    loadSaved()
+                                    notice = if (saved.any { it.id == point.id }) "Ponto salvo com sucesso" else "Ponto removido dos salvos"
+                                } catch (cancelled: CancellationException) { throw cancelled }
+                                catch (failure: Exception) { notice = authErrorMessage(failure) }
+                                finally { savingPoint = false }
+                            }
+                        }
+                    })
+            }
+            Surface(Modifier.align(Alignment.BottomCenter).padding(horizontal = 17.dp).fillMaxWidth().height(75.dp)
+                .pointerInput(Unit) { detectVerticalDragGestures { change, amount -> change.consume(); if (amount < -8f) { showSaved = true; listVisible = true; scope.launch { loadSaved() } } } }
+                .clickable(onClickLabel = "Abrir pontos salvos") { showSaved = true; listVisible = true; scope.launch { loadSaved() } },
+                shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp), color = tokens.secondary, border = quimiaContrastBorder()) {
+                Box(contentAlignment = Alignment.TopCenter) {
+                    Box(Modifier.padding(top = 44.dp).width(90.dp).height(3.dp).background(tokens.white, androidx.compose.foundation.shape.CircleShape))
                 }
             }
+
         }
     }
-    if (listVisible && error == null) ModalBottomSheet(onDismissRequest = { listVisible = false },
+    if (listVisible && (error == null || showSaved)) ModalBottomSheet(onDismissRequest = { listVisible = false },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = tokens.surfaceBackground) {
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 600.dp), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = { showSaved = false }) { Text("Todos os pontos", color = tokens.foregroundPrimary) }
+                    TextButton(onClick = { showSaved = true; scope.launch { loadSaved() } }) { Text("Pontos salvos", color = tokens.foregroundPrimary) }
+                }
+            }
             item { Text("Pontos de ${if (type == "compra") "compra" else "descarte"}", style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary) }
             if (loading) item { CircularProgressIndicator() }
             if (error != null) item {
@@ -223,7 +260,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             if (!showSaved && hasMore && !loading && error == null) item { TextButton(onClick = { load(false) }) { Text("Carregar mais") } }
         }
     }
-    if (listVisible && error != null) GenericErrorScreen(errorKind,
+    if (listVisible && error != null && !showSaved) GenericErrorScreen(errorKind,
         onClose = { listVisible = false }, description = if (errorKind == GenericErrorKind.Unknown) error.orEmpty() else errorKind.description,
         onAction = { action -> when (action) {
             GenericErrorAction.Retry -> load(reset = points.isEmpty())

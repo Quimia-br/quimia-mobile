@@ -70,7 +70,7 @@ internal fun RoomProductCard(
     previewQuantity: Boolean = false, onCheckedChange: (Boolean) -> Unit = {}, onActions: () -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
-    val height = if (selectable) 297.dp else if (previewQuantity) 318.dp else 256.dp
+    val height = if (selectable) 297.dp else if (!critical) 318.dp else 256.dp
     QuimiaCard(
         title = product.name, primaryActionLabel = null, secondaryActionLabel = null,
         showTitle = false, showDescription = false, endIcon = null, sectionSpacing = 0.dp,
@@ -92,10 +92,10 @@ internal fun RoomProductCard(
                 }
             }
             Box(Modifier.fillMaxWidth().then(if (selectable) Modifier.height(144.dp) else Modifier.weight(1f).padding(vertical = 24.dp)), contentAlignment = Alignment.Center) {
-                if (product.remote) CatalogImage(product, modifier = Modifier.size(131.dp)) else QuimiaImage(painter = painterResource(if (critical && product.id.startsWith("squeeze")) R.drawable.room_product_critical_figma else product.imageRes),
+                if (product.remote) CatalogImage(product, modifier = Modifier.size(131.dp), grayscale = critical) else QuimiaImage(painter = painterResource(if (critical && product.id.startsWith("squeeze")) R.drawable.room_product_critical_figma else product.imageRes),
                     contentDescription = product.name, modifier = Modifier.requiredSize(131.dp),
                     backgroundColor = if (critical) tokens.secondary else tokens.surfaceBase,
-                    contentScale = ContentScale.Crop, shape = RoundedCornerShape(0.dp))
+                    contentScale = ContentScale.Fit, shape = RoundedCornerShape(0.dp))
                 if (!selectable) QuimiaIconButton(modifier = Modifier.align(Alignment.BottomEnd), icon = Lucide.Menu,
                     containerColor = if (critical) tokens.surfaceBase else tokens.secondary,
                     contentDescription = "Ações de ${product.name}", onClick = onActions)

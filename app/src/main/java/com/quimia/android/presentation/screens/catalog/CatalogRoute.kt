@@ -54,7 +54,7 @@ internal fun catalogImageUrl(value: String?): String? = value?.takeIf { url ->
 }
 
 @Composable
-internal fun CatalogImage(product: CatalogProduct, modifier: Modifier = Modifier, logo: Boolean = false, detail: Boolean = false) {
+internal fun CatalogImage(product: CatalogProduct, modifier: Modifier = Modifier, logo: Boolean = false, detail: Boolean = false, grayscale: Boolean = false) {
     val tokens = quimiaColorTokens()
     if (!product.remote) {
         QuimiaImage(painter = painterResource(if (logo) product.logoRes else if (detail) product.detailImageRes else product.imageRes),
@@ -65,10 +65,13 @@ internal fun CatalogImage(product: CatalogProduct, modifier: Modifier = Modifier
     }
     var failed by remember(product.id, product.photoUrl, product.brandLogoUrl, logo) { mutableStateOf(false) }
     val url = if (logo) product.brandLogoUrl else product.photoUrl
+    var imageLoading by remember(url) { mutableStateOf(url != null) }
     Box(modifier.clip(if (logo) CircleShape else RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
         if (url != null && !failed) AsyncImage(model = url, contentDescription = if (logo) null else product.name,
-            contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(), onError = { failed = true })
-        else Icon(Lucide.ImageOff, if (logo) "Marca sem imagem" else "Produto sem imagem disponível",
+            colorFilter = if (grayscale) androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }) else null,
+            contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(), onLoading = { imageLoading = true }, onSuccess = { imageLoading = false }, onError = { failed = true; imageLoading = false })
+        if (!detail && url != null && imageLoading && !failed) com.quimia.android.presentation.components.SkeletonBlock(Modifier.fillMaxSize(), if (logo) 100 else 12)
+        if (url == null || failed) Icon(Lucide.ImageOff, if (logo) "Marca sem imagem" else "Produto sem imagem disponível",
             modifier = Modifier.size(if (logo) 22.dp else 36.dp), tint = tokens.textSecondary)
     }
 }
@@ -102,23 +105,27 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
     var rescan by rememberSaveable { mutableStateOf(false) }
     if (rescan) CatalogBarcodeScannerSheet(onDismiss = { rescan = false }, onBarcode = { code -> rescan = false; scope.launch { controller.findBarcode(code) } })
     val canSave = state.shelfReady && !state.shelfLoading
+    val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading || state.shelfLoading, userId)
+    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
-        initialQuery = initialQuery, products = state.products.map { it.catalogProduct() },
+        initialQuery = initialQuery, products = if (screenLoading) sampleCatalogProducts.take(5) else state.products.map { it.catalogProduct() },
         initialSavedProductIds = state.savedIds.map(Int::toString), onQueryChange = { query = it; controller.setQuery(it) },
         onSaveProducts = { ids -> scope.launch { controller.save(ids.mapNotNull(String::toIntOrNull)) } },
-        onProductDetails = { product -> scope.launch { controller.openDetail(product.id.toInt()) } },
+        onProductDetails = { product -> if (!screenLoading) scope.launch { controller.openDetail(product.id.toInt()) } },
         saving = state.savingIds.isNotEmpty(), canSave = canSave,
         saveMessage = state.notice, saveMessageSuccess = state.noticeSuccess, onDismissSaveMessage = controller::dismissNotice,
         onBarcode = { code -> scope.launch { controller.findBarcode(code) } },
         statusContent = {
-            if (state.loading) CatalogLoading("Carregando produtos…")
+            if (!screenLoading) {
+            if (state.loading && state.products.isEmpty()) CatalogLoading("Carregando produtos…")
             state.error?.let { CatalogError(it) { scope.launch { controller.search() } } }
             if (!state.loading && state.error == null && state.products.isEmpty()) {
                 Text("Nenhum produto encontrado", Modifier.padding(24.dp), color = quimiaColorTokens().textSecondary)
             }
-            if (state.shelfLoading) CatalogLoading("Conferindo os produtos da sua estante…")
+            if (state.shelfLoading && !state.loading && state.products.isEmpty()) com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Lines, "Conferindo os produtos da sua estante")
             state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
             state.saveError?.let { CatalogError(it) { scope.launch { controller.retrySave() } } }
+            }
         }, footerContent = {
             if (state.moreLoading) CatalogLoading("Carregando mais produtos…")
             state.moreError?.let { CatalogError(it) { scope.launch { controller.loadMore() } } }
@@ -127,12 +134,14 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
                     iconSize = 0, espacamento = 0, onClick = { scope.launch { controller.loadMore() } })
             }
         })
+    }
     if (state.detailOpen) {
         state.detail?.let { product ->
             CatalogProductDetailsSheet(product.catalogProduct(), product.id in state.savedIds, controller::closeDetail,
                 onSave = { scope.launch { controller.save(listOf(product.id)) } },
                 saving = state.savingIds.isNotEmpty(), canSave = canSave,
                 statusContent = {
+                    state.detailError?.let { CatalogError(it) { scope.launch { controller.retryDetail() } } }
                     state.notice?.let { Text(it, style = Typography.bodyMedium, color = quimiaColorTokens().textPrimary) }
                     state.saveError?.let { CatalogError(it) { scope.launch { controller.save(listOf(product.id)) } } }
                     state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
@@ -147,6 +156,16 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
 
 @Composable
 internal fun CatalogLoading(message: String) {
+    if (message.startsWith("Carregando") || message.startsWith("Conferindo")) {
+        val layout = when {
+            message.contains("detalhe") -> com.quimia.android.presentation.components.SkeletonLayout.Detail
+            message.contains("resumo") || message.contains("socorros") -> com.quimia.android.presentation.components.SkeletonLayout.Lines
+            message.contains("misturas") -> com.quimia.android.presentation.components.SkeletonLayout.History
+            else -> com.quimia.android.presentation.components.SkeletonLayout.Grid
+        }
+        com.quimia.android.presentation.components.LoadingSkeleton(layout, message)
+        return
+    }
     val tokens = quimiaColorTokens()
     Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {

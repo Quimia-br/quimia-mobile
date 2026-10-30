@@ -1,5 +1,8 @@
 package feedback
 
+import motion.quimiaEnter
+import motion.QuimiaMotion
+import motion.LocalQuimiaMotionEnabled
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -52,18 +55,18 @@ fun QuimiaFeedbackItem(
 
     val tint by animateColorAsState(
         targetValue = if (isSuccess) iconSuccessColor ?: tokens.foregroundPrimary else iconErrorColor ?: tokens.error,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = QuimiaMotion.tweenSpec(LocalQuimiaMotionEnabled.current),
         label = "IconTintAnimation"
     )
 
     val borderColor by animateColorAsState(
         targetValue = if (isSuccess) tokens.success else tokens.error,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = QuimiaMotion.tweenSpec(LocalQuimiaMotionEnabled.current),
         label = "BorderColorAnimation"
     )
 
     Box(
-        modifier = modifier
+        modifier = modifier.quimiaEnter(key = isSuccess, emphasis = true)
             .size(containerSize)
             .clip(shape)
             .background(resolvedBackgroundColor)

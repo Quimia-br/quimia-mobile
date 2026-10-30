@@ -80,17 +80,15 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
             } })
         return
     }
-    if (!loaded || profile == null) Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (loading) CircularProgressIndicator()
-        Text(error ?: "Carregando seu perfil…")
-        if (error != null) TextButton(onClick = { scope.launch { reload() } }) { Text("Tentar novamente") }
-        TextButton(onClick = onBack) { Text("Voltar") }
+    if (!loaded || profile == null) {
+        CompositionLocalProvider(theme.LocalQuimiaSkeleton provides true) {
+            ProfileScreen("Seu nome", "email@quimia.com", preferences, {}, {}, {}, onBack = onBack)
+        }
     } else {
-        val photo = rememberAsyncImagePainter(profile.fotoUrl?.takeIf { it.startsWith("https://") })
+        val photo = com.quimia.android.presentation.components.rememberProfilePhoto(userId, profile.fotoUrl)
         ProfileScreen(profile.nome, profile.email, preferences, onPreferencesChange,
             onDisplayNameChange = {}, onPhotoUriChange = {}, onBack = onBack,
-            photo = photo.takeIf { profile.fotoUrl?.startsWith("https://") == true },
+            photo = photo.takeIf { profile.fotoUrl?.startsWith("https://") == true && it.state !is coil.compose.AsyncImagePainter.State.Error },
             birthDate = profileDisplayDate(profile.dataNasc), onLogout = onLogout,
             savePhotoRemote = { uri ->
                 val mime = context.contentResolver.getType(uri)?.lowercase()

@@ -1,5 +1,6 @@
 package com.quimia.android
 
+import motion.quimiaContent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -128,6 +129,9 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     val sessionUid = (authState as? AuthResult.Success)?.uid
     val sessionEmail = (authState as? AuthResult.Success)?.email.orEmpty()
     val context = LocalContext.current
+    LaunchedEffect(sessionUid, authViewModel.providerPhotoUrl) {
+        sessionUid?.let { com.quimia.android.presentation.components.prefetchProfilePhoto(context, it, authViewModel.providerPhotoUrl) }
+    }
     val authScope = rememberCoroutineScope()
     val google = remember(context) { GoogleSignInHelper(context) }
     val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -139,7 +143,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                 authViewModel.loginWithGoogle(token)
             } catch (error: com.google.android.gms.common.api.ApiException) {
                 if (error.statusCode != com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
-                    authNotice = "Não foi possível entrar com Google. Tente novamente. Código: ${error.statusCode}."
+                    authNotice = com.quimia.android.data.auth.googleSignInErrorMessage(error.statusCode)
                 }
             } catch (error: Exception) { authNotice = error.message ?: "Não foi possível entrar com Google. Tente novamente." }
         }
@@ -370,6 +374,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         }
         else -> {
             authScreens.SaveableStateProvider(authDestination.name + if (authDestination == AuthDestination.GoogleDetails || authDestination == AuthDestination.GoogleAddress) googleDraft?.uid.orEmpty() else "") {
+                Box(Modifier.fillMaxSize().quimiaContent(key = authDestination)) {
                 when (authDestination) {
                     AuthDestination.Welcome -> LoginHomeScreen(onStart = { navigateAuth(AuthDestination.Login) })
                     AuthDestination.Login -> Login1Screen(
@@ -413,6 +418,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         onPasswordConfirm = authViewModel::resetPassword,
                     )
                     AuthDestination.RecoverySuccess -> LoginPassSuccesScreen(onStart = { navigateAuth(AuthDestination.Login) })
+                }
                 }
             }
         }

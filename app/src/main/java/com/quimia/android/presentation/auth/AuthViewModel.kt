@@ -62,6 +62,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         firebase.logout()
         val profile = initial.finishRegistration(apiAddress)
         currentProfile = profile
+        onboardingStore.clearPending(profile.id, profile.email)
+        _googleOnboarding.value = null
         if (address != null) withContext(Dispatchers.IO) { onboardingStore.cacheAddress(profile.id, profile.email, address) }
         unlock(profile)
     }
@@ -93,10 +95,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         when (val state = repository.session.value) {
             is SessionState.Authenticated -> {
                 currentProfile = state.profile
-                if (onboardingStore.pending(state.profile.id, state.profile.email)) {
+                if (shouldResumeInitialProfile(state.profile, onboardingStore.pending(state.profile.id, state.profile.email))) {
                     _googleOnboarding.value = googleProfile(state.profile)
                     _authState.value = AuthResult.Error("Complete seus dados para continuar.")
-                } else unlock(state.profile)
+                } else {
+                    onboardingStore.clearPending(state.profile.id, state.profile.email)
+                    _googleOnboarding.value = null
+                    unlock(state.profile)
+                }
             }
             is SessionState.Unavailable -> {
                 _authState.value = AuthResult.Error(state.message)
@@ -130,9 +136,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 repository.loginWithFirebaseToken(firebase.backendIdToken())
                 val profile = authenticatedProfile()
                 currentProfile = profile
-                withContext(Dispatchers.IO) { onboardingStore.markPending(profile.id, profile.email) }
-                _googleOnboarding.value = googleProfile(profile)
-                _authState.value = AuthResult.Error("Complete seus dados para continuar.")
+                if (needsInitialProfile(profile)) {
+                    withContext(Dispatchers.IO) { onboardingStore.markPending(profile.id, profile.email) }
+                    _googleOnboarding.value = googleProfile(profile)
+                    _authState.value = AuthResult.Error("Complete seus dados para continuar.")
+                } else {
+                    onboardingStore.clearPending(profile.id, profile.email)
+                    _googleOnboarding.value = null
+                    unlock(profile)
+                }
             } catch (error: Exception) {
                 firebase.logout()
                 withContext(NonCancellable) { repository.logout() }
@@ -152,8 +164,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
     private fun googleProfile(profile: UserProfile): GoogleOnboarding {
         val stored = LocalProfileStore(getApplication<Application>(), profile.id, profile.email)
-        return GoogleOnboarding(profile.id, profile.email, stored.displayName() ?: profile.nome,
-            stored.birthDate().ifBlank { displayBirthDate(profile.dataNasc) }, profile.fotoUrl)
+        return GoogleOnboarding(profile.id, profile.email, profile.nome.ifBlank { stored.displayName().orEmpty() },
+            displayBirthDate(profile.dataNasc).ifBlank { stored.birthDate() }, profile.fotoUrl)
     }
     fun editGoogle(name: String, birthDate: String) {
         if (!busy.value) _googleOnboarding.value = _googleOnboarding.value?.copy(name = name, birthDate = birthDate)

@@ -1,6 +1,7 @@
 package com.quimia.android.presentation.screens.rooms
 
 import androidx.activity.compose.BackHandler
+import com.composables.icons.lucide.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -112,15 +113,18 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         }
     }
     val tokens = quimiaColorTokens()
+    val initialListLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading, userId)
+    val screenLoading = initialListLoading && state.stage == RoomsStage.List
+    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         when (state.stage) {
-            RoomsStage.List -> RoomList(state.rooms.map { it.uiRoom() }, onOpen = { scope.launch { controller.open(it.toInt()) } },
+            RoomsStage.List -> RoomList(if (screenLoading) previewRooms else state.rooms.map { it.uiRoom() }, onOpen = { if (!screenLoading) scope.launch { controller.open(it.toInt()) } },
                 onCreate = { createDraft() }, onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
                 connected = true, initialQuery = query, onQueryChange = { query = it; controller.setQuery(it) },
                 onUnavailable = controller::notice, showEmpty = !state.loading && state.error == null,
                 statusContent = {
                     RoomsNotice(state.notice) { controller.notice(null) }
-                    if (state.loading) CatalogLoading("Carregando cômodos…")
+                    if (!screenLoading && state.loading && state.rooms.isEmpty()) CatalogLoading("Carregando cômodos…")
                     state.error?.let { CatalogError(it) { reload++ } }
                 }, footerContent = {
                     if (state.moreLoading) CatalogLoading("Carregando mais cômodos…")
@@ -141,7 +145,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                     error = validation ?: state.mutationError?.message,
                     onNameChange = { draftName = it; validation = null }, onIconChange = { draftIcon = it; validation = null },
                     onToggleProduct = { raw ->
-                        if (!state.busy) {
+                        if (!state.busy && !state.shelfLoading) {
                             val id = raw.toInt()
                             if (id in selected) selected = selected - id
                             else if (existing.size + selected.size < 20) selected = selected + id
@@ -156,9 +160,9 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                     nameLimit = 100, showIdentity = !adding, canSubmit = valid && state.shelfReady && !state.shelfLoading && !state.busy,
                     showEmpty = state.shelfReady && !state.shelfLoading,
                     selectionHint = if (adding) "Selecione os produtos da sua estante. Limite de 20 por cômodo."
-                        else "Selecione de 2 a 20 produtos da sua estante. Cada produto pode pertencer a um cômodo.",
+                        else "Escolha os produtos que você usa para limpar esse cômodo",
                     statusContent = {
-                        if (state.shelfLoading) CatalogLoading("Carregando produtos da sua estante…")
+                        if (state.shelfLoading && available.isEmpty()) CatalogLoading("Carregando produtos da sua estante…")
                         state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
                         if (state.mutationError != null && !state.busy) QuimiaButton(text = "Atualizar produtos", iconSize = 0, espacamento = 0,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(48.dp), onClick = { scope.launch { controller.loadShelf() } })
@@ -185,10 +189,12 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             } ?: Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 QuimiaNav(showBackButton = true, onBackClick = controller::showList, onCloseClick = controller::showList)
                 RoomsNotice(state.notice) { controller.notice(null) }
-                if (state.detailLoading) CatalogLoading("Carregando cômodo e avaliação…")
+                if (state.detailLoading) com.quimia.android.presentation.components.LoadingSkeleton(
+                    com.quimia.android.presentation.components.SkeletonLayout.Detail, "Carregando cômodo e avaliação")
                 state.detailError?.let { CatalogError(it) { state.detailId?.let { id -> scope.launch { controller.open(id) } } } }
             }
         }
+    }
     }
     if (editing) AlertDialog(
         onDismissRequest = { if (!state.busy) { editing = false; controller.clearMutationError() } },
@@ -252,21 +258,26 @@ private fun ApiRoomAssessment(room: ApiRoom) {
     val a = room.avaliacao
     val title = when (a.status) { "seguro" -> "Seguro"; "atencao" -> "Atenção"; "critico" -> "Crítico"
         "nao_avaliado" -> "Segurança não avaliada"; else -> "Avaliação não reconhecida" }
-    val background = when (a.status) { "critico" -> tokens.error; "atencao" -> tokens.warning
-        "seguro" -> tokens.success; else -> tokens.surfaceBase }
-    val foreground = if (a.status == "critico") tokens.white else if (a.status in setOf("seguro", "atencao")) androidx.compose.ui.graphics.Color.Black else tokens.textPrimary
-    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).background(background, androidx.compose.foundation.shape.RoundedCornerShape(32.dp)).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(title, style = QuimiaTextStyles.medium20, color = foreground)
-        Text("${a.totalProdutos} produto(s) · ${a.paresAvaliados} par(es) avaliado(s)", color = foreground)
-        if (a.status == "nao_avaliado") Text("A avaliação disponível não confirmou a compatibilidade destes produtos.", color = foreground)
-        a.severidadeMaxima?.let { Text("Severidade máxima: $it", color = foreground) }
-        a.incompatibilidades.forEach { pair ->
-            val first = room.produtos.first { it.id == pair.produtoIdA }.nome
-            val second = room.produtos.first { it.id == pair.produtoIdB }.nome
-            Text("$first + $second", style = QuimiaTextStyles.medium16, color = foreground)
-            pair.descricaoRisco?.let { Text(it, color = foreground) }
-            pair.severidade?.let { Text("Severidade: $it", color = foreground) }
-        }
+    val critical = a.status == "critico"
+    val description = when (a.status) {
+        "seguro" -> "A combinação é segura"
+        "critico" -> "A combinação dos produtos apresenta altos riscos à saúde"
+        "atencao" -> "Confira as orientações antes de usar os produtos juntos."
+        else -> "A API ainda não confirmou a compatibilidade destes produtos."
     }
+    listItem.QuimiaListItem(
+        title = if (critical) "Crítico: nunca use esses produtos juntos" else title,
+        subtitle = description,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = if (critical) 16.dp else 24.dp),
+        horizontalSpacing = 20.dp, cornerRadius = 32.dp, subtitleMaxLines = 4,
+        containerColor = if (critical) tokens.error else tokens.surfaceBase,
+        titleColor = if (critical) tokens.white else tokens.foregroundPrimary,
+        subtitleColor = if (critical) tokens.white.copy(alpha = .85f) else tokens.foregroundSubtle,
+        leadingContent = {
+            shapeIcon.QuimiaShapeIcon(size = 50.dp, iconSize = 24.dp,
+                icon = when (a.status) { "seguro" -> com.composables.icons.lucide.Lucide.Check; "critico" -> com.composables.icons.lucide.Lucide.ShieldX; else -> com.composables.icons.lucide.Lucide.Info },
+                containerColor = when (a.status) { "seguro" -> tokens.success; "atencao" -> tokens.warning; else -> tokens.surfaceBase },
+                iconColor = if (critical) tokens.error else androidx.compose.ui.graphics.Color(0xFF404040))
+        })
 }

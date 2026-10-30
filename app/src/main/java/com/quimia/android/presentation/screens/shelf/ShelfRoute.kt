@@ -82,9 +82,11 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     LaunchedEffect(state.removedId) { if (state.removedId != null && removal?.id == state.removedId.toString()) removal = null }
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.notice(null) } }
     val products = state.products.map { it.catalogProduct() }
+    val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading, userId)
+    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     ShelfScreen(favoriteIds = state.products.filter { it.favorito }.map { it.id.toString() }, savedIds = products.map { it.id }, onSavedIdsChange = {}, onMenuItemSelected = onMenuItemSelected,
         onAiClick = onAiClick, onAddProduct = onAddProduct, initialQuery = query, initialSubstancesTab = substancesTab,
-        apiProducts = products, apiSubstances = state.substances.map { it.shelfSubstance() },
+        apiProducts = if (screenLoading) sampleCatalogProducts.take(4) else products, apiSubstances = if (screenLoading) sampleShelfSubstances else state.substances.map { it.shelfSubstance() },
         onQueryChange = { query = it; controller.setQuery(it) }, onTabChange = { substancesTab = it; controller.setTab(it) },
         onSortChange = { alphabetical = it == ShelfSort.Alphabetical; controller.setSort(it) },
         onApiFavorite = { id, favorite -> if (!favoriteBusy) { favoriteBusy = true; scope.launch {
@@ -95,13 +97,13 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         } } },
         onUnavailable = { controller.notice(it) }, onApiActions = { action = it },
         onApiRoom = { scope.launch { controller.showRoom(it.toInt()) } },
-        onApiExpand = { scope.launch { controller.protect(it.toInt()) } },
+        onApiExpand = { if (!state.loading) scope.launch { controller.protect(it.toInt()) } },
         onMixProduct = { controller.notice("Misturas indisponíveis no momento.") },
         onSubstanceMix = { controller.notice("A mistura direta de substâncias ainda não está disponível.") },
         onSubstanceMixtures = { controller.notice("O histórico por substância ainda não está disponível.") },
         externalOverlay = action != null || removal != null || state.infoId != null || state.roomId != null || state.historyId != null,
         showEmpty = !state.loading && state.error == null,
-        protectionContent = { id ->
+        protectionContent = if (screenLoading) null else { id ->
             LaunchedEffect(controller, id) { controller.protect(id.toInt()) }
             val protection = state.protection[id.toInt()]
             Text("Como se proteger?", style = Typography.titleMedium, color = quimiaColorTokens().textPrimary)
@@ -115,7 +117,9 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         }, statusContent = {
             state.notice?.let { QuimiaToast(modifier = Modifier.padding(16.dp), message = it, type = QuimiaToastType.Info,
                 onDismiss = { controller.notice(null) }) }
-            if (state.loading) CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando sua estante…")
+
+            if (!screenLoading && state.loading && (if (state.substancesTab) state.substances.isEmpty() else state.products.isEmpty()))
+                CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando produtos…")
             state.error?.let { CatalogError(it) { reload++ } }
         }, footerContent = {
             if (state.moreLoading) CatalogLoading("Carregando mais produtos…")
@@ -125,6 +129,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                     iconSize = 0, espacamento = 0, onClick = { scope.launch { controller.loadMore() } })
             }
         })
+    }
     action?.let { product ->
         ShelfActionsPanel(product, onDismiss = { action = null }, onRemove = { controller.clearRemoval(); action = null; removal = product },
             onMixtures = { action = null; scope.launch { controller.showHistory(product.id.toInt()) } },

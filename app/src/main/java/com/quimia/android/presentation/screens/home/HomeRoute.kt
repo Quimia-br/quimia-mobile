@@ -27,8 +27,11 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     onFindDropOffClick: () -> Unit, onMixturesClick: () -> Unit, onShelfClick: () -> Unit,
     onMenuItemSelected: (Int) -> Unit, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
     val context = LocalContext.current.applicationContext
-    val repository = remember(userId, context) { HomeRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, HomeApi::class.java), AuthRepositoryProvider.get(context)) }
+    val auth = remember(context) { AuthRepositoryProvider.get(context) }
+    val session by auth.session.collectAsStateWithLifecycle()
+    val repository = remember(userId, context, auth) { HomeRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, HomeApi::class.java), auth) }
     val controller = remember(userId, repository) { HomeController(repository, userId) }
+    var pointLoading by remember(userId) { mutableStateOf(true) }
     var pointLabel by remember(userId) { mutableStateOf("Carregando…") }
     val state by controller.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -37,9 +40,11 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     fun refresh() {
         scope.launch { controller.refresh() }
         scope.launch {
+            pointLoading = true
             try { pointLabel = repository.lastPoint(userId)?.nome ?: "Não cadastrado" }
             catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { pointLabel = "Não foi possível carregar" }
+            finally { pointLoading = false }
         }
     }
     DisposableEffect(owner, controller) {
@@ -52,18 +57,24 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     LaunchedEffect(state.profileError, state.historyError, state.moreError) {
         if (listOf(state.profileError, state.historyError, state.moreError).contains(GenericErrorKind.SessionExpired)) onSessionExpired()
     }
-    val photoUrl = homePhotoUrl(state.profile?.fotoUrl)
-    val photo = rememberAsyncImagePainter(photoUrl)
-    HomeScreen(avatarInitials = state.profile?.nome?.let(::profileInitials).orEmpty(),
+    val availableProfile = homeVisibleProfile(userId, state.profile, (session as? SessionState.Authenticated)?.profile)
+    val photoUrl = homePhotoUrl(availableProfile?.fotoUrl)
+    val photo = com.quimia.android.presentation.components.rememberProfilePhoto(userId, photoUrl)
+    val avatarLoading = availableProfile == null || (photoUrl != null && (photo.state is AsyncImagePainter.State.Empty || photo.state is AsyncImagePainter.State.Loading))
+    val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(
+        state.profileLoading || state.historyLoading || pointLoading, userId)
+    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
+    HomeScreen(avatarLoading = avatarLoading, avatarInitials = availableProfile?.nome?.let(::profileInitials).orEmpty(),
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
         onSearch = onSearch, onAvatarClick = onAvatarClick, onFindDropOffClick = onFindDropOffClick,
         onMixturesClick = onMixturesClick, onShelfClick = onShelfClick, onMixClick = onMixturesClick,
-        onMenuItemSelected = onMenuItemSelected, dropOffDescription = pointLabel,
+        onMenuItemSelected = onMenuItemSelected, dropOffDescription = pointLabel, dropOffLoading = false,
         profileStatus = {
-            if (state.profileLoading) HomeLoading("Carregando perfil…")
-            state.profileError?.let { HomeLoadError(it, "seu perfil", ::refresh) }
+            if (!screenLoading) state.profileError?.let { HomeLoadError(it, "seu perfil", ::refresh) }
         }, historyContent = {
-            if (state.historyLoading) HomeLoading("Carregando histórico…")
+            if (screenLoading) HomeLoading("Carregando histórico…")
+            else {
+            if (state.historyLoading && state.history.isEmpty()) HomeLoading("Carregando histórico…")
             state.historyError?.let { HomeLoadError(it, "o histórico", ::refresh) }
             if (!state.historyLoading && state.historyError == null && state.history.isEmpty()) {
                 HomeEmptyHistory(onMixturesClick)
@@ -75,6 +86,8 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
                 QuimiaButton(text = "Carregar mais", onClick = { scope.launch { controller.loadMore() } },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).height(48.dp), iconSize = 0, espacamento = 0)
             }
+            }
         })
+    }
     selected?.let { HomeHistoryDetails(it) { selected = null } }
 }

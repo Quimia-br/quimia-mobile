@@ -1,5 +1,6 @@
 package chip
 
+import motion.quimiaAnimatedColor
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -45,16 +46,16 @@ fun QuimiaChip(
     labelTextStyle: TextStyle = QuimiaTextStyles.medium15,
 ) {
     val tokens = quimiaColorTokens()
-    val containerColor = when {
+    val containerColor = quimiaAnimatedColor(when {
         !enabled -> tokens.surfaceDisabled
         selected -> tokens.primary
         else -> tokens.surfaceBase
-    }
-    val contentColor = when {
+    })
+    val contentColor = quimiaAnimatedColor(when {
         !enabled -> tokens.foregroundDisabled
         selected -> actionContentColor(tokens.primary, null, tokens)
         else -> tokens.foregroundPrimary
-    }
+    })
 
     Row(
         modifier = modifier

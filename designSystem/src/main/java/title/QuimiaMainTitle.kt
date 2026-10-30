@@ -1,5 +1,6 @@
 ﻿package title
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -35,6 +36,7 @@ fun QuimiaMainTitle(
         overline?.let {
             Text(
                 text = it,
+                modifier = Modifier.quimiaSkeleton(8.dp),
                 color = tokens.textPrimary,
                 style = QuimiaTextStyles.medium16
             )
@@ -43,6 +45,7 @@ fun QuimiaMainTitle(
         title?.let {
             Text(
                 text = it,
+                modifier = Modifier.quimiaSkeleton(8.dp),
                 color = tokens.textPrimary,
                 style = QuimiaTextStyles.medium24
             )
@@ -51,6 +54,7 @@ fun QuimiaMainTitle(
         description?.let {
             Text(
                 text = it,
+                modifier = Modifier.quimiaSkeleton(8.dp),
                 color = tokens.textSecondary,
                 style = QuimiaTextStyles.medium16
             )

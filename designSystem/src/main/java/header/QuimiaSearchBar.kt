@@ -1,5 +1,6 @@
 package header
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -118,7 +119,7 @@ fun QuimiaSearchBar(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacedBy),
-        modifier = modifier
+        modifier = modifier.quimiaSkeleton(1000.dp)
             .fillMaxWidth()
             .background(
                 color = colors.container,

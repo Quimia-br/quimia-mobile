@@ -1,5 +1,11 @@
 package buttons
 
+import motion.quimiaPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.annotation.DrawableRes
@@ -72,8 +78,11 @@ fun QuimiaButton(
     val disabledContentColor = actionContentColor(actualContainer, tokens.foregroundDisabled, tokens)
     val actualIconColor = if (enabled) actionContentColor(actualContainer, iconColor, tokens) else disabledContentColor
 
+    val motionInteractions = remember { MutableInteractionSource() }
+    val motionPressed by motionInteractions.collectIsPressedAsState()
     Button(
-        modifier = modifier,
+        interactionSource = motionInteractions,
+        modifier = modifier.quimiaPress(motionPressed).quimiaSkeleton(1000.dp),
         onClick = onClick,
         enabled = enabled,
         border = quimiaContrastBorder(),

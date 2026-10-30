@@ -1,5 +1,7 @@
 package com.quimia.android.presentation.screens.shelf
 
+import motion.quimiaContent
+import motion.quimiaResize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -147,7 +149,7 @@ internal fun ShelfScreen(
             Brush.verticalGradient(listOf(tokens.brandSecondary.copy(alpha = 0.86f), tokens.surfaceBackground.copy(alpha = 0.72f), tokens.surfaceBackground))
         ))
         LazyColumn(
-            modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding(),
+            modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().quimiaContent(),
             contentPadding = PaddingValues(
                 top = (62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp),
                 bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + QuimiaFABSize + 40.dp,
@@ -329,7 +331,7 @@ private fun ShelfProductCard(
     QuimiaCard(
         title = product.name, showTitle = false, showDescription = false,
         primaryActionLabel = null, secondaryActionLabel = null,
-        modifier = modifier, contentPadding = 24.dp, sectionSpacing = 0.dp, endIcon = null,
+        modifier = modifier.quimiaResize(), contentPadding = 24.dp, sectionSpacing = 0.dp, endIcon = null,
     ) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             if (product.remote) CatalogImage(product, modifier = Modifier.size(45.dp)) else QuimiaImage(
@@ -376,7 +378,7 @@ private fun ShelfSubstanceCard(
     QuimiaCard(
         title = substance.name, showTitle = false, showDescription = false,
         primaryActionLabel = null, secondaryActionLabel = null, sectionSpacing = 0.dp, endIcon = null,
-        modifier = modifier, contentPadding = 24.dp,
+        modifier = modifier.quimiaResize(), contentPadding = 24.dp,
     ) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onExpand), verticalAlignment = Alignment.CenterVertically) {
             Text(substance.name, Modifier.weight(1f), style = ShelfBodyStyle, color = tokens.textPrimary)

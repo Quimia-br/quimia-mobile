@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.kemi
 
+import motion.quimiaContent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
@@ -121,7 +122,7 @@ fun KemiScreen(
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground).clipToBounds()
         .pointerInput(Unit) { detectTapGestures { } }) {
         KemiBackground(Modifier.fillMaxWidth().height(210.dp))
-        Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize()
+        Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().quimiaContent()
             .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets(top = 62.dp)))
             .navigationBarsPadding().imePadding()
             .then(if (error != null) Modifier.clearAndSetSemantics { } else Modifier)) {

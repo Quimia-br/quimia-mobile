@@ -1,5 +1,6 @@
 package title
 
+import theme.quimiaSkeleton
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -71,6 +72,7 @@ fun QuimiaSectionTitle(
         ) {
             Text(
                 text = title,
+                modifier = Modifier.quimiaSkeleton(8.dp),
                 maxLines = 1,
                 color = actualTextPrimary,
                 style = resolvedTextStyle.copy(fontSize = titleSize)

@@ -1,5 +1,6 @@
 package com.quimia.android.presentation.screens.mixtures
 
+import motion.quimiaContent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -103,7 +104,7 @@ fun MixturesScreen(
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().height(276.dp).background(Brush.verticalGradient(
             listOf(tokens.brandSecondary.copy(alpha = .86f), tokens.surfaceBackground.copy(alpha = .72f), tokens.surfaceBackground))))
-        LazyColumn(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding(),
+        LazyColumn(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().quimiaContent(),
             contentPadding = PaddingValues(top = if (preview) 38.dp else (62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp), bottom = 24.dp)) {
             item { QuimiaNav(showBackButton = true, showCloseButton = false, buttonColor = tokens.surfaceBase,
                 onBackClick = { if (historyVisible) historyVisible = false else close() }) }

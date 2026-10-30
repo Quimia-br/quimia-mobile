@@ -1,5 +1,7 @@
 package com.quimia.android.presentation.screens.profile
 
+import motion.quimiaContent
+import theme.quimiaSkeleton
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,7 +25,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.*
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,7 +72,6 @@ fun ProfileScreen(
     var birthDateVisible by rememberSaveable { mutableStateOf(initialBirthDateVisible) }
     var photoVisible by rememberSaveable { mutableStateOf(initialPhotoVisible) }
     var draftName by rememberSaveable { mutableStateOf(displayName) }
-    var draftEmail by rememberSaveable { mutableStateOf(email) }
     var draftBirthDate by rememberSaveable { mutableStateOf(birthDate) }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -90,7 +89,7 @@ fun ProfileScreen(
         }
     }
     fun openEditor() {
-        draftName = displayName; draftEmail = email; draftBirthDate = birthDate
+        draftName = displayName; draftBirthDate = birthDate
         message = null; editVisible = true
     }
     val onPhoto = {
@@ -100,12 +99,12 @@ fun ProfileScreen(
         if (!saving) { if (photoVisible) photoVisible = false else editVisible = false }
     }
     if (editVisible) ProfileEditScreen(
-        name = draftName, email = draftEmail, birthDate = draftBirthDate, photo = photo,
-        onNameChange = { draftName = it }, onEmailChange = { draftEmail = it },
+        name = draftName, email = email, birthDate = draftBirthDate, photo = photo,
+        onNameChange = { draftName = it },
         onBirthDateChange = { draftBirthDate = it }, onPhoto = onPhoto,
         onBack = { if (!saving) editVisible = false }, saving = saving, remote = saveRemote != null, message = message, onMessageDismiss = { message = null },
         onSave = {
-            val details = ProfileDetails(normalizedProfileName(draftName), draftBirthDate.trim(), draftEmail.trim())
+            val details = ProfileDetails(normalizedProfileName(draftName), draftBirthDate.trim(), email)
             if (saveRemote == null) {
                 if (onDetailsChange != null) onDetailsChange(details) else onDisplayNameChange(details.name)
                 editVisible = false
@@ -148,7 +147,7 @@ private fun ProfilePreferencesScreen(
     val tokens = quimiaColorTokens()
     val accessibleLayout = LocalDensity.current.fontScale > 1.1f || theme.quimiaDyslexicFontEnabled()
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
+        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).quimiaContent()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
             QuimiaNav(showBackButton = true, showCloseButton = false, buttonColor = tokens.surfaceBase,
                 onBackClick = onBack)
@@ -156,8 +155,8 @@ private fun ProfilePreferencesScreen(
                 val identity: @Composable (Modifier) -> Unit = { identityModifier ->
                     Column(identityModifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(displayName.ifBlank { "Seu nome" }, style = QuimiaTextStyles.medium20, color = tokens.foregroundPrimary)
-                            Text(email, Modifier.widthIn(max = if (accessibleLayout) 264.dp else 112.dp)
+                            Text(displayName.ifBlank { "Seu nome" }, modifier = Modifier.quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium20, color = tokens.foregroundPrimary)
+                            Text(email, Modifier.quimiaSkeleton(8.dp).widthIn(max = if (accessibleLayout) 264.dp else 112.dp)
                                 .semantics { contentDescription = email }, style = QuimiaTextStyles.medium14,
                                 color = if (tokens.surfaceBackground == theme.DarkTokens.surfaceBackground) tokens.foregroundPrimary.copy(alpha = .6f) else tokens.textSecondary,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -248,14 +247,14 @@ private fun ProfileFontCard(preferences: ProfilePreferences, onChange: (ProfileP
 @Composable
 private fun ProfileEditScreen(
     name: String, email: String, birthDate: String, photo: Painter?,
-    onNameChange: (String) -> Unit, onEmailChange: (String) -> Unit, onBirthDateChange: (String) -> Unit,
+    onNameChange: (String) -> Unit, onBirthDateChange: (String) -> Unit,
     onBack: () -> Unit, onPhoto: () -> Unit, onSave: () -> Unit, message: String?, onMessageDismiss: () -> Unit,
     saving: Boolean = false, remote: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().imePadding()) {
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).quimiaContent()) {
                 Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
                 QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp), verticalArrangement = Arrangement.spacedBy(31.dp)) {
@@ -266,10 +265,11 @@ private fun ProfileEditScreen(
                         QuimiaInput(value = name, onValueChange = { onNameChange(it.take(80)) }, label = "Nome", enabled = !saving,
                             trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = { onNameChange("") })
                         BirthDateField(birthDate, { if (!saving) onBirthDateChange(it) }, error = profileBirthDateError(birthDate))
-                        QuimiaInput(value = email, onValueChange = { onEmailChange(it.take(254)) }, label = "E-mail", enabled = !remote && !saving, showClearButton = !remote,
-                            description = if (remote) "A API ainda não permite alterar o e-mail." else null,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            trailingIcon = Lucide.X, trailingIconSize = 16.dp, onTrailingIconClick = if (remote) null else { { onEmailChange("") } })
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("E-mail", Modifier.quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
+                            QuimiaInput(value = email, onValueChange = {}, enabled = false, showClearButton = false,
+                                primaryTextColor = tokens.foregroundDisabled)
+                        }
                     }
                 }
             }
