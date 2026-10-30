@@ -117,81 +117,83 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     val screenLoading = initialListLoading && state.stage == RoomsStage.List
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
-        when (state.stage) {
-            RoomsStage.List -> RoomList(if (screenLoading) previewRooms else state.rooms.map { it.uiRoom() }, onOpen = { if (!screenLoading) scope.launch { controller.open(it.toInt()) } },
-                onCreate = { createDraft() }, onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
-                connected = true, initialQuery = query, onQueryChange = { query = it; controller.setQuery(it) },
-                onUnavailable = controller::notice, showEmpty = !state.loading && state.error == null,
-                statusContent = {
-                    RoomsNotice(state.notice) { controller.notice(null) }
-                    if (!screenLoading && state.loading && state.rooms.isEmpty()) CatalogLoading("Carregando cômodos…")
-                    state.error?.let { CatalogError(it) { reload++ } }
-                }, footerContent = {
-                    if (state.moreLoading) CatalogLoading("Carregando mais cômodos…")
-                    state.moreError?.let { CatalogError(it) { scope.launch { controller.loadMore() } } }
-                    if (state.nextPage != null && !state.loading && !state.moreLoading && state.moreError == null) {
-                        QuimiaButton(text = "Carregar mais", iconSize = 0, espacamento = 0, modifier = Modifier.fillMaxWidth().height(48.dp),
-                            onClick = { scope.launch { controller.loadMore() } })
-                    }
-                })
-            RoomsStage.Create, RoomsStage.Adding -> {
-                val adding = state.stage == RoomsStage.Adding
-                val existing = if (adding) state.detail?.produtos.orEmpty().map { it.id }.toSet() else emptySet()
-                val available = state.available.filterNot { it.id in existing }
-                val valid = if (adding) selected.isNotEmpty() && existing.size + selected.distinct().size <= 20 &&
-                    selected.all { id -> available.any { it.id == id } }
-                    else apiRoomValidation(draftName, draftIcon, selected, available.map { it.id }) == null
-                RoomForm(draftName, draftIcon, selected.map(Int::toString), available.map { it.catalogProduct() },
-                    error = validation ?: state.mutationError?.message,
-                    onNameChange = { draftName = it; validation = null }, onIconChange = { draftIcon = it; validation = null },
-                    onToggleProduct = { raw ->
-                        if (!state.busy && !state.shelfLoading) {
-                            val id = raw.toInt()
-                            if (id in selected) selected = selected - id
-                            else if (existing.size + selected.size < 20) selected = selected + id
-                            else validation = "Um cômodo pode ter no máximo 20 produtos."
+        motion.QuimiaScreenDissolve(state.stage, Modifier.fillMaxSize()) { stage ->
+            when (stage) {
+                RoomsStage.List -> RoomList(if (screenLoading) previewRooms else state.rooms.map { it.uiRoom() }, onOpen = { if (!screenLoading) scope.launch { controller.open(it.toInt()) } },
+                    onCreate = { createDraft() }, onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
+                    connected = true, initialQuery = query, onQueryChange = { query = it; controller.setQuery(it) },
+                    onUnavailable = controller::notice, showEmpty = !state.loading && state.error == null,
+                    statusContent = {
+                        RoomsNotice(state.notice) { controller.notice(null) }
+                        if (!screenLoading && state.loading && state.rooms.isEmpty()) CatalogLoading("Carregando cômodos…")
+                        state.error?.let { CatalogError(it) { reload++ } }
+                    }, footerContent = {
+                        if (state.moreLoading) CatalogLoading("Carregando mais cômodos…")
+                        state.moreError?.let { CatalogError(it) { scope.launch { controller.loadMore() } } }
+                        if (state.nextPage != null && !state.loading && !state.moreLoading && state.moreError == null) {
+                            QuimiaButton(text = "Carregar mais", iconSize = 0, espacamento = 0, modifier = Modifier.fillMaxWidth().height(48.dp),
+                                onClick = { scope.launch { controller.loadMore() } })
                         }
-                    },
-                    onClose = { if (adding) scope.launch { controller.cancelAdd() } else controller.showList() }, onOpenCatalog = onOpenCatalog,
-                    onSubmit = { scope.launch {
-                        if (adding) controller.add(selected) else controller.create(draftName, draftIcon, selected)
-                    } }, formTitle = if (adding) "Adicionar produtos" else "Cadastrar cômodo",
-                    submitLabel = if (state.busy) "Salvando…" else if (adding) "Adicionar produtos" else "Criar cômodo",
-                    nameLimit = 100, showIdentity = !adding, canSubmit = valid && state.shelfReady && !state.shelfLoading && !state.busy,
-                    showEmpty = state.shelfReady && !state.shelfLoading,
-                    selectionHint = if (adding) "Selecione os produtos da sua estante. Limite de 20 por cômodo."
-                        else "Escolha os produtos que você usa para limpar esse cômodo",
-                    statusContent = {
-                        if (state.shelfLoading && available.isEmpty()) CatalogLoading("Carregando produtos da sua estante…")
-                        state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
-                        if (state.mutationError != null && !state.busy) QuimiaButton(text = "Atualizar produtos", iconSize = 0, espacamento = 0,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(48.dp), onClick = { scope.launch { controller.loadShelf() } })
-                        RoomsNotice(state.notice) { controller.notice(null) }
                     })
-            }
-            RoomsStage.Saving -> RoomCreating(draftName)
-            RoomsStage.Success, RoomsStage.Error -> RoomCreationResult(state.stage == RoomsStage.Success,
-                state.detail?.nome ?: draftName, controller::showList,
-                onContinue = { if (state.stage == RoomsStage.Success) controller.showCreated() else scope.launch { controller.prepareCreate() } },
-                errorMessage = state.mutationError?.message, failureAction = "Revisar cadastro")
-            RoomsStage.Detail -> state.detail?.let { room ->
-                RoomDetails(room.uiRoom(), room.produtos.map { it.catalogProduct() }, controller::showList,
-                    onProductActions = { id -> if (!state.busy) action = room.produtos.find { it.id.toString() == id }?.catalogProduct() },
-                    apiAssessment = { ApiRoomAssessment(room) },
-                    onEdit = { if (!state.busy) { controller.clearMutationError(); editName = room.nome; editIcon = room.uiRoom().icon; editing = true } },
-                    onDelete = { if (!state.busy) { controller.clearMutationError(); deleting = true } },
-                    onAddProducts = { selected = emptyList(); validation = null; scope.launch { controller.prepareAdd() } },
-                    statusContent = {
-                        RoomsNotice(state.notice) { controller.notice(null) }
-                        if (state.busy) CatalogLoading("Atualizando cômodo…")
-                        state.mutationError?.let { Text(it.message, Modifier.padding(24.dp), color = tokens.textPrimary) }
-                    })
-            } ?: Column(Modifier.fillMaxSize().statusBarsPadding()) {
-                QuimiaNav(showBackButton = true, onBackClick = controller::showList, onCloseClick = controller::showList)
-                RoomsNotice(state.notice) { controller.notice(null) }
-                if (state.detailLoading) com.quimia.android.presentation.components.LoadingSkeleton(
-                    com.quimia.android.presentation.components.SkeletonLayout.Detail, "Carregando cômodo e avaliação")
-                state.detailError?.let { CatalogError(it) { state.detailId?.let { id -> scope.launch { controller.open(id) } } } }
+                RoomsStage.Create, RoomsStage.Adding -> {
+                    val adding = stage == RoomsStage.Adding
+                    val existing = if (adding) state.detail?.produtos.orEmpty().map { it.id }.toSet() else emptySet()
+                    val available = state.available.filterNot { it.id in existing }
+                    val valid = if (adding) selected.isNotEmpty() && existing.size + selected.distinct().size <= 20 &&
+                        selected.all { id -> available.any { it.id == id } }
+                        else apiRoomValidation(draftName, draftIcon, selected, available.map { it.id }) == null
+                    RoomForm(draftName, draftIcon, selected.map(Int::toString), available.map { it.catalogProduct() },
+                        error = validation ?: state.mutationError?.message,
+                        onNameChange = { draftName = it; validation = null }, onIconChange = { draftIcon = it; validation = null },
+                        onToggleProduct = { raw ->
+                            if (!state.busy && !state.shelfLoading) {
+                                val id = raw.toInt()
+                                if (id in selected) selected = selected - id
+                                else if (existing.size + selected.size < 20) selected = selected + id
+                                else validation = "Um cômodo pode ter no máximo 20 produtos."
+                            }
+                        },
+                        onClose = { if (adding) scope.launch { controller.cancelAdd() } else controller.showList() }, onOpenCatalog = onOpenCatalog,
+                        onSubmit = { scope.launch {
+                            if (adding) controller.add(selected) else controller.create(draftName, draftIcon, selected)
+                        } }, formTitle = if (adding) "Adicionar produtos" else "Cadastrar cômodo",
+                        submitLabel = if (state.busy) "Salvando…" else if (adding) "Adicionar produtos" else "Criar cômodo",
+                        nameLimit = 100, showIdentity = !adding, canSubmit = valid && state.shelfReady && !state.shelfLoading && !state.busy,
+                        showEmpty = state.shelfReady && !state.shelfLoading,
+                        selectionHint = if (adding) "Selecione os produtos da sua estante. Limite de 20 por cômodo."
+                            else "Escolha os produtos que você usa para limpar esse cômodo",
+                        statusContent = {
+                            if (state.shelfLoading && available.isEmpty()) CatalogLoading("Carregando produtos da sua estante…")
+                            state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
+                            if (state.mutationError != null && !state.busy) QuimiaButton(text = "Atualizar produtos", iconSize = 0, espacamento = 0,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(48.dp), onClick = { scope.launch { controller.loadShelf() } })
+                            RoomsNotice(state.notice) { controller.notice(null) }
+                        })
+                }
+                RoomsStage.Saving -> RoomCreating(draftName)
+                RoomsStage.Success, RoomsStage.Error -> RoomCreationResult(stage == RoomsStage.Success,
+                    state.detail?.nome ?: draftName, controller::showList,
+                    onContinue = { if (state.stage == RoomsStage.Success) controller.showCreated() else scope.launch { controller.prepareCreate() } },
+                    errorMessage = state.mutationError?.message, failureAction = "Revisar cadastro")
+                RoomsStage.Detail -> state.detail?.let { room ->
+                    RoomDetails(room.uiRoom(), room.produtos.map { it.catalogProduct() }, controller::showList,
+                        onProductActions = { id -> if (!state.busy) action = room.produtos.find { it.id.toString() == id }?.catalogProduct() },
+                        apiAssessment = { ApiRoomAssessment(room) },
+                        onEdit = { if (!state.busy) { controller.clearMutationError(); editName = room.nome; editIcon = room.uiRoom().icon; editing = true } },
+                        onDelete = { if (!state.busy) { controller.clearMutationError(); deleting = true } },
+                        onAddProducts = { selected = emptyList(); validation = null; scope.launch { controller.prepareAdd() } },
+                        statusContent = {
+                            RoomsNotice(state.notice) { controller.notice(null) }
+                            if (state.busy) CatalogLoading("Atualizando cômodo…")
+                            state.mutationError?.let { Text(it.message, Modifier.padding(24.dp), color = tokens.textPrimary) }
+                        })
+                } ?: Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                    QuimiaNav(showBackButton = true, onBackClick = controller::showList, onCloseClick = controller::showList)
+                    RoomsNotice(state.notice) { controller.notice(null) }
+                    if (state.detailLoading) com.quimia.android.presentation.components.LoadingSkeleton(
+                        com.quimia.android.presentation.components.SkeletonLayout.Detail, "Carregando cômodo e avaliação")
+                    state.detailError?.let { CatalogError(it) { state.detailId?.let { id -> scope.launch { controller.open(id) } } } }
+                }
             }
         }
     }

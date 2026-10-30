@@ -74,7 +74,7 @@ fun quimiaAnimatedColor(target: Color): Color = animateColorAsState(target,
 
 /** Dissolves only the screen content. The persistent navigation stays outside this layer. */
 fun Modifier.quimiaContent(key: Any? = Unit): Modifier = composed {
-    val enabled = LocalQuimiaMotionEnabled.current && !LocalQuimiaSkeleton.current
+    val enabled = LocalQuimiaMotionEnabled.current && !LocalQuimiaSkeleton.current && !LocalQuimiaScreenDissolve.current
     val progress = remember(key, enabled) { Animatable(if (enabled) 0f else 1f) }
     LaunchedEffect(key, enabled) {
         if (enabled) progress.animateTo(1f, QuimiaMotion.tweenSpec(true, QuimiaMotion.Entrance)) else progress.snapTo(1f)

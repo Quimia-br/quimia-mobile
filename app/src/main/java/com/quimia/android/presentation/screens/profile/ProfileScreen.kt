@@ -119,26 +119,28 @@ fun ProfileScreen(
     BackHandler(enabled = editVisible || photoVisible) {
         if (!saving) { if (photoVisible) photoVisible = false else editVisible = false }
     }
-    if (editVisible) ProfileEditScreen(
-        name = draftName, email = email, birthDate = draftBirthDate, photo = photo,
-        onNameChange = { draftName = it },
-        onBirthDateChange = { draftBirthDate = it }, onPhoto = onPhoto,
-        onBack = { if (!saving) editVisible = false }, saving = saving, remote = saveRemote != null, message = message, onMessageDismiss = { message = null },
-        onSave = {
-            val details = ProfileDetails(normalizedProfileName(draftName), draftBirthDate.trim(), email)
-            if (saveRemote == null) {
-                if (onDetailsChange != null) onDetailsChange(details) else onDisplayNameChange(details.name)
-                editVisible = false
-            } else if (!saving) scope.launch {
-                saving = true; message = null
-                try { saveRemote(details); editVisible = false }
-                catch (cancelled: CancellationException) { throw cancelled }
-                catch (error: Exception) { message = authErrorMessage(error) }
-                finally { saving = false }
-            }
-        },
-    ) else ProfilePreferencesScreen(displayName, email, preferences, onPreferencesChange, onBack,
-        photo = photo, onEdit = ::openEditor, onPhoto = onPhoto, onLogout = { confirmLogout = true })
+    motion.QuimiaScreenDissolve(editVisible, Modifier.fillMaxSize()) { editing ->
+        if (editing) ProfileEditScreen(
+            name = draftName, email = email, birthDate = draftBirthDate, photo = photo,
+            onNameChange = { draftName = it },
+            onBirthDateChange = { draftBirthDate = it }, onPhoto = onPhoto,
+            onBack = { if (!saving) editVisible = false }, saving = saving, remote = saveRemote != null, message = message, onMessageDismiss = { message = null },
+            onSave = {
+                val details = ProfileDetails(normalizedProfileName(draftName), draftBirthDate.trim(), email)
+                if (saveRemote == null) {
+                    if (onDetailsChange != null) onDetailsChange(details) else onDisplayNameChange(details.name)
+                    editVisible = false
+                } else if (!saving) scope.launch {
+                    saving = true; message = null
+                    try { saveRemote(details); editVisible = false }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) { message = authErrorMessage(error) }
+                    finally { saving = false }
+                }
+            },
+        ) else ProfilePreferencesScreen(displayName, email, preferences, onPreferencesChange, onBack,
+            photo = photo, onEdit = ::openEditor, onPhoto = onPhoto, onLogout = { confirmLogout = true })
+    }
 
     if (!editVisible && message != null) androidx.compose.material3.AlertDialog(
         onDismissRequest = { message = null }, text = { Text(message.orEmpty()) },

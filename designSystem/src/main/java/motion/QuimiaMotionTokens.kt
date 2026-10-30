@@ -11,6 +11,7 @@ object QuimiaMotion {
     const val Quick = 90
     const val Standard = 200
     const val Entrance = 260
+    const val ScreenDissolve = 240
     const val Expansion = 260
     const val Feedback = 160
     const val PressScale = .98f

@@ -64,6 +64,7 @@ fun QuimiaMenuBarBackdrop(
     modifier: Modifier = Modifier,
     barHeight: Dp = QuimiaMenuBarHeight,
 ) {
+    if (!motion.LocalQuimiaNavigationChromeVisible.current) return
     val background = quimiaColorTokens().surfaceBackground
     Column(modifier.fillMaxWidth()) {
         Box(
@@ -95,6 +96,7 @@ fun QuimiaMenuBar(
     fabSpacing: Dp = 12.dp,
     fab: (@Composable () -> Unit)? = null,
 ) {
+    if (!motion.LocalQuimiaNavigationChromeVisible.current) return
     val tokens = quimiaColorTokens()
     val sound = feedback.LocalQuimiaSound.current
     val iconColor = resolveQuimiaMenuBarIconColor(tokens, quimiaHighContrastEnabled())
