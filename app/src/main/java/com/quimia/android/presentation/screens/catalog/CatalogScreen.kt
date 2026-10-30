@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,6 +54,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -453,6 +457,13 @@ private fun ProductCard(
                 contentAlignment = Alignment.Center,
             ) {
                 CatalogImage(product, modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp))
+                if (saved) Box(
+                    Modifier.align(Alignment.TopEnd).padding(top = 12.dp).size(28.dp)
+                        .quimiaSkeleton(100.dp).clip(CircleShape).background(tokens.success),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Lucide.Check, contentDescription = null, modifier = Modifier.size(17.dp), tint = theme.LightTokens.foregroundPrimary)
+                }
                 QuimiaIconButton(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).size(34.dp),
                     icon = Lucide.Info,
@@ -463,15 +474,41 @@ private fun ProductCard(
                     onClick = onInfo,
                 )
             }
-            QuimiaButton(
+            CatalogSaveAction(
                 modifier = Modifier.fillMaxWidth().height(44.dp),
-                text = if (saved) "Guardado" else if (saving) "Guardando…" else "Guardar",
-                textStyle = Typography.bodyLarge,
-                containerColor = tokens.secondary, textColor = tokens.foregroundDisabled,
-                iconSize = 0, espacamento = 0, enabled = canSave && !saving && !saved, onClick = onSave,
+                saved = saved, saving = saving, canSave = canSave, onSave = onSave,
             )
         }
     }
+}
+
+@Composable
+private fun CatalogSaveAction(
+    saved: Boolean, saving: Boolean, canSave: Boolean, onSave: () -> Unit,
+    modifier: Modifier = Modifier, detail: Boolean = false,
+) {
+    val tokens = quimiaColorTokens()
+    if (saved) {
+        Surface(
+            modifier = modifier.quimiaSkeleton(1000.dp).semantics { stateDescription = "Produto já adicionado à sua estante" },
+            shape = CircleShape,
+            color = tokens.success.copy(alpha = 0.12f).compositeOver(tokens.surfaceBase),
+            border = androidx.compose.foundation.BorderStroke(1.dp, tokens.success.copy(alpha = if (quimiaHighContrastEnabled()) 1f else 0.4f)),
+        ) {
+            Row(Modifier.fillMaxSize().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(Lucide.Check, contentDescription = null, modifier = Modifier.size(18.dp), tint = tokens.textPrimary)
+                Text(if (detail) "Na sua estante" else "Na estante", modifier = Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = if (detail) Typography.bodyLarge else Typography.labelLarge, color = tokens.textPrimary)
+            }
+        }
+    } else QuimiaButton(
+        modifier = modifier,
+        text = if (saving) "Guardando…" else "Guardar", textStyle = Typography.bodyLarge,
+        containerColor = if (detail) tokens.primary else tokens.secondary,
+        textColor = if (detail) tokens.foregroundPrimary else tokens.foregroundDisabled,
+        iconSize = 0, espacamento = 0, enabled = canSave && !saving, onClick = onSave,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -568,16 +605,9 @@ private fun CatalogProductDetailsContent(
             }
             statusContent?.invoke()
             Spacer(Modifier.height(16.dp))
-            QuimiaButton(
+            CatalogSaveAction(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                text = if (saved) "Guardado" else if (saving) "Guardando…" else "Guardar",
-                enabled = canSave && !saving && !saved,
-                textStyle = Typography.bodyLarge,
-                containerColor = tokens.primary,
-                textColor = tokens.foregroundPrimary,
-                iconSize = 0,
-                espacamento = 0,
-                onClick = onSave,
+                saved = saved, saving = saving, canSave = canSave, onSave = onSave, detail = true,
             )
         }
     }
@@ -648,6 +678,15 @@ private fun CatalogSinglePreview() {
 @Composable
 private fun CatalogListPreview() {
     QuimiaTheme(darkTheme = false) { CatalogScreen(initialBannerVisible = false) }
+}
+
+@Preview(name = "Catálogo · produtos guardados · claro", widthDp = 360, heightDp = 805, showSystemUi = true)
+@Preview(name = "Catálogo · produtos guardados · escuro", widthDp = 360, heightDp = 805, showSystemUi = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun CatalogSavedProductsPreview() {
+    QuimiaTheme {
+        CatalogScreen(initialBannerVisible = false, initialSavedProductIds = sampleCatalogProducts.take(2).map { it.id })
+    }
 }
 
 @com.quimia.android.presentation.preview.QuimiaScreenPreviews
