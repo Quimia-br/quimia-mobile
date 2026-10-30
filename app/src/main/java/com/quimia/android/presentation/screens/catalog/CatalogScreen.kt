@@ -141,10 +141,11 @@ fun CatalogScreen(
             successMessage = null
         }
     }
-    val filtered = remember(products, query, previewItemLimit) {
-        products ?: sampleCatalogProducts.take(previewItemLimit).filter {
+    val filtered = remember(products, query, previewItemLimit, savedIds) {
+        val matches = products ?: sampleCatalogProducts.take(previewItemLimit).filter {
             it.name.contains(query.trim(), ignoreCase = true) || it.category.contains(query.trim(), ignoreCase = true)
         }
+        matches.sortedBy { it.id in savedIds }
     }
     LaunchedEffect(savedIds) { if (onSaveProducts != null) selectedIds = selectedIds - savedIds }
     var selectionQuery by remember { mutableStateOf(query) }
