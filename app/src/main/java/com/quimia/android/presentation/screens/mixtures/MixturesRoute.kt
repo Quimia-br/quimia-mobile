@@ -81,6 +81,8 @@ internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: (
                 ?: run { if (shelfError == null) notice = "Esse produto não está mais na sua estante." }
         }
     }
+    val entryLoading = com.quimia.android.presentation.components.rememberEntryLoading(shelfLoading, userId)
+    com.quimia.android.presentation.components.ReportDestinationLoading("mixtures", entryLoading)
     val catalog = remember(products) { products.map { it.catalogProduct() } }
     Box(Modifier.fillMaxSize()) {
         MixturesScreen(controller = controller, savedProductIds = catalog.map { it.id }, catalog = catalog,

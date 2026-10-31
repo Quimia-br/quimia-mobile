@@ -83,6 +83,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.notice(null) } }
     val products = state.products.map { it.catalogProduct() }
     val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading, userId)
+    com.quimia.android.presentation.components.ReportDestinationLoading("shelf", screenLoading)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     ShelfScreen(favoriteIds = state.products.filter { it.favorito }.map { it.id.toString() }, savedIds = products.map { it.id }, onSavedIdsChange = {}, onMenuItemSelected = onMenuItemSelected,
         onAiClick = onAiClick, onAddProduct = onAddProduct, initialQuery = query, initialSubstancesTab = substancesTab,

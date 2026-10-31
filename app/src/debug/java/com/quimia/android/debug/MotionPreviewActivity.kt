@@ -30,6 +30,8 @@ class MotionPreviewActivity : ComponentActivity() {
         val loginPreview = intent.getBooleanExtra("login", false)
         val mixturePreview = intent.getBooleanExtra("mixture", false)
         val empty = intent.getBooleanExtra("empty", false)
+        val loadingPreview = intent.getBooleanExtra("loading", false)
+        val splashPreview = intent.getBooleanExtra("splash", false)
         setContent {
             QuimiaTheme(darkTheme = dark) {
                 HideSystemNavigationBar()
@@ -39,12 +41,16 @@ class MotionPreviewActivity : ComponentActivity() {
                 var rooms by remember { mutableStateOf(if (empty) emptyList<QuimiaRoom>() else previewRooms) }
                 var profile by remember { mutableStateOf(false) }
                 var preferences by remember { mutableStateOf(ProfilePreferences()) }
-                var chat by remember { mutableStateOf(false) }
+                var chat by remember { mutableStateOf(intent.getBooleanExtra("kemi", false)) }
                 val controller = remember { KemiController() }
                 val navigate: (Int) -> Unit = { tab = it }
                 QuimiaNavigationMotion(tab) {
                     CompositionLocalProvider(LocalQuimiaSkeleton provides skeleton) {
                         when {
+                            loadingPreview -> com.quimia.android.presentation.components.BrandedLoadingScreen()
+                            splashPreview -> com.quimia.android.presentation.components.LaunchSplash {
+                                KemiScreen(controller, onClose = {}, displayName = "Gustavo")
+                            }
                             loginPreview -> com.quimia.android.presentation.screens.auth.login.Login1Screen()
                             mixturePreview -> com.quimia.android.presentation.screens.mixtures.MixturesScreen(
                                 remember { com.quimia.android.presentation.screens.mixtures.MixtureController() }, saved,

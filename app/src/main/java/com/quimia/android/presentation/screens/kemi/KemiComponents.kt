@@ -75,10 +75,10 @@ internal fun KemiWelcome(displayName: String?, modifier: Modifier = Modifier) {
     val tokens = quimiaColorTokens()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically)) {
-        QuimiaImage(painterResource(R.drawable.kemi_character), "Kemi",
-            modifier = Modifier.weight(1f, fill = false).widthIn(max = 188.dp)
-                .heightIn(max = 158.dp).aspectRatio(188f / 158f), contentScale = ContentScale.Fit,
-            shape = RectangleShape, backgroundColor = Color.Transparent)
+        QuimiaImage(kemiPortraitPainter(), "Kemi",
+            modifier = Modifier.weight(1f, fill = false).widthIn(max = 140.dp)
+                .heightIn(max = 139.dp).aspectRatio(140f / 139f), contentScale = ContentScale.Fit,
+            shape = CircleShape, backgroundColor = Color.Transparent)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(displayName?.trim()?.takeIf { it.isNotEmpty() }?.let { "Olá, $it" } ?: "Olá!",
                 style = QuimiaTextStyles.medium24.copy(fontSize = 25.sp, lineHeight = 30.sp), color = tokens.foregroundPrimary)

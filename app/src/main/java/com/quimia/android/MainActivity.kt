@@ -106,7 +106,9 @@ class MainActivity : ComponentActivity() {
                     useDyslexicFont = preferences.dyslexicFont) {
                     HideSystemNavigationBar()
                     com.quimia.android.presentation.system.QuimiaSoundProvider(preferences.soundEffects) {
-                        QuimiaApp(preferences) { preferences = it; store.save(it) }
+                        com.quimia.android.presentation.components.LaunchSplash {
+                            QuimiaApp(preferences) { preferences = it; store.save(it) }
+                        }
                     }
                 }
             }
@@ -257,6 +259,12 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         }
     }
 
+    val enteringAccount = authBusy && authDestination in setOf(AuthDestination.Login, AuthDestination.Address,
+        AuthDestination.GoogleDetails, AuthDestination.GoogleAddress)
+    com.quimia.android.presentation.components.DestinationLoadingHost(
+        destination = currentScreen, userId = sessionUid,
+        accountLoading = authState is AuthResult.Loading || enteringAccount,
+    ) { brandedLoading ->
     when (authState) {
         is AuthResult.Success -> motion.QuimiaNavigationMotion(selectedMainTab) {
             Box(Modifier.fillMaxSize()) {
@@ -430,7 +438,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
         }
     }
     androidx.activity.compose.BackHandler(enabled = authBusy || choosingGoogle) { }
-    if (authBusy || choosingGoogle) androidx.compose.ui.window.Dialog(
+    if ((authBusy || choosingGoogle) && !brandedLoading) androidx.compose.ui.window.Dialog(
         onDismissRequest = {}, properties = androidx.compose.ui.window.DialogProperties(
             usePlatformDefaultWidth = false, dismissOnBackPress = false, dismissOnClickOutside = false),
     ) {
@@ -452,6 +460,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     authNotice?.let { notice ->
         AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
             text = { Text(notice) }, confirmButton = { TextButton(onClick = { authNotice = null }) { Text("Entendi") } })
+    }
     }
 }
 

@@ -73,7 +73,12 @@ internal fun HomeLoadError(kind: GenericErrorKind, subject: String, onRetry: () 
 @Composable
 private fun HomeProductPhoto(product: HomeProduct?, modifier: Modifier) {
     val url = homePhotoUrl(product?.fotoUrl)
-    val photo = rememberAsyncImagePainter(url)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val request = remember(url, context) {
+        coil.request.ImageRequest.Builder(context).data(url).size(384).allowHardware(false)
+            .transformations(com.quimia.android.presentation.components.ProductPhotoCutout()).build()
+    }
+    val photo = rememberAsyncImagePainter(request)
     if (url == null || photo.state is AsyncImagePainter.State.Error) {
         Box(modifier, contentAlignment = Alignment.Center) {
             Icon(Lucide.ImageOff, "Imagem indisponível de ${product?.nome.orEmpty()}", tint = quimiaColorTokens().foregroundSubtle)

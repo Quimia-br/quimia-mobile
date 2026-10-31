@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.QuimiaAndroid" parent="Base.Theme.QuimiaAndroid">
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowSplashScreenBackground">#2E2E2E</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
+</resources>

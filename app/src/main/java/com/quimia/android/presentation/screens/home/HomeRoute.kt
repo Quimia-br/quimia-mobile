@@ -76,6 +76,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
     val avatarLoading = availableProfile == null || (photoUrl != null && (photo.state is AsyncImagePainter.State.Empty || photo.state is AsyncImagePainter.State.Loading))
     val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(
         state.profileLoading || state.historyLoading || pointLoading, userId)
+    com.quimia.android.presentation.components.ReportDestinationLoading("home", screenLoading)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     HomeScreen(avatarLoading = avatarLoading, avatarInitials = availableProfile?.nome?.let(::profileInitials).orEmpty(),
         avatarPhoto = photo.takeUnless { photoUrl == null || it.state is AsyncImagePainter.State.Error },
