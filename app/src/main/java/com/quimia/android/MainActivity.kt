@@ -91,8 +91,10 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val store = remember { ProfilePreferencesStore(this) }
-            var preferences by remember { mutableStateOf(store.load()) }
+            val preferencesFactory = remember { ProfilePreferencesViewModel.factory(applicationContext) }
+            val preferencesViewModel: ProfilePreferencesViewModel = viewModel(factory = preferencesFactory)
+            val settings by preferencesViewModel.state.collectAsStateWithLifecycle()
+            val preferences = settings.preferences
             val dark = preferences.theme.usesDarkColors(isSystemInDarkTheme())
             val density = LocalDensity.current
             SideEffect {
@@ -107,7 +109,21 @@ class MainActivity : ComponentActivity() {
                     HideSystemNavigationBar()
                     com.quimia.android.presentation.system.QuimiaSoundProvider(preferences.soundEffects) {
                         com.quimia.android.presentation.components.LaunchSplash {
-                            QuimiaApp(preferences) { preferences = it; store.save(it) }
+                            if (settings.ready) {
+                                QuimiaApp(preferences, preferencesViewModel::update)
+                            } else if (settings.error != null) {
+                                com.quimia.android.presentation.screens.errors.GenericErrorScreen(
+                                    kind = com.quimia.android.presentation.screens.errors.GenericErrorKind.Unknown,
+                                    description = settings.error.orEmpty(), onClose = ::finish,
+                                    onAction = { preferencesViewModel.reload() },
+                                )
+                            }
+                        }
+                        if (settings.ready && settings.error != null) {
+                            AlertDialog(onDismissRequest = preferencesViewModel::dismissError,
+                                text = { Text(settings.error.orEmpty()) },
+                                confirmButton = { TextButton(onClick = preferencesViewModel::retrySave) { Text("Tentar novamente") } },
+                                dismissButton = { TextButton(onClick = preferencesViewModel::dismissError) { Text("Fechar") } })
                         }
                     }
                 }
