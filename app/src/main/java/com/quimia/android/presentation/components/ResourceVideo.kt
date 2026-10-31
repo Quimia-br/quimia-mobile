@@ -28,10 +28,12 @@ internal fun ResourceVideo(
     looping: Boolean = false,
     clipToCircle: Boolean = false,
     onFinished: () -> Unit = {},
+    onFirstCycleFinished: () -> Unit = {},
     onFailure: () -> Unit = {},
 ) = key(resource) {
     val owner = LocalLifecycleOwner.current
     val finished by rememberUpdatedState(onFinished)
+    val firstCycleFinished by rememberUpdatedState(onFirstCycleFinished)
     val failure by rememberUpdatedState(onFailure)
     val player = remember { MediaPlayer() }
     var prepared by remember { mutableStateOf(false) }
@@ -89,7 +91,8 @@ internal fun ResourceVideo(
                             player.setSurface(surface)
                             if (!configured) {
                                 configured = true
-                                player.isLooping = looping
+                                // The first cycle needs a real completion event, not a wall-clock timeout.
+                                player.isLooping = false
                                 player.setVolume(0f, 0f)
                                 player.setDataSource(context, Uri.parse("android.resource://${context.packageName}/$resource"))
                                 player.setOnVideoSizeChangedListener { _, w, h ->
@@ -99,7 +102,13 @@ internal fun ResourceVideo(
                                     prepared = true
                                     if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) it.start()
                                 }
-                                player.setOnCompletionListener { if (!looping) finished() }
+                                player.setOnCompletionListener {
+                                    firstCycleFinished()
+                                    if (looping) {
+                                        it.isLooping = true
+                                        if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) it.start()
+                                    } else finished()
+                                }
                                 player.setOnErrorListener { _, what, extra ->
                                     Log.w("QuimiaVideo", "Playback failed for resource $resource: $what/$extra")
                                     failure(); true

@@ -85,49 +85,14 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
 
 @Composable
 internal fun NearbySavedPointsSheet(ids: List<Int>, onDismiss: () -> Unit, onSelect: (Int) -> Unit, onRemove: (Int) -> Unit) {
-    val tokens = quimiaColorTokens()
-    var category by rememberSaveable { mutableStateOf<NearbyCategory?>(NearbyCategory.Collection) }
     var routeNotice by rememberSaveable { mutableStateOf(false) }
-    val points = nearbyPoints.filter { it.id in ids && (category == null || it.category == category) }
-    NearbyFloatingSheet(onDismiss) {
-        NearbySheetHeader("Pontos salvos", onDismiss)
-        Column(Modifier.padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(17.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(17.dp)) {
-                NearbyCategory.entries.forEach { item ->
-                    QuimiaChip(label = item.label, selected = category == item, centerContent = true,
-                        modifier = Modifier.weight(1f), onClick = { category = if (category == item) null else item })
-                }
-            }
-            if (points.isEmpty()) QuimiaEmptyState(
-                fillAvailableSpace = false, title = "Nenhum ponto salvo",
-                description = "Selecione um ponto no mapa de demonstração e toque em Salvar.", icon = Lucide.MapPin,
-            ) else points.forEach { point ->
-                Surface(shape = RoundedCornerShape(32.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
-                    Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuimiaListItem(
-                            title = point.name, subtitle = point.address, titleMaxLines = 1, subtitleMaxLines = 1,
-                            contentPadding = PaddingValues(0.dp), containerColor = Color.Transparent, cornerRadius = 0.dp,
-                            trailingContent = {
-                                QuimiaIconButton(
-                                    modifier = Modifier.size(45.dp).border(2.dp, Color(0xFFFF93D7), CircleShape),
-                                    icon = Lucide.Heart, containerColor = tokens.surfaceBase, iconColor = Color.Unspecified,
-                                    iconPainter = painterResource(R.drawable.figma_heart_filled),
-                                    contentDescription = "Remover dos salvos",
-                                    onClick = { onRemove(point.id) },
-                                )
-                            },
-                            onClick = { onSelect(point.id) },
-                        )
-                        QuimiaButton(modifier = Modifier.fillMaxWidth().height(41.dp), text = "Abrir aplicativo de mapa",
-                            textStyle = QuimiaTextStyles.medium14, iconSize = 0, espacamento = 0,
-                            containerColor = tokens.secondary, onClick = { routeNotice = true })
-                    }
-                }
-            }
-            if (routeNotice) QuimiaToast(message = "Este ponto é de demonstração. Rotas reais ainda não estão conectadas.",
-                type = QuimiaToastType.Info, onDismiss = { routeNotice = false })
-        }
-    }
+    NearbyPointsSheet(points = nearbyPoints.filter { it.id in ids }.map { point ->
+        NearbyPointListEntry(point.id, point.name, point.address,
+            if (point.category == NearbyCategory.Collection) "descarte" else "compra", true, true)
+    }, initialCategory = "descarte", onDismiss = onDismiss, onSelect = onSelect,
+        onOpenMap = { routeNotice = true }, onToggleSaved = onRemove,
+        error = if (routeNotice) "Este ponto é de demonstração. Rotas reais ainda não estão conectadas." else null,
+        onErrorDismiss = { routeNotice = false })
 }
 
 @Composable

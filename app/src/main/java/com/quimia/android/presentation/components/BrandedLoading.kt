@@ -65,20 +65,27 @@ internal fun DestinationLoadingHost(
         if (aiEntry && motion) delay(450)
         aiEntry = false
     }
-    val visible = brandedLoadingVisible(menuShown, accountLoading, aiEntry, pending, slowEntry)
+    val launching = LocalLaunchSplashVisible.current
+    val requested = !launching && brandedLoadingVisible(menuShown, accountLoading, aiEntry, pending, slowEntry)
+    var playback by remember { mutableStateOf(LoadingPlaybackState()) }
+    val presentation = playback.update(requested, motion)
+    val visible = presentation.showing
+    SideEffect { playback = presentation }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(visible) { if (visible) keyboard?.hide() }
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalDestinationLoading provides report) {
             Box(Modifier.fillMaxSize().then(if (visible) Modifier.clearAndSetSemantics { } else Modifier)) {
-                content(visible)
+                content(visible || launching)
             }
         }
-        // Do not even keep an outgoing loading layer above a newly visible menu.
-        if (!menuShown) {
+        // Tab switches cannot start a loading screen. A video already started elsewhere finishes before revealing the destination.
+        if (!menuShown || visible) {
             AnimatedVisibility(visible, enter = fadeIn(QuimiaMotion.tweenSpec(motion, 120)),
                 exit = fadeOut(QuimiaMotion.tweenSpec(motion, QuimiaMotion.ScreenDissolve))) {
-                BrandedLoadingScreen()
+                key(presentation.appearance) {
+                    BrandedLoadingScreen(onFirstCycleFinished = { playback = playback.cycleFinished(presentation.appearance) })
+                }
             }
         }
         BackHandler(enabled = accountLoading) { }
@@ -87,7 +94,7 @@ internal fun DestinationLoadingHost(
 
 /** Figma 2058:9127: the supplied walking-pig video repeats only while this loading layer exists. */
 @Composable
-internal fun BrandedLoadingScreen() {
+internal fun BrandedLoadingScreen(onFirstCycleFinished: () -> Unit = {}) {
     val tokens = quimiaColorTokens()
     BoxWithConstraints(Modifier.fillMaxSize().background(tokens.surfaceBackground)
         .pointerInput(Unit) { detectTapGestures { } }
@@ -99,7 +106,8 @@ internal fun BrandedLoadingScreen() {
         Box(Modifier.align(Alignment.Center).size(size, size * (137f / 138f)).clip(CircleShape)) {
             Image(painterResource(R.drawable.kemi_loading), null, Modifier.matchParentSize(), contentScale = ContentScale.Fit)
             if (animate && !failed) ResourceVideo(R.raw.quimia_loading, Modifier.matchParentSize(),
-                looping = true, clipToCircle = true, onFailure = { failed = true })
+                looping = true, clipToCircle = true, onFirstCycleFinished = onFirstCycleFinished,
+                onFailure = { failed = true; onFirstCycleFinished() })
         }
         Text("Carregando...", Modifier.align(Alignment.Center).offset(y = size / 2 + 45.dp),
             style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)

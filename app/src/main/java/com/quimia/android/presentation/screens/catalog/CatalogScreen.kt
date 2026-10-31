@@ -445,11 +445,11 @@ private fun ProductCard(
                 CatalogImage(product, modifier = Modifier.size(width = if (compact) 122.dp else 154.dp, height = 154.dp))
                 QuimiaIconButton(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).size(34.dp),
-                    icon = if (saved) Lucide.Check else Lucide.Info,
+                    icon = Lucide.Info,
                     size = QuimiaIconButtonSize.Small,
                     iconSize = 18.dp,
-                    containerColor = if (saved) tokens.success else tokens.secondary,
-                    iconColor = if (saved) theme.LightTokens.foregroundPrimary else tokens.foregroundPrimary,
+                    containerColor = tokens.secondary,
+                    iconColor = tokens.foregroundPrimary,
                     contentDescription = "Informações sobre ${product.name}",
                     onClick = onInfo,
                 )
@@ -491,7 +491,7 @@ private fun CatalogSaveAction(
         modifier = Modifier.fillMaxSize(),
         text = if (saving) "Guardando…" else "Guardar", textStyle = Typography.bodyLarge,
         containerColor = if (detail) tokens.primary else tokens.secondary,
-        textColor = if (detail) tokens.foregroundPrimary else tokens.foregroundDisabled,
+        textColor = tokens.foregroundPrimary,
         iconSize = 0, espacamento = 0, enabled = canSave && !saving && !saved, onClick = onSave,
     )
     }

@@ -80,6 +80,7 @@ fun QuimiaToast(
     description: String? = null,
     statusIconContainerColor: Color? = null,
     animateEntrance: Boolean = true,
+    compactLayout: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     val motion = LocalQuimiaMotionEnabled.current
@@ -176,11 +177,11 @@ fun QuimiaToast(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = 12.dp),
+                .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = if (compactLayout) 8.dp else 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (type == QuimiaToastType.Loading) Box(Modifier.size(if (compact) 40.dp else 50.dp), contentAlignment = Alignment.Center) {
+            if (type == QuimiaToastType.Loading) Box(Modifier.size(if (compactLayout) 24.dp else if (compact) 40.dp else 50.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(24.dp), color = tokens.foregroundPrimary, strokeWidth = 2.dp)
             } else QuimiaShapeIcon(
                 size = if (compact) 40.dp else QuimiaShapeIconSize.Small.value,
@@ -189,13 +190,13 @@ fun QuimiaToast(
                 containerColor = statusIconContainerColor,
             )
             Column(
-                modifier = Modifier.weight(1f).sizeIn(minHeight = 50.dp),
+                modifier = Modifier.weight(1f).sizeIn(minHeight = if (compactLayout) 24.dp else 50.dp),
                 verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically),
             ) {
                 Text(
                     text = message,
                     color = tokens.foregroundPrimary,
-                    style = QuimiaTextStyles.medium16,
+                    style = if (compactLayout) QuimiaTextStyles.medium14 else QuimiaTextStyles.medium16,
                 )
                 if (!description.isNullOrBlank()) {
                     Text(
@@ -228,7 +229,7 @@ fun QuimiaToast(
 /** Keeps the previous notice mounted until its exit animation has finished. */
 @Composable
 fun QuimiaToastHost(message: String?, modifier: Modifier = Modifier, type: QuimiaToastType = QuimiaToastType.Info,
-    description: String? = null, onDismiss: (() -> Unit)? = null) {
+    description: String? = null, onDismiss: (() -> Unit)? = null, compactLayout: Boolean = false) {
     val visibility = remember { MutableTransitionState(false) }
     var retained by remember { mutableStateOf(message) }
     var retainedType by remember { mutableStateOf(type) }
@@ -242,7 +243,7 @@ fun QuimiaToastHost(message: String?, modifier: Modifier = Modifier, type: Quimi
         enter = fadeIn(QuimiaMotion.tweenSpec(motion, 180)) + slideInVertically(QuimiaMotion.tweenSpec(motion, 220)) { -it / 5 },
         exit = fadeOut(QuimiaMotion.tweenSpec(motion, 180)) + shrinkVertically(QuimiaMotion.tweenSpec(motion, 220), shrinkTowards = Alignment.Top)) {
         retained?.let { QuimiaToast(it, type = retainedType, description = retainedDescription,
-            onDismiss = onDismiss, animateEntrance = false) }
+            onDismiss = onDismiss, animateEntrance = false, compactLayout = compactLayout) }
     }
 }
 

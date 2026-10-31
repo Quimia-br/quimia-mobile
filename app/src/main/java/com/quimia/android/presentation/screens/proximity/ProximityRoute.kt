@@ -74,6 +74,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     var listVisible by rememberSaveable { mutableStateOf(false) }
     var saved by remember(userId) { mutableStateOf<List<ApiPoint>>(emptyList()) }
     var savedReady by remember(userId) { mutableStateOf(false) }
+    var savedLoadCount by remember(userId) { mutableIntStateOf(0) }
     var savingPoint by remember { mutableStateOf(false) }
     var selectedPoint by remember { mutableStateOf<Int?>(null) }
     var showSaved by remember { mutableStateOf(false) }
@@ -108,9 +109,11 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         }
     }
     suspend fun loadSaved() {
+        savedLoadCount++
         try { saved = repository.saved(userId); savedReady = true }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { savedReady = false; notice = authErrorMessage(failure) }
+        finally { savedLoadCount-- }
     }
     suspend fun loadAddress() {
         try { address = repository.address(userId); addressError = null }
@@ -145,7 +148,11 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     }
     Column(Modifier.fillMaxSize().background(tokens.surfaceBackground).statusBarsPadding()) {
         Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-        QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = { onMenuItemSelected(0) })
+        NearbyNavigationHeader(loadingMessage = when {
+            savingPoint -> "Salvando ponto…"
+            loading || savedLoadCount > 0 -> "Carregando pontos…"
+            else -> null
+        }, onBack = { onMenuItemSelected(0) })
         QuimiaSectionTitle(title = "Proximidade", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
             horizontalPadding = 32.dp, verticalPadding = 32.dp) {
             QuimiaIconButton(icon = Lucide.ChevronDown, iconRotationDegrees = if (expanded) 180f else 0f,
@@ -183,9 +190,6 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
                     QuimiaChip(label = label, selected = type == value, centerContent = true, modifier = Modifier.weight(1f), onClick = { type = value })
                 }
             }
-            toast.QuimiaToastHost(when { savingPoint -> "Salvando ponto…"; loading -> "Carregando pontos…"; else -> null },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = 91.dp),
-                type = toast.QuimiaToastType.Loading)
             if (error != null) TextButton(modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
                 onClick = { showSaved = false; listVisible = true }) { Text("Não foi possível carregar os pontos. Tentar novamente", color = tokens.foregroundPrimary) }
             points.find { it.id == selectedPoint }?.takeIf { it.latitude != null && it.longitude != null }?.let { point ->
@@ -221,51 +225,29 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
 
         }
     }
-    if (listVisible && (error == null || showSaved)) ModalBottomSheet(onDismissRequest = { listVisible = false },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = tokens.surfaceBackground) {
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 600.dp), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TextButton(onClick = { showSaved = false }) { Text("Todos os pontos", color = tokens.foregroundPrimary) }
-                    TextButton(onClick = { showSaved = true; scope.launch { loadSaved() } }) { Text("Pontos salvos", color = tokens.foregroundPrimary) }
-                }
-            }
-            item { Text("Pontos de ${if (type == "compra") "compra" else "descarte"}", style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary) }
-            if (loading) item { CircularProgressIndicator() }
-            if (error != null) item {
-                Text(error.orEmpty(), color = tokens.foregroundPrimary)
-                TextButton(onClick = { load(reset = points.isEmpty()) }) { Text("Tentar novamente") }
-            }
-            if (!loading && error == null && (if (showSaved) saved.isEmpty() else points.isEmpty())) item {
-                states.QuimiaEmptyState(icon = Lucide.MapPin,
-                    title = if (showSaved) "Nenhum ponto salvo" else "Nenhum ponto encontrado",
-                    description = if (showSaved) "Salve pontos no mapa para encontrá-los aqui." else "Experimente outra região ou filtro.")
-            }
-            items(if (showSaved) saved else points, key = { it.id }) { point ->
-                Surface(shape = RoundedCornerShape(28.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(point.nome, style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
-                        Text(point.address, style = QuimiaTextStyles.medium14, color = tokens.foregroundSubtle)
-                        QuimiaButton(text = "Abrir aplicativo de mapas", iconSize = 0, espacamento = 0,
-                            textColor = LightTokens.foregroundPrimary, enabled = point.mapsQuery != null,
-                            modifier = Modifier.fillMaxWidth(), onClick = { openMaps(point) })
-                        TextButton(enabled = savedReady && !savingPoint, onClick = {
-                            savingPoint = true
-                            scope.launch {
-                                try {
-                                    if (saved.any { it.id == point.id }) repository.removePoint(userId, point.id)
-                                    else repository.savePoint(userId, point.id)
-                                    loadSaved()
-                                } catch (cancelled: CancellationException) { throw cancelled }
-                                catch (failure: Exception) { notice = authErrorMessage(failure) }
-                                finally { savingPoint = false }
-                            }
-                        }) { Text(if (saved.any { it.id == point.id }) "Remover dos salvos" else "Salvar ponto", color = tokens.foregroundPrimary) }
+    if (listVisible && (error == null || showSaved)) {
+        val listed = if (showSaved) saved else points
+        NearbyPointsSheet(points = listed.map { point -> NearbyPointListEntry(point.id, point.nome, point.address,
+            point.tipo, saved.any { it.id == point.id }, point.mapsQuery != null) },
+            initialCategory = type, savedOnly = showSaved, loading = if (showSaved) savedLoadCount > 0 else loading,
+            error = notice, onErrorDismiss = { notice = null }, canToggleSaved = savedReady && !savingPoint,
+            hasMore = !showSaved && hasMore && error == null, onMore = { load(false) }, onCategory = { type = it },
+            onShowSaved = { showSaved = true; scope.launch { loadSaved() } }, onDismiss = { listVisible = false },
+            onSelect = { id -> listed.find { it.id == id }?.let(::openMaps) },
+            onOpenMap = { id -> listed.find { it.id == id }?.let(::openMaps) },
+            onToggleSaved = { id ->
+                if (savedReady && !savingPoint) {
+                    savingPoint = true
+                    scope.launch {
+                        try {
+                            if (saved.any { it.id == id }) repository.removePoint(userId, id) else repository.savePoint(userId, id)
+                            loadSaved()
+                        } catch (cancelled: CancellationException) { throw cancelled }
+                        catch (failure: Exception) { notice = authErrorMessage(failure) }
+                        finally { savingPoint = false }
                     }
                 }
-            }
-            if (!showSaved && hasMore && !loading && error == null) item { TextButton(onClick = { load(false) }) { Text("Carregar mais") } }
-        }
+            })
     }
     if (listVisible && error != null && !showSaved) GenericErrorScreen(errorKind,
         onClose = { listVisible = false }, description = if (errorKind == GenericErrorKind.Unknown) error.orEmpty() else errorKind.description,
@@ -284,6 +266,6 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             address = repository.saveAddress(userId, body.copy(latitude = coordinate?.latitude, longitude = coordinate?.longitude))
             addressError = null
         })
-    notice?.let { text -> AlertDialog(onDismissRequest = { notice = null }, text = { Text(text) },
+    notice?.takeIf { !listVisible }?.let { text -> AlertDialog(onDismissRequest = { notice = null }, text = { Text(text) },
         confirmButton = { TextButton(onClick = { notice = null }) { Text("Entendi") } }) }
 }

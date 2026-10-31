@@ -70,7 +70,10 @@ class MotionPreviewActivity : ComponentActivity() {
                             tab == 2 -> ShelfScreen(saved, { saved = it }, onMenuItemSelected = navigate,
                                 favoriteIds = favorites, onFavoriteIdsChange = { favorites = it },
                                 onAiClick = { chat = true }, onAddProduct = { tab = 1 })
-                            tab == 3 -> ProximityScreen(onMenuItemSelected = navigate)
+                            tab == 3 -> ProximityScreen(onMenuItemSelected = navigate,
+                                initialHeaderExpanded = false, initialSavedPointIds = listOf(1, 2),
+                                previewSavedPoints = intent.getBooleanExtra("points_saved", false),
+                                previewLoadingPoints = intent.getBooleanExtra("points_loading", false))
                             tab == 4 -> RoomsScreen(rooms, { rooms = it }, saved, onMenuItemSelected = navigate,
                                 onAiClick = { chat = true }, onOpenCatalog = { tab = 1 })
                             else -> HomeScreen(onMenuItemSelected = navigate, onAvatarClick = { profile = true },

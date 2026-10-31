@@ -56,6 +56,7 @@ fun ProximityScreen(
     previewAddressForm: Boolean = false,
     initialHeaderExpanded: Boolean = true,
     initialCollectionFilter: Boolean = false,
+    previewLoadingPoints: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     var category by rememberSaveable { mutableStateOf<NearbyCategory?>(if (initialCollectionFilter || previewSelectedPointId != null) NearbyCategory.Collection else null) }
@@ -76,10 +77,8 @@ fun ProximityScreen(
     Box(modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-            Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp)) {
-                QuimiaIconButton(icon = Lucide.ChevronLeft, size = QuimiaIconButtonSize.Medium,
-                    containerColor = tokens.secondary, contentDescription = "Voltar para Home", onClick = { onMenuItemSelected(0) })
-            }
+            NearbyNavigationHeader(if (previewLoadingPoints) "Carregando pontos…" else null,
+                onBack = { onMenuItemSelected(0) })
             QuimiaSectionTitle(title = "Proximidade", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
                 horizontalPadding = 32.dp, verticalPadding = 32.dp) {
                 QuimiaIconButton(icon = Lucide.ChevronDown, iconRotationDegrees = if (headerExpanded) 180f else 0f,
