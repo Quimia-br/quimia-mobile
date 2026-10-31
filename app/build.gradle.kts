@@ -89,6 +89,7 @@ ksp {
 }
 
 dependencies {
+    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.appcompat)
@@ -123,6 +124,7 @@ dependencies {
     
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation(libs.androidx.work.testing)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation(libs.androidx.junit)

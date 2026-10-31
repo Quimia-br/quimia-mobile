@@ -28,9 +28,10 @@ import toast.QuimiaToastType
 @Composable
 internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: () -> Unit,
     onSessionExpired: () -> Unit, onRecorded: () -> Unit, initialProductId: String? = null,
-    initialHistory: Boolean = false, historyProductId: String? = null) {
+    initialHistory: Boolean = false, historyProductId: String? = null, notificationsEnabled: Boolean = false) {
     val context = LocalContext.current.applicationContext
     val sessions = remember(context) { AuthRepositoryProvider.get(context) }
+    val latestNotificationsEnabled by rememberUpdatedState(notificationsEnabled)
     val repository = remember(userId, sessions) {
         MixturesRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, MixturesApi::class.java), sessions)
     }
@@ -95,6 +96,12 @@ internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: (
                     val ids = request.ingredients.map { requireNotNull(it.id.toIntOrNull()) }
                     result = repository.analyze(userId, ids[0], ids[1])
                     onRecorded()
+                    if (latestNotificationsEnabled && (sessions.session.value as? SessionState.Authenticated)?.profile?.id == userId) {
+                        result?.let { recorded -> runCatching {
+                            com.quimia.android.data.notifications.QuimiaNotifications(context).post(
+                                com.quimia.android.domain.notifications.mixtureResultNotification(userId, recorded.id))
+                        } }
+                    }
                     MixtureReply.Recorded
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) {

@@ -35,7 +35,8 @@ class RoomProfilePreferencesRepositoryTest {
     }
 
     private fun openDatabase() {
-        database = Room.databaseBuilder(context, QuimiaDatabase::class.java, databaseName).build()
+        database = Room.databaseBuilder(context, QuimiaDatabase::class.java, databaseName)
+            .addMigrations(QuimiaDatabase.MIGRATION_1_2).build()
     }
 
     @After fun cleanup() {
@@ -97,5 +98,27 @@ class RoomProfilePreferencesRepositoryTest {
             theme = "RemovedTheme", textSizeStep = 999, dyslexicFont = true, soundEffects = false,
         ))
         assertEquals(saved.copy(theme = ProfileTheme.Light), RoomProfilePreferencesRepository(context, database).load())
+    }
+
+    @Test fun upgradingVersionOnePreservesSettingsAndLeavesNotificationsOptedOut() = runBlocking {
+        database.close()
+        context.openOrCreateDatabase(databaseName, Context.MODE_PRIVATE, null).use { old ->
+            old.execSQL("CREATE TABLE accessibility_preferences (id INTEGER NOT NULL PRIMARY KEY, theme TEXT NOT NULL, textSizeStep INTEGER NOT NULL, dyslexicFont INTEGER NOT NULL, soundEffects INTEGER NOT NULL)")
+            old.execSQL("INSERT INTO accessibility_preferences VALUES (1, 'HighContrast', 2, 1, 0)")
+            old.version = 1
+        }
+        openDatabase()
+        val restored = RoomProfilePreferencesRepository(context, database).load()
+        assertEquals(saved, restored)
+        assertFalse(restored.mixtureNotifications)
+        assertFalse(restored.shelfReminders)
+    }
+
+    @Test fun notificationChoicesPersistWhenTheDatabaseReopens() = runBlocking {
+        val choices = saved.copy(mixtureNotifications = true, shelfReminders = true)
+        RoomProfilePreferencesRepository(context, database).save(choices)
+        database.close()
+        openDatabase()
+        assertEquals(choices, RoomProfilePreferencesRepository(context, database).load())
     }
 }

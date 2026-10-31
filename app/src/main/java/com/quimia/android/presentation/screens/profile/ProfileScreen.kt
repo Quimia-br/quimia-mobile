@@ -261,6 +261,7 @@ private fun ProfilePreferencesScreen(
                     onCheckedChange = { onPreferencesChange(preferences.copy(soundEffects = it)) },
                     contentDescription = "Ativar efeitos sonoros")
             }
+            NotificationPreferencesCard(preferences, onPreferencesChange)
             QuimiaButton(text = "Sair", modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                 .padding(top = if (quimiaHighContrastEnabled()) 18.dp else 8.dp)
                 .then(if (accessibleLayout) Modifier.heightIn(min = 48.dp) else Modifier.height(43.dp)),
