@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,6 +46,8 @@ import theme.RadiusSmall
 import theme.quimiaColorTokens
 import theme.quimiaHighContrastEnabled
 import theme.QuimiaTheme
+
+val LocalQuimiaInputActionIconSize = staticCompositionLocalOf<Dp?> { null }
 
 @Composable
 fun QuimiaInput(
@@ -78,6 +82,8 @@ fun QuimiaInput(
     highlighted: Boolean = false,
     borderWidth: Dp = 3.dp,
     ) {
+    val actionIconSize = trailingIconSize ?: LocalQuimiaInputActionIconSize.current
+    val largeAction = actionIconSize != null && actionIconSize >= 20.dp
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
 
@@ -166,13 +172,14 @@ fun QuimiaInput(
                 }
                     if ((value.isNotEmpty() && showClearButton) || (showTrailingIconWhenEmpty && trailingIcon != null)) {
                         QuimiaIconButton(
-                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
+                            modifier = Modifier.padding(start = 4.dp, top = if (largeAction) 0.dp else 8.dp, bottom = if (largeAction) 0.dp else 8.dp)
+                                .then(if (largeAction) Modifier.sizeIn(minWidth = 32.dp, minHeight = 32.dp) else Modifier),
                             icon = trailingIcon ?: Lucide.X,
                             onClick = onTrailingIconClick ?: { onValueChange("") },
                             iconColor = actualPrimaryColor,
                             containerColor = actualContainerColor,
                             size = QuimiaIconButtonSize.Icon,
-                            iconSize = trailingIconSize,
+                            iconSize = actionIconSize,
                             contentDescription = trailingIconContentDescription ?: "Clear all"
                         )
                     }

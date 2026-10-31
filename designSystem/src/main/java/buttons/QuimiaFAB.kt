@@ -46,11 +46,12 @@ fun QuimiaFAB(
     val actualContainerColor = containerColor ?: tokens.primary
     val actualIconColor = actionContentColor(actualContainerColor, iconColor, tokens)
 
+    val sound = feedback.LocalQuimiaSound.current
     val motionInteractions = remember { MutableInteractionSource() }
     val motionPressed by motionInteractions.collectIsPressedAsState()
     IconButton(
         interactionSource = motionInteractions,
-        onClick = onClick,
+        onClick = { sound(feedback.QuimiaSound.Tap); onClick() },
         modifier = modifier.quimiaPress(motionPressed).size(QuimiaFABSize).quimiaSkeleton(QuimiaFABSize).quimiaContrastOutline(CircleShape),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,

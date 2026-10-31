@@ -48,7 +48,7 @@ internal fun BirthDateField(value: String, onValueChange: (String) -> Unit, erro
         onClick("Selecionar data de nascimento") { open(); true }
     }) {
         QuimiaInput(value, {}, label = "Data de nascimento", placeholder = "DD/MM/AAAA", enabled = false,
-            trailingIcon = Lucide.Calendar, trailingIconSize = 16.dp, showTrailingIconWhenEmpty = true,
+            trailingIcon = Lucide.Calendar, trailingIconSize = input.LocalQuimiaInputActionIconSize.current ?: 16.dp, showTrailingIconWhenEmpty = true,
             onTrailingIconClick = ::open, error = error)
         Box(Modifier.matchParentSize().clickable(onClick = ::open))
     }

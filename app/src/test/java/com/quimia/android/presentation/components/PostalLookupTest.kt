@@ -35,6 +35,14 @@ class PostalLookupTest {
         assertNotNull(state.error)
     }
 
+    @Test fun missingStreetCannotBeSavedAsAnAutomaticallyCompletedAddress() {
+        val result = decodePostalAddress(validJson.replace("Praça da Sé", ""), "01001000")
+        val state = postalLookupState("01001000", result)
+        assertFalse(state.ready)
+        assertNotNull(state.error)
+        assertEquals("", state.address?.street)
+    }
+
     @Test fun changingOrClearingPostalCodeImmediatelyRemovesTheOldAddress() {
         val previous = postalLookupState("01001000", decodePostalAddress(validJson, "01001000"))
         assertNull(currentPostalState("0100100", previous).address)

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -116,8 +117,10 @@ fun QuimiaBottomSheetContent(
 ) {
     val tokens = quimiaColorTokens()
     val secondary = if (theme == QuimiaBottomSheetTheme.Primary) tokens.secondary else tokens.surfaceBase
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+    val boundedHeight = contentHeight?.coerceAtMost(maxHeight)
     Column(
-        modifier = modifier.fillMaxWidth().then(if (contentHeight != null) Modifier.height(contentHeight) else Modifier).padding(contentPadding),
+        modifier = Modifier.fillMaxWidth().then(if (boundedHeight != null) Modifier.height(boundedHeight) else Modifier.heightIn(max = maxHeight)).padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (showDragHandle) QuimiaDragger(color = secondary, height = 3.dp)
@@ -154,6 +157,8 @@ fun QuimiaBottomSheetContent(
             }
         }
     }
+}
+
 }
 
 @preview.QuimiaDevicePreviews

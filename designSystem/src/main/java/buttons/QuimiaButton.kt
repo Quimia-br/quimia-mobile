@@ -78,12 +78,13 @@ fun QuimiaButton(
     val disabledContentColor = actionContentColor(actualContainer, tokens.foregroundDisabled, tokens)
     val actualIconColor = if (enabled) actionContentColor(actualContainer, iconColor, tokens) else disabledContentColor
 
+    val sound = feedback.LocalQuimiaSound.current
     val motionInteractions = remember { MutableInteractionSource() }
     val motionPressed by motionInteractions.collectIsPressedAsState()
     Button(
         interactionSource = motionInteractions,
         modifier = modifier.quimiaPress(motionPressed).quimiaSkeleton(1000.dp),
-        onClick = onClick,
+        onClick = { sound(feedback.QuimiaSound.Tap); onClick() },
         enabled = enabled,
         border = quimiaContrastBorder(),
         colors = ButtonDefaults.buttonColors(

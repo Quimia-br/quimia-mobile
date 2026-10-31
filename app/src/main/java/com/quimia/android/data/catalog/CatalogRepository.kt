@@ -9,7 +9,7 @@ import retrofit2.http.*
 @Serializable internal data class CatalogPage<T>(val itens: List<T>, val pagina: Int, val tamanho: Int,
     val totalItens: Long, val totalPaginas: Int)
 @Serializable internal data class CatalogBrand(val id: Int, val nome: String, val logoUrl: String? = null)
-@Serializable internal data class ApiCatalogProduct(val id: Int, val nome: String, val tipo: String,
+@Serializable internal data class ApiCatalogProduct(val id: Int, val nome: String, val tipo: String? = null,
     val descricao: String? = null, val codBarras: String? = null, val fotoUrl: String? = null, val marca: CatalogBrand? = null, val favorito: Boolean = false)
 @Serializable internal data class BarcodeRequest(val codBarras: String)
 @Serializable internal data class SaveCatalogRequest(val produtoIds: List<Int>)
@@ -86,7 +86,7 @@ internal class CatalogRepository(private val api: CatalogApi, private val sessio
 }
 
 internal fun validateCatalogProduct(product: ApiCatalogProduct) {
-    if (product.id <= 0 || product.nome.isBlank() || product.tipo.isBlank() ||
+    if (product.id <= 0 || product.nome.isBlank() ||
         product.marca?.let { it.id <= 0 || it.nome.isBlank() } == true) throw CatalogContractException()
 }
 internal fun validateCatalogPage(page: CatalogPage<ApiCatalogProduct>, expected: Int, size: Int) {

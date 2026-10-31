@@ -41,20 +41,22 @@ internal fun MixturePicker(
     products: List<CatalogProduct>, substances: List<MixtureIngredient>, other: MixtureIngredient?,
     current: MixtureIngredient?, onDismiss: () -> Unit, onUse: (MixtureIngredient) -> Unit,
     onOpenCatalog: () -> Unit, initialSubstances: Boolean = false,
+    loadingProducts: Boolean = false, productsError: String? = null, onRetryProducts: () -> Unit = {}, allowSubstances: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val content: @Composable () -> Unit = {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             MixturePickerContent(products, substances, other, current, onDismiss, onUse, onOpenCatalog,
-                Modifier.fillMaxWidth().heightIn(max = maxHeight).height(if (initialSubstances) 515.dp else 650.dp), initialSubstances)
+                Modifier.fillMaxWidth().heightIn(max = maxHeight).height(if (initialSubstances) 515.dp else 650.dp), initialSubstances,
+                loadingProducts, productsError, onRetryProducts, allowSubstances)
         }
     }
     if (LocalInspectionMode.current) {
         Box(Modifier.fillMaxSize().background(CatalogModalScrimColor).statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), contentAlignment = Alignment.BottomCenter) {
-            Surface(Modifier.widthIn(max = 560.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder()) { content() }
+            Surface(Modifier.widthIn(max = 840.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder()) { content() }
         }
     } else ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 840.dp,
         containerColor = tokens.secondary, scrimColor = CatalogModalScrimColor, shape = RoundedCornerShape(40.dp), dragHandle = null) {
         HideSystemNavigationBar()
         content()
@@ -66,9 +68,10 @@ internal fun MixturePickerContent(
     products: List<CatalogProduct>, substances: List<MixtureIngredient>, other: MixtureIngredient?, current: MixtureIngredient?,
     onDismiss: () -> Unit, onUse: (MixtureIngredient) -> Unit, onOpenCatalog: () -> Unit,
     modifier: Modifier = Modifier, initialSubstances: Boolean = false,
+    loadingProducts: Boolean = false, productsError: String? = null, onRetryProducts: () -> Unit = {}, allowSubstances: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
-    var substanceTab by rememberSaveable { mutableStateOf(initialSubstances || current?.kind == MixtureIngredientKind.Substance) }
+    var substanceTab by rememberSaveable { mutableStateOf(allowSubstances && (initialSubstances || current?.kind == MixtureIngredientKind.Substance)) }
     var chosenKey by rememberSaveable { mutableStateOf(current?.key) }
     val candidates = if (substanceTab) substances else products.map { it.mixtureIngredient() }
     val chosen = candidates.firstOrNull { it.key == chosenKey && it.key != other?.key }
@@ -82,7 +85,7 @@ internal fun MixturePickerContent(
             QuimiaIconButton(icon = Lucide.X, onClick = onDismiss, containerColor = tokens.surfaceBase, contentDescription = "Fechar estante")
         }
         Spacer(Modifier.height(32.dp))
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (allowSubstances) BoxWithConstraints(Modifier.fillMaxWidth()) {
           val compact = maxWidth < 246.dp
           Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             listOf(false to "Produtos", true to "Substâncias").forEach { (substancesTab, label) ->
@@ -95,12 +98,17 @@ internal fun MixturePickerContent(
           }
         }
         Spacer(Modifier.height(26.dp))
-        if (candidates.isEmpty()) Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+        if (loadingProducts) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            toast.QuimiaToast("Carregando sua estante…", type = toast.QuimiaToastType.Loading)
+        } else if (productsError != null) Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            toast.QuimiaToast(productsError, type = toast.QuimiaToastType.Error)
+            QuimiaButton(text = "Tentar novamente", iconSize = 0, espacamento = 0, onClick = onRetryProducts)
+        } else if (candidates.isEmpty()) Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(if (substanceTab) "Sua estante ainda não tem substâncias." else "Guarde produtos na estante para selecionar uma mistura.",
                 style = QuimiaTextStyles.medium16, color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
             if (!substanceTab) QuimiaButton(text = "Ir para catálogo", onClick = onOpenCatalog, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0)
-        } else LazyVerticalGrid(GridCells.Fixed(2), modifier = Modifier.weight(1f),
+        } else LazyVerticalGrid(GridCells.Adaptive(140.dp), modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(candidates, key = { it.key }) { item ->
                 val unavailable = item.key == other?.key
@@ -128,7 +136,7 @@ internal fun MixturePickerContent(
             }
         }
         Spacer(Modifier.height(24.dp))
-        QuimiaButton(text = "Usar", enabled = chosen != null, modifier = Modifier.fillMaxWidth().height(52.dp),
+        QuimiaButton(text = "Usar", enabled = chosen != null && !loadingProducts && productsError == null, modifier = Modifier.fillMaxWidth().height(52.dp),
             textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0, onClick = { chosen?.let(onUse) })
     }
 }

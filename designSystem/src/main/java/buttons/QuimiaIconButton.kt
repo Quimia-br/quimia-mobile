@@ -1,6 +1,7 @@
 package buttons
 
 import motion.quimiaPress
+import motion.quimiaRotation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.remember
@@ -60,17 +61,22 @@ fun QuimiaIconButton(
     contentDescription: String? = null,
     iconPainter: Painter? = null,
     contrastOutline: Boolean = size != QuimiaIconButtonSize.Icon,
+    iconRotationDegrees: Float = 0f,
+    clickSound: feedback.QuimiaSound? = feedback.QuimiaSound.Tap,
+    enabled: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
 
     val actualContainerColor = containerColor ?: tokens.primary
     val actualIconColor = actionContentColor(actualContainerColor, iconColor, tokens)
 
+    val sound = feedback.LocalQuimiaSound.current
     val motionInteractions = remember { MutableInteractionSource() }
     val motionPressed by motionInteractions.collectIsPressedAsState()
     IconButton(
+        enabled = enabled,
         interactionSource = motionInteractions,
-        onClick = onClick,
+        onClick = { clickSound?.let(sound); onClick() },
         modifier = modifier.quimiaPress(motionPressed).size(size.buttonSize).quimiaSkeleton(size.buttonSize).quimiaContrastOutline(CircleShape, contrastOutline && quimiaHighContrastEnabled()),
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = actualContainerColor,
@@ -79,10 +85,10 @@ fun QuimiaIconButton(
     ) {
         if (iconPainter != null) Icon(
             painter = iconPainter, contentDescription = contentDescription,
-            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize),
+            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize).quimiaRotation(iconRotationDegrees),
         ) else Icon(
             imageVector = icon, contentDescription = contentDescription,
-            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize),
+            tint = actualIconColor, modifier = Modifier.size(iconSize ?: size.iconSize).quimiaRotation(iconRotationDegrees),
         )
     }
 }

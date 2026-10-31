@@ -44,7 +44,7 @@ internal fun ApiCatalogProduct.catalogProduct() = CatalogProduct(id.toString(), 
     when (tipo) {
         "limpeza_geral" -> "Limpeza geral"; "desinfetante" -> "Desinfetante"; "desincrustante" -> "Desincrustante"
         "desengraxante" -> "Desengraxante"; "alvejante" -> "Alvejante"; "aromatizante" -> "Aromatizante"
-        "outro" -> "Outro"; else -> tipo
+        "outro" -> "Outro"; else -> tipo?.takeIf { it.isNotBlank() } ?: "Tipo não informado"
     }, 0, 0, description = descricao?.takeIf { it.isNotBlank() } ?: "Descrição não informada.",
     barcode = codBarras.orEmpty(), photoUrl = catalogImageUrl(fotoUrl), brandLogoUrl = catalogImageUrl(marca?.logoUrl), remote = true,
     brandName = marca?.nome)
@@ -106,6 +106,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
     if (rescan) CatalogBarcodeScannerSheet(onDismiss = { rescan = false }, onBarcode = { code -> rescan = false; scope.launch { controller.findBarcode(code) } })
     val canSave = state.shelfReady && !state.shelfLoading
     val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading || state.shelfLoading, userId)
+    com.quimia.android.presentation.components.ReportDestinationLoading("catalog", screenLoading)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
         initialQuery = initialQuery, products = if (screenLoading) sampleCatalogProducts.take(5) else state.products.map { it.catalogProduct() },
@@ -113,15 +114,13 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
         onSaveProducts = { ids -> scope.launch { controller.save(ids.mapNotNull(String::toIntOrNull)) } },
         onProductDetails = { product -> if (!screenLoading) scope.launch { controller.openDetail(product.id.toInt()) } },
         saving = state.savingIds.isNotEmpty(), canSave = canSave,
+        showEmpty = !screenLoading && !state.loading && !state.shelfLoading && state.error == null,
         saveMessage = state.notice, saveMessageSuccess = state.noticeSuccess, onDismissSaveMessage = controller::dismissNotice,
         onBarcode = { code -> scope.launch { controller.findBarcode(code) } },
         statusContent = {
             if (!screenLoading) {
             if (state.loading && state.products.isEmpty()) CatalogLoading("Carregando produtos…")
             state.error?.let { CatalogError(it) { scope.launch { controller.search() } } }
-            if (!state.loading && state.error == null && state.products.isEmpty()) {
-                Text("Nenhum produto encontrado", Modifier.padding(24.dp), color = quimiaColorTokens().textSecondary)
-            }
             if (state.shelfLoading && !state.loading && state.products.isEmpty()) com.quimia.android.presentation.components.LoadingSkeleton(com.quimia.android.presentation.components.SkeletonLayout.Lines, "Conferindo os produtos da sua estante")
             state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
             state.saveError?.let { CatalogError(it) { scope.launch { controller.retrySave() } } }
@@ -156,23 +155,13 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
 
 @Composable
 internal fun CatalogLoading(message: String) {
-    if (message.startsWith("Carregando") || message.startsWith("Conferindo")) {
-        val layout = when {
-            message.contains("detalhe") -> com.quimia.android.presentation.components.SkeletonLayout.Detail
-            message.contains("resumo") || message.contains("socorros") -> com.quimia.android.presentation.components.SkeletonLayout.Lines
-            message.contains("misturas") -> com.quimia.android.presentation.components.SkeletonLayout.History
-            else -> com.quimia.android.presentation.components.SkeletonLayout.Grid
-        }
-        com.quimia.android.presentation.components.LoadingSkeleton(layout, message)
-        return
-    }
-    val tokens = quimiaColorTokens()
-    Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = tokens.primary)
-        Text(message, style = Typography.bodyMedium, color = tokens.textPrimary)
-    }
+    if (theme.LocalQuimiaSkeleton.current) {
+        com.quimia.android.presentation.components.LoadingSkeleton(
+            if (message.contains("socorros") || message.contains("resumo")) com.quimia.android.presentation.components.SkeletonLayout.Lines
+            else com.quimia.android.presentation.components.SkeletonLayout.Grid, message)
+    } else toast.QuimiaToastHost(message, modifier = Modifier.padding(16.dp), type = toast.QuimiaToastType.Loading)
 }
+
 @Composable
 internal fun CatalogError(problem: CatalogProblem, retry: () -> Unit) {
     val tokens = quimiaColorTokens()

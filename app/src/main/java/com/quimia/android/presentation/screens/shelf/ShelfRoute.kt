@@ -52,7 +52,7 @@ internal fun firstAidText(aid: ShelfFirstAid): String {
 @Composable
 internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit,
     onAddProduct: () -> Unit, onSessionExpired: () -> Unit,
-    onCreateRoom: (String) -> Unit = {}, onOpenRoom: (String) -> Unit = {}) {
+    onCreateRoom: (String) -> Unit = {}, onOpenRoom: (String) -> Unit = {}, onMixProduct: (String) -> Unit = {}) {
     val context = LocalContext.current.applicationContext
     var query by rememberSaveable(userId) { mutableStateOf("") }
     var substancesTab by rememberSaveable(userId) { mutableStateOf(false) }
@@ -83,6 +83,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.notice(null) } }
     val products = state.products.map { it.catalogProduct() }
     val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading, userId)
+    com.quimia.android.presentation.components.ReportDestinationLoading("shelf", screenLoading)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     ShelfScreen(favoriteIds = state.products.filter { it.favorito }.map { it.id.toString() }, savedIds = products.map { it.id }, onSavedIdsChange = {}, onMenuItemSelected = onMenuItemSelected,
         onAiClick = onAiClick, onAddProduct = onAddProduct, initialQuery = query, initialSubstancesTab = substancesTab,
@@ -98,7 +99,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         onUnavailable = { controller.notice(it) }, onApiActions = { action = it },
         onApiRoom = { scope.launch { controller.showRoom(it.toInt()) } },
         onApiExpand = { if (!state.loading) scope.launch { controller.protect(it.toInt()) } },
-        onMixProduct = { controller.notice("Misturas indisponíveis no momento.") },
+        onMixProduct = onMixProduct,
         onSubstanceMix = { controller.notice("A mistura direta de substâncias ainda não está disponível.") },
         onSubstanceMixtures = { controller.notice("O histórico por substância ainda não está disponível.") },
         externalOverlay = action != null || removal != null || state.infoId != null || state.roomId != null || state.historyId != null,
@@ -107,16 +108,16 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             LaunchedEffect(controller, id) { controller.protect(id.toInt()) }
             val protection = state.protection[id.toInt()]
             Text("Como se proteger?", style = Typography.titleMedium, color = quimiaColorTokens().textPrimary)
+            Spacer(Modifier.height(12.dp))
             if (protection == null || protection.loading) CatalogLoading("Carregando primeiros socorros…")
             protection?.error?.let { CatalogError(it) { scope.launch { controller.protect(id.toInt(), force = true) } } }
             protection?.data?.let { aid ->
                 CatalogDescriptionCard(firstAidText(aid))
-                aid.versaoFds?.let { Text("FDS: $it", style = Typography.bodySmall, color = quimiaColorTokens().textSecondary) }
                 aid.dataAtualizacaoFds?.let { Text("Atualização da FDS: $it", style = Typography.bodySmall, color = quimiaColorTokens().textSecondary) }
             }
         }, statusContent = {
-            state.notice?.let { QuimiaToast(modifier = Modifier.padding(16.dp), message = it, type = QuimiaToastType.Info,
-                onDismiss = { controller.notice(null) }) }
+            toast.QuimiaToastHost(modifier = Modifier.padding(16.dp), message = state.notice, type = QuimiaToastType.Info,
+                onDismiss = { controller.notice(null) })
 
             if (!screenLoading && state.loading && (if (state.substancesTab) state.substances.isEmpty() else state.products.isEmpty()))
                 CatalogLoading(if (state.substancesTab) "Carregando substâncias…" else "Carregando produtos…")
@@ -148,7 +149,6 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             state.summary.error?.let { CatalogError(it) { scope.launch { controller.showInformation(id) } } }
             state.summary.data?.let { summary ->
                 CatalogDescriptionCard(summary.resumo?.takeIf(String::isNotBlank) ?: "Resumo de segurança não informado para este produto.")
-                summary.versao?.let { Text("FDS: $it", color = quimiaColorTokens().textSecondary, style = Typography.bodySmall) }
                 summary.dataAtualizacao?.let { Text("Atualização: $it", color = quimiaColorTokens().textSecondary, style = Typography.bodySmall) }
             }
         }

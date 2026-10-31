@@ -1,8 +1,8 @@
 package com.quimia.android.presentation.screens.home
+import motion.quimiaClickable
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,10 +55,9 @@ private fun HomeMixture.severityLabel(): String? = severidade?.takeIf { it.isNot
 
 @Composable
 internal fun HomeLoading(message: String) {
-    com.quimia.android.presentation.components.LoadingSkeleton(
-        if (message.contains("perfil")) com.quimia.android.presentation.components.SkeletonLayout.Lines
-        else com.quimia.android.presentation.components.SkeletonLayout.History, message)
-
+    if (theme.LocalQuimiaSkeleton.current) com.quimia.android.presentation.components.LoadingSkeleton(
+        com.quimia.android.presentation.components.SkeletonLayout.History, message)
+    else toast.QuimiaToastHost(message, modifier = Modifier.padding(16.dp), type = toast.QuimiaToastType.Loading)
 }
 
 @Composable
@@ -74,7 +73,12 @@ internal fun HomeLoadError(kind: GenericErrorKind, subject: String, onRetry: () 
 @Composable
 private fun HomeProductPhoto(product: HomeProduct?, modifier: Modifier) {
     val url = homePhotoUrl(product?.fotoUrl)
-    val photo = rememberAsyncImagePainter(url)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val request = remember(url, context) {
+        coil.request.ImageRequest.Builder(context).data(url).size(384).allowHardware(false)
+            .transformations(com.quimia.android.presentation.components.ProductPhotoCutout()).build()
+    }
+    val photo = rememberAsyncImagePainter(request)
     if (url == null || photo.state is AsyncImagePainter.State.Error) {
         Box(modifier, contentAlignment = Alignment.Center) {
             Icon(Lucide.ImageOff, "Imagem indisponível de ${product?.nome.orEmpty()}", tint = quimiaColorTokens().foregroundSubtle)
@@ -98,7 +102,7 @@ internal fun HomeApiHistoryCard(item: HomeMixture, onClick: () -> Unit) {
     QuimiaCard(title = "", showTitle = false, primaryActionLabel = null, secondaryActionLabel = null,
         layout = QuimiaCardLayout.Stacked, contentPadding = 24.dp,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp)
-            .clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button, onClickLabel = "Ver mistura salva", onClick = onClick)) {
+            .clip(RoundedCornerShape(24.dp)).quimiaClickable(role = Role.Button, onClickLabel = "Ver mistura salva", onClick = onClick)) {
         Text("${item.produtoA?.nome.orEmpty()} & ${item.produtoB?.nome.orEmpty()}", style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary)
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

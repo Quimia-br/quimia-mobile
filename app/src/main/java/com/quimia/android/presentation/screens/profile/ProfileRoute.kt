@@ -70,6 +70,7 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
     LaunchedEffect(userId) { reload() }
     LaunchedEffect(session) { if (session == SessionState.SignedOut) onLogout() }
     val profile = (session as? SessionState.Authenticated)?.profile?.takeIf { it.id == userId }
+    com.quimia.android.presentation.components.ReportDestinationLoading("profile", !loaded && error == null)
     if (error != null && !loading) {
         GenericErrorScreen(errorKind, onClose = { if (loaded) error = null else onBack() },
             description = if (errorKind == GenericErrorKind.Unknown) error.orEmpty() else errorKind.description,

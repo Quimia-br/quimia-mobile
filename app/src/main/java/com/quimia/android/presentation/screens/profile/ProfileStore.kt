@@ -10,12 +10,14 @@ class ProfilePreferencesStore(context: Context) {
         theme = ProfileTheme.fromStored(preferences.getString("theme", null)),
         textSizeStep = preferences.getInt("text_size_step", 0).coerceIn(0, 2),
         dyslexicFont = preferences.getBoolean("dyslexic_font", false),
+        soundEffects = preferences.getBoolean("sound_effects", true),
     )
 
     fun save(value: ProfilePreferences) {
         preferences.edit().putString("theme", value.theme.name)
             .putInt("text_size_step", value.textSizeStep.coerceIn(0, 2))
-            .putBoolean("dyslexic_font", value.dyslexicFont).apply()
+            .putBoolean("dyslexic_font", value.dyslexicFont)
+            .putBoolean("sound_effects", value.soundEffects).apply()
     }
 }
 

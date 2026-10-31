@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -54,6 +55,12 @@ fun MixturesScreen(
     onOpenHistoryConsumed: () -> Unit = {},
     historyProductId: String? = null,
     demonstration: Boolean = false,
+    remoteHistoryContent: (LazyListScope.() -> Unit)? = null,
+    onHistoryOpen: () -> Unit = {},
+    loadingProducts: Boolean = false,
+    productsError: String? = null,
+    onRetryProducts: () -> Unit = {},
+    allowSubstances: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     val preview = LocalInspectionMode.current
@@ -71,6 +78,7 @@ fun MixturesScreen(
         val request = controller.begin() ?: return
         analysisJob = scope.launch {
             val reply = analyzeMixture(analyzer, request)
+            if (reply == MixtureReply.Recorded) { controller.cancel(); return@launch }
             val accepted = controller.complete(request, reply)
             if (!accepted && controller.state.pendingId == null) failure = (reply as? MixtureReply.Failed)?.kind ?: GenericErrorKind.ContentUnavailable
         }
@@ -83,6 +91,14 @@ fun MixturesScreen(
         if (initialHistory) { historyVisible = true; onOpenHistoryConsumed() }
     }
     DisposableEffect(controller) { onDispose { controller.cancel() } }
+    LaunchedEffect(historyVisible) { if (historyVisible) onHistoryOpen() }
+    LaunchedEffect(products, loadingProducts, controller.state.pendingId) {
+        if (remoteHistoryContent != null && !loadingProducts && productsError == null && controller.state.pendingId == null) {
+            controller.state.slots.forEachIndexed { index, ingredient ->
+                if (ingredient != null && products.none { it.id == ingredient.id }) controller.remove(index)
+            }
+        }
+    }
     BackHandler {
         when {
             failure != null -> failure = null
@@ -104,7 +120,7 @@ fun MixturesScreen(
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().height(276.dp).background(Brush.verticalGradient(
             listOf(tokens.brandSecondary.copy(alpha = .86f), tokens.surfaceBackground.copy(alpha = .72f), tokens.surfaceBackground))))
-        LazyColumn(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().quimiaContent(),
+        LazyColumn(Modifier.align(Alignment.TopCenter).widthIn(max = 840.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().quimiaContent(),
             contentPadding = PaddingValues(top = if (preview) 38.dp else (62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp), bottom = 24.dp)) {
             item { QuimiaNav(showBackButton = true, showCloseButton = false, buttonColor = tokens.surfaceBase,
                 onBackClick = { if (historyVisible) historyVisible = false else close() }) }
@@ -112,17 +128,19 @@ fun MixturesScreen(
                 Column(Modifier.fillMaxWidth().padding(32.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Text(when { historyVisible -> "Histórico de misturas"; demonstration -> "Misturas · demonstração"; else -> "Misturas" },
                         style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
-                    Text(if (historyVisible) "Veja as misturas que você escolheu guardar no histórico" else "Selecione dois produtos da estante e veja o risco da combinação entre eles",
+                    Text(if (historyVisible) { if (remoteHistoryContent != null) "Veja suas análises registradas no histórico" else "Veja as misturas que você escolheu guardar no histórico" } else "Selecione dois produtos da estante e veja o risco da combinação entre eles",
                         style = QuimiaTextStyles.medium16, color = tokens.textSecondary)
                 }
             }
             if (historyVisible) {
+                if (remoteHistoryContent != null) remoteHistoryContent.invoke(this) else {
                 if (history.isEmpty()) item {
                     QuimiaEmptyState(icon = Lucide.Atom, title = "Você ainda não salvou\nnenhuma mistura", buttonLabel = "Misturar",
                         onButtonClick = { historyVisible = false }, fillAvailableSpace = false)
                 }
                 items(history, key = { it.id }) { result ->
                     MixtureHistoryCard(result, onClick = { controller.openResult(result.id) }, Modifier.padding(horizontal = 24.dp).padding(bottom = 20.dp))
+                }
                 }
             } else {
                 item {
@@ -142,7 +160,7 @@ fun MixturesScreen(
                             .semantics { liveRegion = LiveRegionMode.Polite; contentDescription = "Analisando mistura" },
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             CircularProgressIndicator(Modifier.size(20.dp), color = tokens.foregroundDisabled, strokeWidth = 2.dp)
-                        } else QuimiaButton(text = "Misturar", enabled = state.canAnalyze, modifier = Modifier.fillMaxWidth().height(43.dp),
+                        } else QuimiaButton(text = "Misturar", enabled = state.canAnalyze && !loadingProducts && productsError == null, modifier = Modifier.fillMaxWidth().height(43.dp),
                             textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0, onClick = ::analyze)
                         QuimiaListItem(title = "Histórico de misturas", subtitle = "Suas últimas misturas salvas", containerColor = tokens.surfaceBase,
                             horizontalSpacing = 20.dp, leadingContent = { QuimiaShapeIcon(size = 50.dp, icon = Lucide.Clock, containerColor = tokens.surfaceBackground) },
@@ -155,7 +173,9 @@ fun MixturesScreen(
         pickerSlot?.let { slot ->
             MixturePicker(products, substances, state.slots[1 - slot], state.slots[slot], onDismiss = { pickerSlot = null },
                 onUse = { if (controller.select(slot, it)) pickerSlot = null },
-                onOpenCatalog = { pickerSlot = null; onOpenCatalog() }, initialSubstances = initialSubstances)
+                onOpenCatalog = { pickerSlot = null; onOpenCatalog() }, initialSubstances = initialSubstances,
+                loadingProducts = loadingProducts, productsError = productsError, onRetryProducts = onRetryProducts,
+                allowSubstances = allowSubstances)
         }
         state.result?.let { result -> MixtureResultSheet(result, onClose = controller::closeResult,
             saved = state.history.any { it.id == result.id }, onSave = {

@@ -1,9 +1,11 @@
 package com.quimia.android.presentation.screens.rooms
 
 import motion.quimiaContent
+import motion.QuimiaExpand
+import com.quimia.android.presentation.components.SearchEmptyState
+import motion.quimiaClickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -176,25 +178,28 @@ internal fun RoomList(
                     contentDescription = "Mostrar ou ocultar filtros", onClick = { filtersVisible = !filtersVisible })
                 QuimiaIconButton(icon = Lucide.Plus, containerColor = tokens.surfaceBase, contentDescription = "Cadastrar cômodo", onClick = onCreate)
             }
-            if (filtersVisible) Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            QuimiaExpand(filtersVisible) { Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 RoomSort.entries.forEach { item -> QuimiaChip(label = item.label, modifier = Modifier.weight(1f), centerContent = true,
                     selected = item == sort, onClick = { if (connected && item != RoomSort.Alphabetical) onUnavailable("A ordenação por data de criação ainda não está disponível.") else sort = item }) }
+            }
             }
             statusContent?.invoke()
             BoxWithConstraints(Modifier.weight(1f)) {
                 val columns = roomGridColumns(maxWidth.value)
                 if (showEmpty && visibleRooms.isEmpty()) Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (query.isNotBlank()) SearchEmptyState(title = "Não foi possível encontrar\no cômodo") else {
                     QuimiaEmptyState(fillAvailableSpace = false, icon = Lucide.Bath,
-                        title = if (query.isBlank()) "Seus cômodos ficam aqui" else "Nenhum cômodo encontrado",
-                        description = if (query.isBlank()) "Cadastre um cômodo e organize os produtos da sua estante." else "Experimente pesquisar outro nome.")
-                    QuimiaButton(text = "Cadastrar cômodo", iconSize = 0, espacamento = 0, onClick = onCreate)
+                        title = "Seus cômodos ficam aqui",
+                        description = "Cadastre um cômodo e organize os produtos da sua estante.",
+                        buttonLabel = "Cadastrar cômodo", onButtonClick = onCreate)
+                    }
                 } else LazyVerticalGrid(columns = GridCells.Fixed(columns),
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp,
                         bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + QuimiaFABSize + 40.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     items(visibleRooms, key = { it.id }) { room ->
                         QuimiaCard(title = room.name, showDescription = false, endIcon = null, primaryActionLabel = "Ver", secondaryActionLabel = null,
-                            modifier = Modifier.heightIn(min = 248.dp).clip(RoundedCornerShape(24.dp)).clickable { onOpen(room.id) },
+                            modifier = Modifier.heightIn(min = 248.dp).clip(RoundedCornerShape(24.dp)).quimiaClickable { onOpen(room.id) },
                             sectionSpacing = 28.dp, contentPadding = 16.dp,
                             headerContent = { Text(room.name, style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             onPrimaryActionClick = { onOpen(room.id) }) {

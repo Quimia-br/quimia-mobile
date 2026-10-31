@@ -41,19 +41,21 @@ internal fun AuthScreenLayout(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val statusInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Box(modifier.fillMaxSize().background(quimiaColorTokens().surfaceBackground).statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
-        BoxWithConstraints(Modifier.widthIn(max = 600.dp).fillMaxSize().imePadding()) {
-            val availableHeight = maxHeight
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = availableHeight),
-                verticalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.fillMaxWidth()) {
-                    Spacer(Modifier.height((79.dp - statusInset).coerceAtLeast(0.dp)))
-                    if (onBack != null) QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
+    CompositionLocalProvider(input.LocalQuimiaInputActionIconSize provides 24.dp) {
+        Box(modifier.fillMaxSize().background(quimiaColorTokens().surfaceBackground).statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
+            BoxWithConstraints(Modifier.widthIn(max = 600.dp).fillMaxSize().imePadding()) {
+                val availableHeight = maxHeight
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = availableHeight),
+                    verticalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.fillMaxWidth()) {
+                        Spacer(Modifier.height((79.dp - statusInset).coerceAtLeast(0.dp)))
+                        if (onBack != null) QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
+                    }
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = bodyVerticalPadding)
+                        .padding(bottom = if (availableHeight + statusInset < 820.dp) 24.dp else 0.dp), content = content)
+                    Column(Modifier.fillMaxWidth().padding(start = footerHorizontalPadding, end = footerHorizontalPadding, bottom = bottomPadding),
+                        horizontalAlignment = Alignment.CenterHorizontally, content = footer)
                 }
-                Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = bodyVerticalPadding)
-                    .padding(bottom = if (availableHeight + statusInset < 820.dp) 24.dp else 0.dp), content = content)
-                Column(Modifier.fillMaxWidth().padding(start = footerHorizontalPadding, end = footerHorizontalPadding, bottom = bottomPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally, content = footer)
             }
         }
     }
@@ -62,7 +64,7 @@ internal fun AuthScreenLayout(
 @Composable
 internal fun AuthPrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
     QuimiaButton(text = text, onClick = onClick, enabled = enabled, modifier = modifier.fillMaxWidth().height(58.dp),
-        textColor = theme.LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
+        containerColor = quimiaColorTokens().primary, textColor = theme.LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
 }
 
 @Composable
@@ -76,14 +78,14 @@ internal fun AuthFooterLink(prefix: String, action: String, onClick: () -> Unit)
 }
 
 @Composable
-internal fun AuthPasswordInput(value: String, onValueChange: (String) -> Unit, label: String, error: String? = null, showVisibilityWhenEmpty: Boolean = false, placeholder: String = "123456") {
+internal fun AuthPasswordInput(value: String, onValueChange: (String) -> Unit, label: String, error: String? = null, showVisibilityWhenEmpty: Boolean = false, placeholder: String = "123456", modifier: Modifier = Modifier) {
     var visible by rememberSaveable { mutableStateOf(false) }
-    QuimiaInput(value = value, onValueChange = onValueChange, label = label, placeholder = placeholder, error = error,
+    QuimiaInput(value = value, onValueChange = onValueChange, label = label, placeholder = placeholder, error = error, modifier = modifier,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = if (visible) Lucide.EyeOff else Lucide.Eye,
         trailingIconContentDescription = if (visible) "Ocultar senha" else "Mostrar senha",
-        showTrailingIconWhenEmpty = showVisibilityWhenEmpty, trailingIconSize = 16.dp, onTrailingIconClick = { visible = !visible })
+        showTrailingIconWhenEmpty = showVisibilityWhenEmpty, trailingIconSize = 24.dp, onTrailingIconClick = { visible = !visible })
 }
 
 @Composable

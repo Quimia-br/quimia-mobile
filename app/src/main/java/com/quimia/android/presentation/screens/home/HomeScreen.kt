@@ -109,6 +109,7 @@ fun HomeScreen(
     profileStatus: (@Composable () -> Unit)? = null,
     dropOffDescription: String = "Não cadastrado",
     dropOffLoading: Boolean = false,
+    dropOffMap: (@Composable () -> Unit)? = null,
 ) {
     HomeSystemBarsEffect()
 
@@ -209,7 +210,7 @@ fun HomeScreen(
 
                 HomeQuickActions(
                     dropOffDescription = dropOffDescription,
-                    dropOffLoading = dropOffLoading,
+                    dropOffLoading = dropOffLoading, dropOffMap = dropOffMap,
                     onFindDropOffClick = {
                         AnalyticsLogger.logInteraction("home", "find_drop_off_tapped")
                         if (onFindDropOffClick != null) onFindDropOffClick() else unavailable("Pontos de descarte")
@@ -265,7 +266,8 @@ fun HomeScreen(
             ) {
                 QuimiaMenuBar(
                     modifier = Modifier.fillMaxWidth(),
-                    selectedIndex = 0,
+                    selectedIndex = 0, fabSpacing = 24.dp,
+                    fab = onAiClick?.let { action -> { buttons.QuimiaFAB(onClick = action, contentDescription = "Abrir assistente de IA") } },
                     onItemSelected = { item ->
                         AnalyticsLogger.logInteraction("home", "menu_item_$item")
                         if (onMenuItemSelected != null) {
@@ -328,6 +330,7 @@ private fun HomeQuickActions(
     dropOffDescription: String = "Não cadastrado",
     dropOffLoading: Boolean = false,
     modifier: Modifier = Modifier,
+    dropOffMap: (@Composable () -> Unit)? = null,
     onFindDropOffClick: () -> Unit,
     onMixturesClick: () -> Unit,
     onShelfClick: () -> Unit,
@@ -356,7 +359,7 @@ private fun HomeQuickActions(
                     .weight(leftWeight)
                     .fillMaxHeight(),
                 title = "Meu ponto de\ndescarte",
-                description = dropOffDescription,
+                description = dropOffDescription.takeIf { dropOffMap == null && it.isNotBlank() && it != "Não cadastrado" },
                 icon = Lucide.MapPin,
                 primaryActionLabel = null,
                 secondaryActionLabel = "Encontrar",
@@ -368,14 +371,14 @@ private fun HomeQuickActions(
                     end = 16.dp,
                     bottom = 16.dp,
                 ),
-                sectionSpacing = 18.dp,
+                sectionSpacing = if (dropOffMap == null) 18.dp else 10.dp,
                 actionHeight = 50.dp,
                 iconSize = 28.dp,
                 titleTextStyle = QuimiaTextStyles.medium16,
                 descriptionTextStyle = QuimiaTextStyles.medium14,
                 actionTextStyle = QuimiaTextStyles.medium16,
                 onSecondaryActionClick = onFindDropOffClick,
-            )
+            ) { if (dropOffMap != null) { Spacer(Modifier.height(10.dp)); dropOffMap() } }
 
             Column(
                 modifier = Modifier.weight(rightWeight),

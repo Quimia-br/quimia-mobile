@@ -1,4 +1,5 @@
 package com.quimia.android.presentation.screens.proximity
+import motion.QuimiaExpand
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,6 +56,7 @@ fun ProximityScreen(
     previewAddressForm: Boolean = false,
     initialHeaderExpanded: Boolean = true,
     initialCollectionFilter: Boolean = false,
+    previewLoadingPoints: Boolean = false,
 ) {
     val tokens = quimiaColorTokens()
     var category by rememberSaveable { mutableStateOf<NearbyCategory?>(if (initialCollectionFilter || previewSelectedPointId != null) NearbyCategory.Collection else null) }
@@ -75,18 +77,16 @@ fun ProximityScreen(
     Box(modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().statusBarsPadding()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-            Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp)) {
-                QuimiaIconButton(icon = Lucide.ChevronLeft, size = QuimiaIconButtonSize.Medium,
-                    containerColor = tokens.secondary, contentDescription = "Voltar para Home", onClick = { onMenuItemSelected(0) })
-            }
+            NearbyNavigationHeader(if (previewLoadingPoints) "Carregando pontos…" else null,
+                onBack = { onMenuItemSelected(0) })
             QuimiaSectionTitle(title = "Proximidade", titleSize = 24.sp, textStyle = QuimiaTextStyles.medium24,
                 horizontalPadding = 32.dp, verticalPadding = 32.dp) {
-                QuimiaIconButton(icon = if (headerExpanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                QuimiaIconButton(icon = Lucide.ChevronDown, iconRotationDegrees = if (headerExpanded) 180f else 0f,
                     modifier = Modifier.size(24.dp), containerColor = Color.Transparent, iconSize = 24.dp,
                     contentDescription = if (headerExpanded) "Recolher endereço" else "Mostrar endereço",
                     onClick = { headerExpanded = !headerExpanded })
             }
-            if (headerExpanded) {
+            QuimiaExpand(headerExpanded) {
                 QuimiaListItem(
                     modifier = Modifier.padding(horizontal = 24.dp), title = "Casa", subtitle = address,
                     containerColor = tokens.surfaceBase, contentPadding = PaddingValues(24.dp), titleMaxLines = 1, subtitleMaxLines = 1,
@@ -120,9 +120,9 @@ fun ProximityScreen(
                         },
                     )
                 }
-                if (message != null) QuimiaToast(
+                toast.QuimiaToastHost(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 75.dp),
-                    message = message.orEmpty(), type = QuimiaToastType.Success, onDismiss = { message = null },
+                    message = message, type = QuimiaToastType.Success, onDismiss = { message = null },
                 )
             }
         }

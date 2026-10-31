@@ -11,6 +11,8 @@ import buttons.QuimiaIconButton
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.House
 import com.composables.icons.lucide.Target
+import com.composables.icons.lucide.Store
+import com.composables.icons.lucide.Recycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,7 +54,10 @@ internal fun ProximityMapPreview(points: List<NearbyPoint>, selectedPointId: Int
                 contentAlignment = Alignment.Center,
             ) {
                 if (point.id == selectedPointId) Box(Modifier.size(67.dp).background(tokens.primary.copy(alpha = .35f), CircleShape))
-                Box(Modifier.size(20.dp).background(tokens.primary, CircleShape).border(2.dp, Color.White, CircleShape))
+                Box(Modifier.size(41.dp).background(tokens.primary, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(if (point.category == NearbyCategory.Shopping) Lucide.Store else Lucide.Recycle,
+                        contentDescription = null, tint = theme.LightTokens.foregroundPrimary, modifier = Modifier.size(24.dp))
+                }
             }
         }
     }

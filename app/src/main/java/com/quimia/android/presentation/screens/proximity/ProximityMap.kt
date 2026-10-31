@@ -34,6 +34,18 @@ import buttons.QuimiaIconButton
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.House
+import com.composables.icons.lucide.Store
+import com.composables.icons.lucide.Recycle
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
+import toast.QuimiaToastHost
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -160,6 +172,8 @@ private fun NearbyGoogleMap(
         if (loading) { failed = true; loading = false }
     }
     val primary = tokens.primary.toArgb()
+    val storeIcon = rememberVectorPainter(Lucide.Store)
+    val recycleIcon = rememberVectorPainter(Lucide.Recycle)
     DisposableEffect(map, points, selectedPointId, primary, density) {
         val native = map
         val markers = if (native == null) emptyList() else points.filter { it.coordinate.isValid() }.mapNotNull { point ->
@@ -167,7 +181,7 @@ private fun NearbyGoogleMap(
                 .position(LatLng(point.coordinate.latitude, point.coordinate.longitude))
                 .title(point.name).snippet(point.address).anchor(.5f, .5f)
                 .zIndex(if (point.id == selectedPointId) 2f else 1f)
-                .icon(BitmapDescriptorFactory.fromBitmap(nearbyMarkerBitmap(primary, density, point.id == selectedPointId))))
+                .icon(BitmapDescriptorFactory.fromBitmap(nearbyMarkerBitmap(primary, density, point.id == selectedPointId, if (point.category == NearbyCategory.Shopping) storeIcon else recycleIcon))))
                 ?.apply { tag = point.id }
         }
         onDispose { markers.forEach { it.remove() } }
@@ -223,12 +237,8 @@ private fun NearbyGoogleMap(
                     if (homeCoordinate == null) onHomeUnavailable()
                 })
         }
-        if (loading) Row(Modifier.align(Alignment.Center).background(tokens.surfaceBase, RoundedCornerShape(24.dp))
-            .quimiaContrastOutline(RoundedCornerShape(24.dp)).padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(Modifier.size(22.dp), color = tokens.primary, strokeWidth = 2.dp)
-            Text("Carregando mapa…", style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
-        }
+        QuimiaToastHost(if (loading) "Carregando mapa…" else null,
+            Modifier.align(Alignment.TopCenter).padding(start = 16.dp, end = 16.dp, top = 195.dp), type = QuimiaToastType.Loading)
         if (failed) NearbyMapNotice(
             message = "Não foi possível carregar o mapa. Verifique a conexão e a configuração da chave do Google Maps.",
             onRetry = onRetry,
@@ -243,7 +253,8 @@ private fun NearbyGoogleMap(
         }
         if (message != null) Column(Modifier.align(Alignment.TopCenter).padding(start = 24.dp, end = 24.dp, top = 195.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            QuimiaToast(message = message, type = QuimiaToastType.Info, onDismiss = location::dismissNotice)
+            QuimiaToast(message = message, type = if (location.status == NearbyLocationStatus.Loading) QuimiaToastType.Loading else QuimiaToastType.Info,
+                onDismiss = if (location.status == NearbyLocationStatus.Loading) null else location::dismissNotice)
             if (location.status == NearbyLocationStatus.PermissionBlocked || location.status == NearbyLocationStatus.Disabled) {
                 QuimiaButton(modifier = Modifier.fillMaxWidth().height(43.dp), text = "Abrir configurações", iconSize = 0,
                     espacamento = 0, containerColor = tokens.surfaceBase, onClick = location::openSettings)
@@ -266,22 +277,23 @@ private fun NearbyMapNotice(message: String, onRetry: (() -> Unit)? = null) {
     }
 }
 
-private fun nearbyMarkerBitmap(color: Int, density: Float, selected: Boolean): Bitmap {
-    val size = (67 * density).roundToInt().coerceAtLeast(1)
-    return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also { bitmap ->
+internal fun nearbyMarkerBitmap(color: Int, density: Float, selected: Boolean, painter: Painter): Bitmap {
+    val side = (61 * density).roundToInt().coerceAtLeast(1)
+    return Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).also { bitmap ->
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val center = size / 2f
-        if (selected) {
-            paint.color = color
-            paint.alpha = 89
-            canvas.drawCircle(center, center, 33.5f * density, paint)
-        }
-        paint.color = android.graphics.Color.WHITE
-        paint.alpha = 255
-        canvas.drawCircle(center, center, 10f * density, paint)
+        val center = side / 2f
         paint.color = color
-        canvas.drawCircle(center, center, 8f * density, paint)
+        if (selected) { paint.alpha = 80; canvas.drawCircle(center, center, 30.5f * density, paint) }
+        paint.alpha = 255
+        canvas.drawCircle(center, center, 20.5f * density, paint)
+        val iconSize = 24f * density
+        CanvasDrawScope().draw(Density(density), LayoutDirection.Ltr,
+            androidx.compose.ui.graphics.Canvas(bitmap.asImageBitmap()), Size(side.toFloat(), side.toFloat())) {
+            translate((side - iconSize) / 2, (side - iconSize) / 2) {
+                with(painter) { draw(Size(iconSize, iconSize), colorFilter = ColorFilter.tint(theme.LightTokens.foregroundPrimary)) }
+            }
+        }
     }
 }
 
@@ -322,7 +334,7 @@ private class NearbyGoogleLocationSource : LocationSource {
 }
 
 @Composable
-private fun NearbyMapLifecycle(view: MapView, save: () -> Unit) {
+internal fun NearbyMapLifecycle(view: MapView, save: () -> Unit) {
     val owner = LocalLifecycleOwner.current
     val context = LocalContext.current.applicationContext
     val latestSave by rememberUpdatedState(save)

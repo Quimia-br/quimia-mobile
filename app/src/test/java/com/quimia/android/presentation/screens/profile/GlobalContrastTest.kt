@@ -19,16 +19,16 @@ class GlobalContrastTest {
         assertEquals(SolidColor(HighContrastTokens.borderFocus), border.brush)
     }
 
-    @Test fun menuIconsMatchDarkModeInsteadOfBecomingWhiteInHighContrast() {
+    @Test fun darkAndContrastMenuIconsAreWhite() {
         val dark = resolveQuimiaMenuBarIconColor(DarkTokens, false)
         val contrast = resolveQuimiaMenuBarIconColor(HighContrastTokens, true)
         assertEquals(dark, contrast)
-        assertNotEquals(HighContrastTokens.white, contrast)
+        assertEquals(HighContrastTokens.white, contrast)
         assertNotEquals(HighContrastTokens.secondary, contrast)
     }
 
-    @Test fun lightAndDarkMenuColorsRemainUnchanged() {
+    @Test fun lightMenuRemainsGrayAndDarkMenuUsesWhite() {
         assertEquals(LightTokens.foregroundSubtle, resolveQuimiaMenuBarIconColor(LightTokens, false))
-        assertEquals(DarkTokens.foregroundSubtle, resolveQuimiaMenuBarIconColor(DarkTokens, false))
+        assertEquals(DarkTokens.white, resolveQuimiaMenuBarIconColor(DarkTokens, false))
     }
 }

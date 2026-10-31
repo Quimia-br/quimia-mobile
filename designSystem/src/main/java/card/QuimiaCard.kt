@@ -1,6 +1,7 @@
 package card
 
 import theme.quimiaSkeleton
+import motion.quimiaAnimatedColor
 import theme.QuimiaTextStyles
 
 import androidx.compose.foundation.background
@@ -78,13 +79,15 @@ fun QuimiaCard(
 ) {
     val tokens = quimiaColorTokens()
     val hasActions = !primaryActionLabel.isNullOrBlank() || !secondaryActionLabel.isNullOrBlank()
+    val background = quimiaAnimatedColor(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
+    val border = quimiaAnimatedColor(if (outline || (contrastOutline && quimiaHighContrastEnabled())) outlineColor ?: tokens.borderFocus else Color.Transparent)
 
     Column(
         modifier = modifier.quimiaSkeleton()
             .fillMaxWidth()
             .clip(RoundedCornerShape(RadiusLarge.dp))
-            .background(containerColor ?: if (theme == QuimiaCardTheme.Primary) tokens.surfaceBase else tokens.secondary)
-            .then(if (outline || (contrastOutline && quimiaHighContrastEnabled())) Modifier.border(outlineWidth, outlineColor ?: tokens.borderFocus, RoundedCornerShape(RadiusLarge.dp)) else Modifier)
+            .background(background)
+            .border(outlineWidth, border, RoundedCornerShape(RadiusLarge.dp))
             .padding(paddingValues ?: PaddingValues(contentPadding)),
         verticalArrangement = if (layout == QuimiaCardLayout.Default) Arrangement.SpaceBetween else Arrangement.Top,
     ) {
