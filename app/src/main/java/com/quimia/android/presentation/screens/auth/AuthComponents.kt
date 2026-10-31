@@ -41,19 +41,21 @@ internal fun AuthScreenLayout(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val statusInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Box(modifier.fillMaxSize().background(quimiaColorTokens().surfaceBackground).statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
-        BoxWithConstraints(Modifier.widthIn(max = 600.dp).fillMaxSize().imePadding()) {
-            val availableHeight = maxHeight
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = availableHeight),
-                verticalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.fillMaxWidth()) {
-                    Spacer(Modifier.height((79.dp - statusInset).coerceAtLeast(0.dp)))
-                    if (onBack != null) QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
+    CompositionLocalProvider(input.LocalQuimiaInputActionIconSize provides 24.dp) {
+        Box(modifier.fillMaxSize().background(quimiaColorTokens().surfaceBackground).statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
+            BoxWithConstraints(Modifier.widthIn(max = 600.dp).fillMaxSize().imePadding()) {
+                val availableHeight = maxHeight
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = availableHeight),
+                    verticalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.fillMaxWidth()) {
+                        Spacer(Modifier.height((79.dp - statusInset).coerceAtLeast(0.dp)))
+                        if (onBack != null) QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
+                    }
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = bodyVerticalPadding)
+                        .padding(bottom = if (availableHeight + statusInset < 820.dp) 24.dp else 0.dp), content = content)
+                    Column(Modifier.fillMaxWidth().padding(start = footerHorizontalPadding, end = footerHorizontalPadding, bottom = bottomPadding),
+                        horizontalAlignment = Alignment.CenterHorizontally, content = footer)
                 }
-                Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = bodyVerticalPadding)
-                    .padding(bottom = if (availableHeight + statusInset < 820.dp) 24.dp else 0.dp), content = content)
-                Column(Modifier.fillMaxWidth().padding(start = footerHorizontalPadding, end = footerHorizontalPadding, bottom = bottomPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally, content = footer)
             }
         }
     }
@@ -83,7 +85,7 @@ internal fun AuthPasswordInput(value: String, onValueChange: (String) -> Unit, l
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = if (visible) Lucide.EyeOff else Lucide.Eye,
         trailingIconContentDescription = if (visible) "Ocultar senha" else "Mostrar senha",
-        showTrailingIconWhenEmpty = showVisibilityWhenEmpty, trailingIconSize = 16.dp, onTrailingIconClick = { visible = !visible })
+        showTrailingIconWhenEmpty = showVisibilityWhenEmpty, trailingIconSize = 24.dp, onTrailingIconClick = { visible = !visible })
 }
 
 @Composable

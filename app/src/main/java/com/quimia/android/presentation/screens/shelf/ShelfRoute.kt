@@ -108,11 +108,11 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             LaunchedEffect(controller, id) { controller.protect(id.toInt()) }
             val protection = state.protection[id.toInt()]
             Text("Como se proteger?", style = Typography.titleMedium, color = quimiaColorTokens().textPrimary)
+            Spacer(Modifier.height(12.dp))
             if (protection == null || protection.loading) CatalogLoading("Carregando primeiros socorros…")
             protection?.error?.let { CatalogError(it) { scope.launch { controller.protect(id.toInt(), force = true) } } }
             protection?.data?.let { aid ->
                 CatalogDescriptionCard(firstAidText(aid))
-                aid.versaoFds?.let { Text("FDS: $it", style = Typography.bodySmall, color = quimiaColorTokens().textSecondary) }
                 aid.dataAtualizacaoFds?.let { Text("Atualização da FDS: $it", style = Typography.bodySmall, color = quimiaColorTokens().textSecondary) }
             }
         }, statusContent = {
@@ -149,7 +149,6 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             state.summary.error?.let { CatalogError(it) { scope.launch { controller.showInformation(id) } } }
             state.summary.data?.let { summary ->
                 CatalogDescriptionCard(summary.resumo?.takeIf(String::isNotBlank) ?: "Resumo de segurança não informado para este produto.")
-                summary.versao?.let { Text("FDS: $it", color = quimiaColorTokens().textSecondary, style = Typography.bodySmall) }
                 summary.dataAtualizacao?.let { Text("Atualização: $it", color = quimiaColorTokens().textSecondary, style = Typography.bodySmall) }
             }
         }

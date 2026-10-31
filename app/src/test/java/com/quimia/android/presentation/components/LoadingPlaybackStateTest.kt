@@ -4,6 +4,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class LoadingPlaybackStateTest {
+    @Test fun roomsCanRevealTheirContentAsSoonAsTheRequestFinishes() {
+        val started = LoadingPlaybackState().update(true, true, requireFullCycle = false)
+        assertTrue(started.showing)
+        assertFalse(started.update(false, true, requireFullCycle = false).showing)
+    }
     @Test fun aFastResponseCannotCutTheFirstVideoShort() {
         val started = LoadingPlaybackState().update(requested = true, animated = true)
         assertTrue(started.update(requested = false, animated = true).showing)

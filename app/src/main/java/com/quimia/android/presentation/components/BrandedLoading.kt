@@ -68,7 +68,7 @@ internal fun DestinationLoadingHost(
     val launching = LocalLaunchSplashVisible.current
     val requested = !launching && brandedLoadingVisible(menuShown, accountLoading, aiEntry, pending, slowEntry)
     var playback by remember { mutableStateOf(LoadingPlaybackState()) }
-    val presentation = playback.update(requested, motion)
+    val presentation = playback.update(requested, motion, requireFullCycle = destination != "rooms")
     val visible = presentation.showing
     SideEffect { playback = presentation }
     val keyboard = LocalSoftwareKeyboardController.current
