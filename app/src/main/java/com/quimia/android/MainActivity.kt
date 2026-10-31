@@ -264,6 +264,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     com.quimia.android.presentation.components.DestinationLoadingHost(
         destination = currentScreen, userId = sessionUid,
         accountLoading = authState is AuthResult.Loading || enteringAccount,
+        navigationVisible = authState is AuthResult.Success && !showProfile && !showKemi && !showMixtures && selectedMainTab in setOf(0, 1, 2, 4),
     ) { brandedLoading ->
     when (authState) {
         is AuthResult.Success -> motion.QuimiaNavigationMotion(selectedMainTab) {

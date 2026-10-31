@@ -115,7 +115,12 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     val tokens = quimiaColorTokens()
     val initialListLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading, userId)
     val screenLoading = initialListLoading && state.stage == RoomsStage.List
-    com.quimia.android.presentation.components.ReportDestinationLoading("rooms", screenLoading)
+    com.quimia.android.presentation.components.ReportDestinationLoading("rooms", pending = when (state.stage) {
+        RoomsStage.List -> screenLoading
+        RoomsStage.Create, RoomsStage.Adding -> state.shelfLoading
+        RoomsStage.Detail -> state.detailLoading
+        else -> false
+    }, navigationVisible = state.stage == RoomsStage.List, page = state.stage)
     CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         motion.QuimiaScreenDissolve(state.stage, Modifier.fillMaxSize()) { stage ->

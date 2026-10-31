@@ -44,6 +44,12 @@ class MotionPreviewActivity : ComponentActivity() {
                 var chat by remember { mutableStateOf(intent.getBooleanExtra("kemi", false)) }
                 val controller = remember { KemiController() }
                 val navigate: (Int) -> Unit = { tab = it }
+                val destination = when { chat -> "kemi"; profile -> "profile"; else -> when (tab) {
+                    1 -> "catalog"; 2 -> "shelf"; 3 -> "proximity"; 4 -> "rooms"; else -> "home"
+                } }
+                com.quimia.android.presentation.components.DestinationLoadingHost(destination, "preview", accountLoading = false,
+                    navigationVisible = !chat && !profile && !loadingPreview && !splashPreview && tab in setOf(0, 1, 2, 4)) {
+                com.quimia.android.presentation.components.ReportDestinationLoading(destination, skeleton)
                 QuimiaNavigationMotion(tab) {
                     CompositionLocalProvider(LocalQuimiaSkeleton provides skeleton) {
                         when {
@@ -71,6 +77,7 @@ class MotionPreviewActivity : ComponentActivity() {
                                 onAiClick = { chat = true }, onShelfClick = { tab = 2 }, onMixturesClick = { chat = true }, onFindDropOffClick = { tab = 3 })
                         }
                     }
+                }
                 }
             }
         }
