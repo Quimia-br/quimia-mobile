@@ -32,9 +32,19 @@ private class InterfaceSounds(context: Context) {
     private val ready = mutableSetOf<Int>()
     private val variants = InterfaceSoundVariants()
     private var released = false
+    private var interactionStream = 0
+    private var resultStream = 0
     var enabled: Boolean
         get() = gate.enabled
-        set(value) { gate.enabled = value }
+        set(value) {
+            gate.enabled = value
+            if (!value) {
+                pool.stop(interactionStream)
+                pool.stop(resultStream)
+                interactionStream = 0
+                resultStream = 0
+            }
+        }
     private val pool = SoundPool.Builder().setMaxStreams(2).setAudioAttributes(
         AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).build()
@@ -50,6 +60,7 @@ private class InterfaceSounds(context: Context) {
     }
     private val sounds = mapOf(
         QuimiaSound.Tap to listOf(R.raw.ui_tap, R.raw.ui_tap_2, R.raw.ui_tap_3),
+        QuimiaSound.Navigation to listOf(R.raw.ui_navigation, R.raw.ui_navigation_2, R.raw.ui_navigation_3),
         QuimiaSound.Selection to listOf(R.raw.ui_selection, R.raw.ui_selection_2, R.raw.ui_selection_3),
         QuimiaSound.Success to listOf(R.raw.ui_success, R.raw.ui_success_2),
         QuimiaSound.Error to listOf(R.raw.ui_error, R.raw.ui_error_2),
@@ -64,13 +75,16 @@ private class InterfaceSounds(context: Context) {
     private fun output(cue: QuimiaSound) {
         if (!permitted()) return
         val sample = variants.next(cue, sounds.getValue(cue).filter { it in ready }) ?: return
-        val volume = when (cue) {
-            QuimiaSound.Tap -> .55f
-            QuimiaSound.Selection -> .45f
-            QuimiaSound.Success -> .65f
-            QuimiaSound.Error -> .60f
+        val mix = cue.mix()
+        // Cut the previous interaction so a quick succession of controls doesn't turn into a pile of clicks.
+        pool.stop(interactionStream)
+        interactionStream = 0
+        if (mix.priority > 1) {
+            pool.stop(resultStream)
+            resultStream = pool.play(sample, mix.volume, mix.volume, mix.priority, 0, 1f)
+        } else {
+            interactionStream = pool.play(sample, mix.volume, mix.volume, mix.priority, 0, 1f)
         }
-        pool.play(sample, volume, volume, if (cue == QuimiaSound.Tap) 1 else 2, 0, 1f)
     }
     fun release() {
         released = true; enabled = false

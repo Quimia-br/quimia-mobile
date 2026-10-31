@@ -175,6 +175,10 @@ private fun ProfilePreferencesScreen(
 ) {
     val tokens = quimiaColorTokens()
     val accessibleLayout = LocalDensity.current.fontScale > 1.1f || theme.quimiaDyslexicFontEnabled()
+    val sound = feedback.LocalQuimiaSound.current
+    val previewScope = rememberCoroutineScope()
+    var soundPreview by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    LaunchedEffect(preferences.soundEffects) { if (!preferences.soundEffects) soundPreview?.cancel() }
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).quimiaContent()) {
             Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
@@ -241,10 +245,17 @@ private fun ProfilePreferencesScreen(
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("Efeitos sonoros", Modifier.weight(1f), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
                 if (preferences.soundEffects) {
-                    val sound = feedback.LocalQuimiaSound.current
                     QuimiaIconButton(icon = Lucide.Volume2, containerColor = tokens.secondary,
-                        contentDescription = "Testar efeitos sonoros", clickSound = null,
-                        onClick = { sound(feedback.QuimiaSound.Success) })
+                        contentDescription = "Ouvir prévia dos efeitos sonoros", clickSound = null,
+                        onClick = {
+                            soundPreview?.cancel()
+                            soundPreview = previewScope.launch {
+                                feedback.QuimiaSound.entries.forEach { cue ->
+                                    sound(cue)
+                                    kotlinx.coroutines.delay(600)
+                                }
+                            }
+                        })
                 }
                 QuimiaSwitch(checked = preferences.soundEffects,
                     onCheckedChange = { onPreferencesChange(preferences.copy(soundEffects = it)) },

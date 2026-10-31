@@ -141,7 +141,7 @@ fun QuimiaMenuBar(
                         .quimiaPress(pressed)
                         .clip(CircleShape)
                         .selectable(selected = index == selectedIndex, role = Role.Tab, interactionSource = interactions, indication = null) {
-                            if (index != selectedIndex) sound(feedback.QuimiaSound.Tap)
+                            if (index != selectedIndex) sound(feedback.QuimiaSound.Navigation)
                             onItemSelected(index)
                         },
                     contentAlignment = Alignment.Center,

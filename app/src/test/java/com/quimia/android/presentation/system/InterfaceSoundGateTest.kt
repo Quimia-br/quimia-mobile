@@ -33,7 +33,7 @@ class InterfaceSoundGateTest {
         assertEquals(QuimiaSound.Tap, gate.request(QuimiaSound.Tap, 100))
         assertNull(gate.request(QuimiaSound.Tap, 120))
         assertEquals(QuimiaSound.Success, gate.request(QuimiaSound.Success, 121))
-        assertEquals(QuimiaSound.Tap, gate.request(QuimiaSound.Tap, 180))
+        assertEquals(QuimiaSound.Tap, gate.request(QuimiaSound.Tap, 200))
     }
     @Test fun aLateTapDoesNotReplaceAnImportantQueuedConfirmation() {
         val gate = InterfaceSoundGate()
@@ -41,5 +41,22 @@ class InterfaceSoundGateTest {
         gate.request(QuimiaSound.Tap, 120)
         assertNull(gate.loaded(QuimiaSound.Tap, 130))
         assertEquals(QuimiaSound.Success, gate.loaded(QuimiaSound.Success, 140))
+    }
+
+    @Test fun repeatedResultToastsDoNotRepeatTheirSoundImmediately() {
+        val gate = InterfaceSoundGate()
+        gate.loaded(QuimiaSound.Error, 0)
+        assertEquals(QuimiaSound.Error, gate.request(QuimiaSound.Error, 100))
+        assertNull(gate.request(QuimiaSound.Error, 300))
+        assertEquals(QuimiaSound.Error, gate.request(QuimiaSound.Error, 1000))
+    }
+
+    @Test fun navigationHasItsOwnCueAndResultsAreStillImmediate() {
+        val gate = InterfaceSoundGate()
+        gate.loaded(QuimiaSound.Navigation, 0)
+        gate.loaded(QuimiaSound.Success, 0)
+        assertEquals(QuimiaSound.Navigation, gate.request(QuimiaSound.Navigation, 100))
+        assertNull(gate.request(QuimiaSound.Navigation, 150))
+        assertEquals(QuimiaSound.Success, gate.request(QuimiaSound.Success, 151))
     }
 }
