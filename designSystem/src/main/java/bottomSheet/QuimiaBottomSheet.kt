@@ -64,6 +64,8 @@ fun QuimiaBottomSheet(
     scrimColor: Color? = null,
     shape: androidx.compose.ui.graphics.Shape? = null,
     contentPadding: PaddingValues = PaddingValues(32.dp),
+    titleTextStyle: androidx.compose.ui.text.TextStyle = QuimiaTextStyles.medium24,
+    closeButtonColor: Color? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (!isVisible) return
@@ -92,6 +94,7 @@ fun QuimiaBottomSheet(
             onPrimaryActionClick = onPrimaryActionClick, onSecondaryActionClick = onSecondaryActionClick,
             contentHeight = contentHeight,
             contentPadding = contentPadding,
+            titleTextStyle = titleTextStyle, closeButtonColor = closeButtonColor,
             content = content,
         )
     }
@@ -113,6 +116,8 @@ fun QuimiaBottomSheetContent(
     onSecondaryActionClick: () -> Unit = {},
     contentHeight: Dp? = 547.dp,
     contentPadding: PaddingValues = PaddingValues(32.dp),
+    titleTextStyle: androidx.compose.ui.text.TextStyle = QuimiaTextStyles.medium24,
+    closeButtonColor: Color? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = quimiaColorTokens()
@@ -129,12 +134,12 @@ fun QuimiaBottomSheetContent(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (!title.isNullOrBlank()) Text(text = title, color = tokens.textPrimary,
-                        style = QuimiaTextStyles.medium24)
+                        style = titleTextStyle)
                     if (!description.isNullOrBlank()) Text(text = description, color = tokens.textSecondary,
                         style = QuimiaTextStyles.medium16)
                 }
                 if (showCloseButton) QuimiaIconButton(icon = Lucide.X, onClick = onClose,
-                    size = QuimiaIconButtonSize.Small, containerColor = secondary,
+                    size = QuimiaIconButtonSize.Small, containerColor = closeButtonColor ?: secondary,
                     contentDescription = "Fechar")
             }
         }

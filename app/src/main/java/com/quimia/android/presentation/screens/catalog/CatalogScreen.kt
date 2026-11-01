@@ -137,6 +137,7 @@ fun CatalogScreen(
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
+    val playSound = feedback.LocalQuimiaSound.current
     var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
     fun changeQuery(value: String) { query = value.take(100); onQueryChange?.invoke(query) }
     val voiceInput = rememberVoiceInput { changeQuery(it) }
@@ -178,8 +179,8 @@ fun CatalogScreen(
     }
     fun select(id: String) {
         if (saving || id in savedIds) return
-        if (id in selectedIds) selectedIds = selectedIds - id
-        else if (selectedIds.size < 50) selectedIds = selectedIds + id
+        if (id in selectedIds) { selectedIds = selectedIds - id; playSound(feedback.QuimiaSound.Selection) }
+        else if (selectedIds.size < 50) { selectedIds = selectedIds + id; playSound(feedback.QuimiaSound.Selection) }
         else dialogMessage = "Selecione até 50 produtos por vez."
     }
 
@@ -401,6 +402,7 @@ private fun ProductCard(
     val outline = resolveCatalogProductOutline(tokens, quimiaHighContrastEnabled(), selectionMode, selected)
         ?: if (saved && !selectionMode) CatalogProductOutline(tokens.success, 2.dp) else null
     val interactions = remember { MutableInteractionSource() }
+    val playSound = feedback.LocalQuimiaSound.current
     val pressed by interactions.collectIsPressedAsState()
     QuimiaCard(
         modifier = modifier
@@ -408,7 +410,7 @@ private fun ProductCard(
             .clip(cardShape)
             .combinedClickable(
                 interactionSource = interactions, indication = androidx.compose.foundation.LocalIndication.current,
-                onClick = { if (selectionMode) onLongSelect() else onInfo() },
+                onClick = { if (selectionMode) onLongSelect() else { playSound(feedback.QuimiaSound.Tap); onInfo() } },
                 onLongClick = onLongSelect,
             ),
         title = product.name,

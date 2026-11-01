@@ -16,7 +16,7 @@ enum class RoomIcon(val label: String) {
 @Serializable
 enum class RoomSafety { NotEvaluated, Critical, Safe }
 
-enum class RoomPage { List, Create, Detail, Saving, Success, Error }
+enum class RoomPage { List, Create, Detail, Adding, Editing, Saving, Success, Error }
 
 @Serializable
 data class QuimiaRoom(

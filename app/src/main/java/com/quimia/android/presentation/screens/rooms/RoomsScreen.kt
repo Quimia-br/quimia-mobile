@@ -64,6 +64,7 @@ fun RoomsScreen(
     var validation by rememberSaveable { mutableStateOf<String?>(null) }
     var actionProductId by rememberSaveable { mutableStateOf(previewActionProductId) }
     var informationProductId by rememberSaveable { mutableStateOf<String?>(null) }
+    var deleting by rememberSaveable { mutableStateOf(false) }
     val availableProducts = remember(savedProductIds, catalog) {
         val indexed = catalog.associateBy { it.id }
         savedProductIds.distinct().mapNotNull(indexed::get)
@@ -93,7 +94,11 @@ fun RoomsScreen(
         draftName = ""; draftIcon = null; draftProductIds = emptyList()
         draftId = UUID.randomUUID().toString(); validation = null; page = RoomPage.Create
     }
-    BackHandler(enabled = page != RoomPage.List) { page = if (page == RoomPage.Error) RoomPage.Create else RoomPage.List }
+    BackHandler(enabled = page != RoomPage.List) { page = when (page) {
+        RoomPage.Error -> RoomPage.Create
+        RoomPage.Editing, RoomPage.Adding -> RoomPage.Detail
+        else -> RoomPage.List
+    } }
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         when (page) {
             RoomPage.List -> RoomList(rooms, onOpen = { selectedRoomId = it; page = RoomPage.Detail },
@@ -112,7 +117,30 @@ fun RoomsScreen(
             RoomPage.Detail -> if (selectedRoom != null) RoomDetails(
                 room = selectedRoom, products = roomProducts(selectedRoom, catalog),
                 onClose = { page = RoomPage.List }, onProductActions = { actionProductId = it },
+                onAddProducts = { draftProductIds = emptyList(); page = RoomPage.Adding },
+                onEdit = { draftName = selectedRoom.name; draftIcon = selectedRoom.icon;
+                    draftProductIds = selectedRoom.productIds; page = RoomPage.Editing },
+                onDelete = { deleting = true },
             ) else RoomList(rooms, { selectedRoomId = it; page = RoomPage.Detail }, ::startCreate, onMenuItemSelected, onAiClick)
+            RoomPage.Editing -> if (selectedRoom != null) RoomForm(draftName, draftIcon, draftProductIds,
+                availableProducts, validation, onNameChange = { draftName = it }, onIconChange = { draftIcon = it },
+                onToggleProduct = { id -> draftProductIds = if (id in draftProductIds) draftProductIds - id else (draftProductIds + id).take(20) },
+                onClose = { page = RoomPage.Detail }, onOpenCatalog = onOpenCatalog,
+                onSubmit = { onRoomsChange(rooms.upsertRoom(selectedRoom.copy(name = draftName.trim(), icon = requireNotNull(draftIcon),
+                    productIds = draftProductIds, safety = RoomSafety.NotEvaluated))); page = RoomPage.Detail },
+                formTitle = "Editar cômodo", formDescription = "Editar as informações do cômodo", submitLabel = "Salvar", highlightName = false,
+                canSubmit = draftName.isNotBlank() && draftIcon != null && (draftName.trim() != selectedRoom.name ||
+                    draftIcon != selectedRoom.icon || draftProductIds.toSet() != selectedRoom.productIds.toSet()))
+            RoomPage.Adding -> if (selectedRoom != null) {
+                RoomDetails(selectedRoom, roomProducts(selectedRoom, catalog), { page = RoomPage.Detail }, {})
+                RoomAddProductsPanel(availableProducts.filterNot { it.id in selectedRoom.productIds }, draftProductIds,
+                    busy = false, loading = false, ready = true, existingCount = selectedRoom.productIds.size,
+                    emptyShelf = availableProducts.isEmpty(),
+                    onToggle = { id -> draftProductIds = if (id in draftProductIds) draftProductIds - id else draftProductIds + id },
+                    onDismiss = { page = RoomPage.Detail }, onOpenCatalog = onOpenCatalog,
+                    onSubmit = { onRoomsChange(rooms.upsertRoom(selectedRoom.copy(productIds = (selectedRoom.productIds + draftProductIds).distinct(),
+                        safety = RoomSafety.NotEvaluated))); page = RoomPage.Detail })
+            }
             RoomPage.Saving -> RoomCreating(draftName.ifBlank { "Banheiro" })
             RoomPage.Success, RoomPage.Error -> RoomCreationResult(
                 success = page == RoomPage.Success, name = selectedRoom?.name ?: draftName.ifBlank { "banheiro" },
@@ -120,6 +148,10 @@ fun RoomsScreen(
             )
         }
     }
+    if (deleting && selectedRoom != null) RoomDeleteConfirmation(selectedRoom.name, busy = false,
+        onDismiss = { deleting = false }, onConfirm = {
+            onRoomsChange(rooms.filterNot { it.id == selectedRoom.id }); deleting = false; page = RoomPage.List
+        })
     catalog.firstOrNull { it.id == actionProductId }?.let { product ->
         ShelfActionsPanel(product = product, onDismiss = { actionProductId = null }, showMixtures = false, actionSpacing = 16.dp,
             onMixtures = {}, onInformation = { informationProductId = product.id; actionProductId = null },

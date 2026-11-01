@@ -22,9 +22,10 @@ class RoomsControllerTest {
         var addCall: suspend () -> ApiRoom = { room() }
         var deleteCall: suspend () -> Unit = {}
         var editCall: suspend (String, String) -> ApiRoom = { name, icon -> room().copy(nome = name, icone = icon) }
+        var shelfProducts = products
         val users = mutableListOf<String>()
         override suspend fun list(user: String, query: String, page: Int): CatalogPage<ApiRoomSummary> { users += user; return listCall(query, page) }
-        override suspend fun shelf(user: String) = products
+        override suspend fun shelf(user: String) = shelfProducts
         override suspend fun detail(user: String, id: Int) = detailCall()
         override suspend fun create(user: String, name: String, icon: String, ids: List<Int>) = createCall()
         override suspend fun add(user: String, id: Int, ids: List<Int>) = addCall()
@@ -122,5 +123,62 @@ class RoomsControllerTest {
         assertFalse(room().copy(icone = "unknown").uiRoom().knownIcon)
         val source = Source(); RoomsController(source, "one").loadList(); RoomsController(source, "two").loadList()
         assertEquals(listOf("one", "two"), source.users)
+    }
+    @Test fun `edit saves identity and selected products using confirmed server assessment`() = runBlocking {
+        val extra = ApiCatalogProduct(9, "Produto C", "outro")
+        var server = room()
+        val calls = mutableListOf<String>()
+        val source = Source().apply {
+            shelfProducts = products + extra
+            detailCall = { server }
+            editCall = { name, icon -> calls += "edit"; server = server.copy(nome = name, icone = icon); server }
+            removeCall = { calls += "remove"; server = server.copy(produtos = server.produtos.filterNot { it.id == 8 },
+                avaliacao = RoomAssessment("nao_avaliado", 1, 0, 0, null, emptyList())) }
+            addCall = { calls += "add"; server = server.copy(produtos = server.produtos + extra,
+                avaliacao = RoomAssessment("nao_avaliado", 2, 0, 0, null, emptyList())); server }
+        }
+        val controller = RoomsController(source, "user")
+        controller.open(4); controller.prepareEdit()
+        assertEquals(RoomsStage.Editing, controller.state.value.stage)
+        controller.edit("Cozinha", RoomIcon.Refrigerator, listOf(7, 9))
+        assertEquals(listOf("edit", "remove", "add"), calls)
+        assertEquals("Cozinha", controller.state.value.detail?.nome)
+        assertEquals(setOf(7, 9), controller.state.value.detail?.produtos?.map { it.id }?.toSet())
+        assertEquals(RoomsStage.Detail, controller.state.value.stage)
+        assertNull(controller.state.value.mutationError)
+    }
+    @Test fun `partial edit stays in form and retries without repeating confirmed removals`() = runBlocking {
+        val extra = ApiCatalogProduct(9, "Produto C", "outro")
+        var server = room(); var removals = 0
+        val source = Source().apply {
+            shelfProducts = products + extra
+            detailCall = { server }
+            removeCall = { removals++; server = server.copy(produtos = server.produtos.filterNot { it.id == 8 },
+                avaliacao = RoomAssessment("nao_avaliado", 1, 0, 0, null, emptyList())) }
+            addCall = { throw IOException() }
+        }
+        val controller = RoomsController(source, "user")
+        controller.open(4); controller.prepareEdit()
+        controller.edit("Banheiro", RoomIcon.Toilet, listOf(7, 9))
+        assertEquals(RoomsStage.Editing, controller.state.value.stage)
+        assertNotNull(controller.state.value.mutationError)
+        assertEquals(listOf(7), controller.state.value.detail?.produtos?.map { it.id })
+        source.addCall = { server = server.copy(produtos = server.produtos + extra,
+            avaliacao = RoomAssessment("nao_avaliado", 2, 0, 0, null, emptyList())); server }
+        controller.edit("Banheiro", RoomIcon.Toilet, listOf(7, 9))
+        assertEquals(1, removals)
+        assertEquals(RoomsStage.Detail, controller.state.value.stage)
+        assertNull(controller.state.value.mutationError)
+    }
+    @Test fun `edit rejects products outside shelf before any API mutation`() = runBlocking {
+        var calls = 0
+        val source = Source().apply { editCall = { _, _ -> calls++; room() } }
+        val controller = RoomsController(source, "user")
+        controller.open(4); controller.prepareEdit()
+        controller.edit("Cozinha", RoomIcon.Refrigerator, listOf(7, 999))
+        assertEquals(0, calls)
+        assertEquals(RoomsStage.Editing, controller.state.value.stage)
+        assertEquals(setOf(7, 8), controller.state.value.detail?.produtos?.map { it.id }?.toSet())
+        assertNotNull(controller.state.value.notice)
     }
 }

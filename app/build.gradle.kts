@@ -123,6 +123,10 @@ dependencies {
     implementation(libs.play.services.auth)
     
     testImplementation(libs.junit)
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.androidx.junit)
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation(libs.androidx.work.testing)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

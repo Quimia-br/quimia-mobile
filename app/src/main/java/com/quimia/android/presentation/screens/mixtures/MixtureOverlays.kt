@@ -117,7 +117,10 @@ internal fun MixturePickerContent(
                     layout = QuimiaCardLayout.Stacked, contentPadding = 16.dp, outline = selected,
                     outlineColor = selectionColor, contrastOutline = !quimiaHighContrastEnabled() || chosenKey == null,
                     modifier = Modifier.height(if (substanceTab) 110.dp else 318.dp), headerContent = null) {
-                    Surface(onClick = { if (!unavailable) chosenKey = item.key }, enabled = !unavailable,
+                    val playSound = feedback.LocalQuimiaSound.current
+                    Surface(onClick = { if (!unavailable && chosenKey != item.key) {
+                        chosenKey = item.key; playSound(feedback.QuimiaSound.Selection)
+                    } }, enabled = !unavailable,
                         color = Color.Transparent, modifier = Modifier.fillMaxSize()) {
                         if (substanceTab) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
                             Icon(androidx.compose.ui.res.painterResource(com.quimia.android.R.drawable.figma_bubbles), null,

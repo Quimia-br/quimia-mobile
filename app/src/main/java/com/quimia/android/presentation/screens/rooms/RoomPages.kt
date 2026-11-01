@@ -39,6 +39,9 @@ internal fun RoomForm(
     showIdentity: Boolean = true, canSubmit: Boolean? = null, showEmpty: Boolean = true,
     selectionHint: String = "Escolha os produtos que você usa para limpar esse cômodo",
     statusContent: (@Composable () -> Unit)? = null,
+    formDescription: String = "Insira as informações do cômodo",
+    enabled: Boolean = true,
+    highlightName: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -49,12 +52,12 @@ internal fun RoomForm(
                 Column(Modifier.fillMaxWidth().padding(24.dp)) {
                     QuimiaMainTitle(title = formTitle)
                     Spacer(Modifier.height(4.dp))
-                    Text("Insira as informações do cômodo", modifier = Modifier.quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium16, color = tokens.textSecondary)
+                    Text(formDescription, modifier = Modifier.quimiaSkeleton(8.dp), style = QuimiaTextStyles.medium16, color = tokens.textSecondary)
                 }
                 if (showIdentity) {
                 Box(Modifier.fillMaxWidth().padding(24.dp)) {
                     QuimiaInput(value = name, onValueChange = { onNameChange(it.take(nameLimit)) }, label = "Nome", placeholder = "Sala de estar",
-                        highlighted = name.isNotBlank(), borderWidth = 3.dp,
+                        highlighted = highlightName && name.isNotBlank(), borderWidth = 3.dp, enabled = enabled,
                         trailingIconSize = 16.dp, trailingIconContentDescription = "Limpar nome do cômodo",
                         trailingIcon = if (name.isNotEmpty()) Lucide.X else null, onTrailingIconClick = { onNameChange("") })
                 }
@@ -71,7 +74,8 @@ internal fun RoomForm(
                                     QuimiaIconButton(icon = if (item == RoomIcon.Sofa) Lucide.Sofa else item.vector,
                                         iconPainter = item.drawable?.let { painterResource(it) }, iconSize = 20.dp,
                                         size = QuimiaIconButtonSize.Large,
-                                        containerColor = if (icon == item) tokens.secondaryPressed else tokens.secondary,
+                                        containerColor = if (icon == item) tokens.primary else tokens.secondary,
+                                        enabled = enabled,
                                         contentDescription = "Ícone ${item.label}${if (icon == item) ", selecionado" else ""}",
                                         onClick = { onIconChange(item) })
                                 }
@@ -98,6 +102,7 @@ internal fun RoomForm(
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     row.forEach { product ->
                                         RoomProductCard(product, Modifier.weight(1f), selectable = true, checked = product.id in selectedIds,
+                                            enabled = enabled && (product.id in selectedIds || selectedIds.size < 20),
                                             onCheckedChange = { onToggleProduct(product.id) })
                                     }
                                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
@@ -118,17 +123,28 @@ internal fun RoomForm(
 
 @Composable
 internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClose: () -> Unit, onProductActions: (String) -> Unit,
-    apiAssessment: (@Composable () -> Unit)? = null, onAddProducts: (() -> Unit)? = null, onEdit: (() -> Unit)? = null, onDelete: (() -> Unit)? = null, statusContent: (@Composable () -> Unit)? = null) {
+    apiAssessment: (@Composable () -> Unit)? = null, onAddProducts: (() -> Unit)? = null, onEdit: (() -> Unit)? = null, onDelete: (() -> Unit)? = null,
+    statusContent: (@Composable () -> Unit)? = null, enabled: Boolean = true, initialMenuVisible: Boolean = false) {
     val tokens = quimiaColorTokens()
     val preview = LocalInspectionMode.current
     val safety = if (preview || apiAssessment != null) room.safety else RoomSafety.NotEvaluated
     var noticeVisible by rememberSaveable(room.id) { mutableStateOf(true) }
+    var menuVisible by rememberSaveable(room.id) { mutableStateOf(initialMenuVisible) }
+    if (menuVisible) RoomActionsPanel(room.name, onDismiss = { menuVisible = false },
+        onAdd = onAddProducts?.let { { menuVisible = false; it() } },
+        onEdit = onEdit?.let { { menuVisible = false; it() } },
+        onDelete = onDelete?.let { { menuVisible = false; it() } },
+        previewBackground = { RoomDetails(room, products, {}, {}) })
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         BoxWithConstraints(Modifier.widthIn(max = 840.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             val columns = roomGridColumns(maxWidth.value)
             Column(Modifier.fillMaxSize()) {
                 Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-                QuimiaNav(showBackButton = true, onBackClick = onClose, onCloseClick = onClose)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    QuimiaIconButton(icon = Lucide.ChevronLeft, contentDescription = "Voltar para cômodos", containerColor = tokens.secondary, enabled = enabled, onClick = onClose)
+                    QuimiaIconButton(icon = Lucide.Menu, contentDescription = "Ações do cômodo", enabled = enabled,
+                        containerColor = if (menuVisible) tokens.secondaryPressed else tokens.secondary, onClick = { menuVisible = true })
+                }
                 LazyColumn(modifier = Modifier.quimiaContent(), contentPadding = PaddingValues(bottom = 24.dp)) {
                     item {
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -160,6 +176,7 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                             statusContent?.invoke()
                             if (safety == RoomSafety.Critical && noticeVisible) Box(Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(16.dp), contentAlignment = Alignment.Center) {
                                 QuimiaToast(message = "Alterar status da mistura", description = "Adicione ou remova produtos do cômodo para recalcular",
+                                    leadingIcon = Lucide.Check, statusIconContainerColor = tokens.success,
                                     onDismiss = { noticeVisible = false })
                             } else Spacer(Modifier.height(24.dp))
                         }
@@ -169,17 +186,9 @@ internal fun RoomDetails(room: QuimiaRoom, products: List<CatalogProduct>, onClo
                     } else items(products.chunked(columns)) { row ->
                         Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                             row.forEach { product -> RoomProductCard(product, Modifier.weight(1f), critical = safety == RoomSafety.Critical,
+                                enabled = enabled,
                                 previewQuantity = preview && safety == RoomSafety.Safe, onActions = { onProductActions(product.id) }) }
                             repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                    item {
-                        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            onAddProducts?.let { add -> QuimiaButton(text = "Adicionar produtos", iconSize = 0, espacamento = 0, modifier = Modifier.fillMaxWidth().height(48.dp), onClick = add) }
-                            if (onEdit != null && onDelete != null) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                QuimiaButton(text = "Editar cômodo", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onEdit)
-                                QuimiaButton(text = "Excluir", iconSize = 0, espacamento = 0, modifier = Modifier.weight(1f).height(48.dp), onClick = onDelete)
-                            }
                         }
                     }
                 }

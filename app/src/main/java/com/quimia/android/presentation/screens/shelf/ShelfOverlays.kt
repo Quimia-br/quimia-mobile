@@ -214,7 +214,7 @@ internal fun ShelfNoRoomConfirmation(onDismiss: () -> Unit, onCreate: () -> Unit
 }
 
 @Composable
-private fun ShelfConfirmation(
+internal fun ShelfConfirmation(
     title: String, description: String?, destructive: Boolean, action: String,
     onDismiss: () -> Unit, onConfirm: () -> Unit,
     busy: Boolean = false, statusContent: (@Composable () -> Unit)? = null,

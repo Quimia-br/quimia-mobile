@@ -78,3 +78,25 @@ private fun RoomErrorPreview() { QuimiaTheme(false) { RoomsScreen(emptyList(), {
 @Preview(name = "Cômodos · texto ampliado", group = "Acessibilidade", widthDp = 320, heightDp = 720, fontScale = 1.5f)
 @Composable
 private fun RoomsEmptyPreview() { QuimiaTheme(false) { RoomsScreen(emptyList(), {}, emptyList()) } }
+
+@QuimiaScreenPreviews
+@Preview(name = "Figma · Menu do cômodo", group = "Figma", widthDp = 360, heightDp = 800)
+@Composable
+private fun RoomMenuPreview() { QuimiaTheme(false) {
+    RoomDetails(QuimiaRoom("kitchen", "Cozinha", RoomIcon.Refrigerator, roomPreviewCatalog.map { it.id }, RoomSafety.Safe),
+        roomPreviewCatalog, {}, {}, onAddProducts = {}, onEdit = {}, onDelete = {}, initialMenuVisible = true)
+} }
+
+@QuimiaScreenPreviews
+@Preview(name = "Figma · Editar cômodo", group = "Figma", widthDp = 360, heightDp = 1433)
+@Composable
+private fun RoomEditPreview() { QuimiaTheme(false) {
+    RoomForm("Cozinha", RoomIcon.Refrigerator, roomPreviewCatalog.take(2).map { it.id }, roomPreviewCatalog, null,
+        {}, {}, {}, {}, {}, {}, formTitle = "Editar cômodo", formDescription = "Editar as informações do cômodo",
+        submitLabel = "Salvar", canSubmit = false, highlightName = false)
+} }
+
+@QuimiaScreenPreviews
+@Preview(name = "Figma · Confirmar exclusão do cômodo", group = "Figma", widthDp = 360, heightDp = 800)
+@Composable
+private fun RoomDeletePreview() { QuimiaTheme(false) { RoomDeleteConfirmation("Cozinha", false, {}, {}) } }
