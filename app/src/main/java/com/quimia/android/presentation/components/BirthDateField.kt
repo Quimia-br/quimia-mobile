@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,6 +20,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import bottomSheet.QuimiaBottomSheet
@@ -43,16 +45,13 @@ internal fun BirthDateField(value: String, onValueChange: (String) -> Unit, erro
     val keyboard = LocalSoftwareKeyboardController.current
     val focus = androidx.compose.ui.platform.LocalFocusManager.current
     fun open() { focus.clearFocus(); keyboard?.hide(); expanded = true }
-    Box(Modifier.fillMaxWidth().clearAndSetSemantics {
-        role = Role.Button
-        contentDescription = "Data de nascimento, ${value.ifBlank { "não selecionada" }}${error?.let { ". $it" }.orEmpty()}"
-        onClick("Selecionar data de nascimento") { open(); true }
-    }) {
-        QuimiaInput(value, {}, label = "Data de nascimento", placeholder = "DD/MM/AAAA", enabled = false,
-            trailingIcon = Lucide.Calendar, trailingIconSize = input.LocalQuimiaInputActionIconSize.current ?: 16.dp, showTrailingIconWhenEmpty = true,
-            onTrailingIconClick = ::open, error = error)
-        Box(Modifier.matchParentSize().clickable(onClick = ::open))
-    }
+    QuimiaInput(value.filter { it in '0'..'9' }.take(8), { onValueChange(formatBirthDate(it)) },
+        label = "Data de nascimento", placeholder = "DD/MM/AAAA",
+        modifier = Modifier.semantics { contentDescription = "Data de nascimento" },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), visualTransformation = BirthDateVisualTransformation,
+        trailingIcon = Lucide.Calendar, trailingIconSize = input.LocalQuimiaInputActionIconSize.current ?: 24.dp,
+        trailingIconContentDescription = "Abrir calendário de nascimento", showTrailingIconWhenEmpty = true, showClearButton = false,
+        onTrailingIconClick = ::open, error = error)
     if (expanded) BirthDateSheet(value, { expanded = false }, { onValueChange(it); expanded = false })
 }
 
