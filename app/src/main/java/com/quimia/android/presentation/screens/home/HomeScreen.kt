@@ -362,7 +362,7 @@ private fun HomeQuickActions(
                 description = dropOffDescription.takeIf { dropOffMap == null && it.isNotBlank() && it != "Não cadastrado" },
                 icon = Lucide.MapPin,
                 primaryActionLabel = null,
-                secondaryActionLabel = "Encontrar",
+                secondaryActionLabel = if (dropOffMap == null) "Encontrar" else null,
                 layout = QuimiaCardLayout.Stacked,
                 contentPadding = 16.dp,
                 paddingValues = PaddingValues(

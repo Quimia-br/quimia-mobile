@@ -110,7 +110,7 @@ private fun NearbyGoogleMap(
     val density = context.resources.displayMetrics.density
     val (location, locate) = rememberNearbyLocation()
     val source = remember { NearbyGoogleLocationSource() }
-    var focus by remember { mutableStateOf(NearbyMapFocus.Initial) }
+    var focus by remember { mutableStateOf(if (selectedPointId != null) NearbyMapFocus.Point else NearbyMapFocus.Initial) }
     var cameraRevision by remember { mutableIntStateOf(0) }
     var map by remember { mutableStateOf<GoogleMap?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -153,7 +153,7 @@ private fun NearbyGoogleMap(
             native.setOnCameraMoveStartedListener { reason ->
                 if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) focus = NearbyMapFocus.Manual
             }
-            if (savedMap != null) focus = NearbyMapFocus.Manual
+            if (savedMap != null && selectedPointId == null) focus = NearbyMapFocus.Manual
             if (savedMap == null) native.moveCamera(CameraUpdateFactory.newLatLngZoom(
                 LatLng(nearbyDefaultCoordinate.latitude, nearbyDefaultCoordinate.longitude), 13.5f,
             ))
@@ -197,10 +197,11 @@ private fun NearbyGoogleMap(
     LaunchedEffect(map, bottomContentInset) {
         map?.setPadding(0, (72 * density).roundToInt(), 0, (bottomContentInset.value * density).roundToInt())
     }
-    LaunchedEffect(map, selectedPointId) {
-        val point = points.firstOrNull { it.id == selectedPointId } ?: return@LaunchedEffect
+    val selectedCoordinate = points.firstOrNull { it.id == selectedPointId }?.coordinate
+    LaunchedEffect(map, selectedPointId, selectedCoordinate) {
+        val point = selectedCoordinate?.takeIf { it.isValid() } ?: return@LaunchedEffect
         focus = NearbyMapFocus.Point
-        map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(point.coordinate.latitude, point.coordinate.longitude), 14.5f))
+        map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(point.latitude, point.longitude), 16f))
     }
     LaunchedEffect(map, location.location, location.revision) {
         val native = map ?: return@LaunchedEffect
