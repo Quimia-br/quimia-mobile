@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.quimia.android.R
 import feedback.LocalQuimiaSound
 import feedback.QuimiaSound
+import feedback.LocalQuimiaSoundStatus
 
 @Composable
 internal fun QuimiaSoundProvider(enabled: Boolean, content: @Composable () -> Unit) {
@@ -20,20 +21,23 @@ internal fun QuimiaSoundProvider(enabled: Boolean, content: @Composable () -> Un
     val player = remember(context) { InterfaceSounds(context) }
     SideEffect { player.enabled = enabled }
     DisposableEffect(player) { onDispose { player.release() } }
-    CompositionLocalProvider(LocalQuimiaSound provides player::play, content = content)
+    CompositionLocalProvider(LocalQuimiaSound provides player::play,
+        LocalQuimiaSoundStatus provides player::statusMessage, content = content)
 }
 
 /** Custom app effects use media volume, independently of Android's keyboard/touch sound setting. */
-private class InterfaceSounds(context: Context) {
+internal class InterfaceSounds(context: Context) {
     private val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val handler = Handler(Looper.getMainLooper())
     private val gate = InterfaceSoundGate()
     private val ready = mutableSetOf<Int>()
+    private val failed = mutableSetOf<Int>()
     private val variants = InterfaceSoundVariants()
     private var released = false
     private var interactionStream = 0
     private var resultStream = 0
+    private var lastPlaybackFailed = false
     var enabled: Boolean
         get() = gate.enabled
         set(value) {
@@ -46,14 +50,16 @@ private class InterfaceSounds(context: Context) {
             }
         }
     private val pool = SoundPool.Builder().setMaxStreams(2).setAudioAttributes(
-        AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME)
+        AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).build()
     init {
         pool.setOnLoadCompleteListener { _, id, status ->
-            if (status == 0) handler.post {
+            handler.post {
                 if (!released) sounds.entries.firstOrNull { id in it.value }?.key?.let { cue ->
-                    ready += id
-                    gate.loaded(cue, SystemClock.elapsedRealtime())?.let(::output)
+                    if (status == 0) {
+                        ready += id
+                        gate.loaded(cue, SystemClock.elapsedRealtime())?.let(::output)
+                    } else failed += id
                 }
             }
         }
@@ -65,9 +71,22 @@ private class InterfaceSounds(context: Context) {
         QuimiaSound.Success to listOf(R.raw.ui_success, R.raw.ui_success_2),
         QuimiaSound.Error to listOf(R.raw.ui_error, R.raw.ui_error_2),
     ).mapValues { (_, resources) -> resources.map { pool.load(context, it, 1) } }
-    private fun permitted(): Boolean = !released && enabled && audio.ringerMode == AudioManager.RINGER_MODE_NORMAL &&
-        audio.mode == AudioManager.MODE_NORMAL && audio.getStreamVolume(AudioManager.STREAM_MUSIC) > 0 &&
-        notifications.currentInterruptionFilter in setOf(NotificationManager.INTERRUPTION_FILTER_ALL, NotificationManager.INTERRUPTION_FILTER_UNKNOWN)
+    internal fun blockReason(): InterfaceSoundBlock? = interfaceSoundBlock(enabled,
+        audio.getStreamVolume(AudioManager.STREAM_MUSIC), audio.mode, notifications.currentInterruptionFilter)
+
+    private fun permitted(): Boolean = !released && blockReason() == null
+
+    fun statusMessage(): String? {
+        blockReason()?.let { return it.message }
+        if (ready.isEmpty()) return if (failed.size == sounds.values.sumOf { it.size })
+            "Não foi possível carregar os efeitos sonoros. Feche e abra o app para tentar novamente."
+        else "Os efeitos ainda estão sendo preparados. Aguarde um instante e toque na prévia novamente."
+        if (lastPlaybackFailed) {
+            lastPlaybackFailed = false // Report this attempt once, allowing the next preview to retry playback.
+            return "O Android não conseguiu reproduzir o efeito. Confira a saída de áudio selecionada e tente novamente."
+        }
+        return null
+    }
 
     fun play(cue: QuimiaSound) {
         if (permitted()) gate.request(cue, SystemClock.elapsedRealtime())?.let(::output)
@@ -82,8 +101,10 @@ private class InterfaceSounds(context: Context) {
         if (mix.priority > 1) {
             pool.stop(resultStream)
             resultStream = pool.play(sample, mix.volume, mix.volume, mix.priority, 0, 1f)
+            lastPlaybackFailed = resultStream == 0
         } else {
             interactionStream = pool.play(sample, mix.volume, mix.volume, mix.priority, 0, 1f)
+            lastPlaybackFailed = interactionStream == 0
         }
     }
     fun release() {

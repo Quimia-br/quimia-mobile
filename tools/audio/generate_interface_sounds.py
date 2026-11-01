@@ -82,7 +82,7 @@ def main():
     args = parser.parse_args()
     preview = [0.] * (RATE // 3)
     # Reel order: taps, navigation, selection, success, then error. Mix levels match Android playback.
-    levels = {"tap": .42, "navigation": .48, "selection": .38, "success": .65, "error": .60}
+    levels = {"tap": .60, "navigation": .62, "selection": .52, "success": .72, "error": .68}
     for kind, count in VARIANTS.items():
         for variant in range(count):
             samples = render(kind, variant)

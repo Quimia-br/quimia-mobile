@@ -176,8 +176,10 @@ private fun ProfilePreferencesScreen(
     val tokens = quimiaColorTokens()
     val accessibleLayout = LocalDensity.current.fontScale > 1.1f || theme.quimiaDyslexicFontEnabled()
     val sound = feedback.LocalQuimiaSound.current
+    val soundStatus = feedback.LocalQuimiaSoundStatus.current
     val previewScope = rememberCoroutineScope()
     var soundPreview by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var soundPreviewMessage by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(preferences.soundEffects) { if (!preferences.soundEffects) soundPreview?.cancel() }
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).quimiaContent()) {
@@ -249,11 +251,16 @@ private fun ProfilePreferencesScreen(
                         contentDescription = "Ouvir prévia dos efeitos sonoros", clickSound = null,
                         onClick = {
                             soundPreview?.cancel()
+                            soundPreviewMessage = soundStatus()
                             soundPreview = previewScope.launch {
+                                if (soundPreviewMessage != null) return@launch
                                 feedback.QuimiaSound.entries.forEach { cue ->
+                                    soundPreviewMessage = soundStatus()
+                                    if (soundPreviewMessage != null) return@launch
                                     sound(cue)
                                     kotlinx.coroutines.delay(600)
                                 }
+                                soundPreviewMessage = soundStatus()
                             }
                         })
                 }
@@ -261,6 +268,9 @@ private fun ProfilePreferencesScreen(
                     onCheckedChange = { onPreferencesChange(preferences.copy(soundEffects = it)) },
                     contentDescription = "Ativar efeitos sonoros")
             }
+            Text(soundPreviewMessage ?: "Os efeitos usam o volume de mídia e a saída de áudio selecionada no aparelho.",
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp).semantics { liveRegion = LiveRegionMode.Polite },
+                style = QuimiaTextStyles.medium14, color = tokens.foregroundSubtle)
             NotificationPreferencesCard(preferences, onPreferencesChange)
             QuimiaButton(text = "Sair", modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                 .padding(top = if (quimiaHighContrastEnabled()) 18.dp else 8.dp)
