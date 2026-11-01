@@ -89,6 +89,12 @@ jobs:
           apksigner_path=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
           "$apksigner_path" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 
+      - name: Verify Google login configuration in final APK
+        run: |
+          python3 -m unittest discover -s tools/android -p 'test_*.py'
+          aapt_path=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)
+          python3 tools/android/verify_release_google.py --aapt "$aapt_path" --apk app/build/outputs/apk/release/app-release.apk
+
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v6
         with:

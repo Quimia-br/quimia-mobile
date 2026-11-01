@@ -31,7 +31,8 @@ val mapsApiKey = providers.environmentVariable("MAPS_API_KEY").orNull?.trim().ta
     ?: localConfiguration.getProperty("MAPS_API_KEY", "").trim()
 val mapsConfigured = mapsApiKey.isNotEmpty() && mapsApiKey != "COLE_SUA_CHAVE_AQUI"
 
-if (file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()) {
+val hasGoogleServicesConfiguration = file("google-services.json").exists() || file("src/debug/google-services.json").exists() || file("src/main/google-services.json").exists()
+if (hasGoogleServicesConfiguration) {
     apply(plugin = "com.google.gms.google-services")
 }
 
@@ -46,12 +47,15 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 
     testOptions.unitTests.isIncludeAndroidResources = true
 
     defaultConfig {
         applicationId = "com.quimia.android"
+        // CI/previews can compile without credentials; the release workflow rejects this empty configuration.
+        if (!hasGoogleServicesConfiguration) resValue("string", "default_web_client_id", "")
         versionCode = releaseVersionCode
         versionName = releaseVersionName
         manifestPlaceholders["MAPS_API_KEY"] = if (mapsConfigured) mapsApiKey else ""

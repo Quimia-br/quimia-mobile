@@ -1,6 +1,7 @@
 package com.quimia.android.data.auth
 
 import android.content.Context
+import com.quimia.android.R
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -12,9 +13,10 @@ import kotlin.coroutines.resume
 
 class GoogleSignInHelper(private val context: Context) {
     private val webClientId: String by lazy {
-        val resource = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-        check(resource != 0) { "O acesso Google ainda não foi configurado para este aplicativo." }
-        context.getString(resource).also { check(it.isNotBlank()) { "O acesso Google ainda não foi configurado para este aplicativo." } }
+        // A static reference keeps the OAuth client in optimized release APKs.
+        context.getString(R.string.default_web_client_id).also {
+            check(it.isNotBlank()) { "O acesso Google ainda não foi configurado para este aplicativo." }
+        }
     }
     private val googleSignInOptions by lazy { GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestEmail()
