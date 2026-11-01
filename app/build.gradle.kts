@@ -50,7 +50,14 @@ android {
         resValues = true
     }
 
-    testOptions.unitTests.isIncludeAndroidResources = true
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // Robolectric downloads Android runtimes independently of Gradle repositories.
+            // repo1.maven.org can return HTTP 403 on GitHub-hosted runners.
+            it.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+        }
+    }
 
     defaultConfig {
         applicationId = "com.quimia.android"
