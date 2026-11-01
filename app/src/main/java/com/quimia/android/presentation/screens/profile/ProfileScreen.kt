@@ -317,7 +317,7 @@ private fun ProfileEditScreen(
 ) {
     val tokens = quimiaColorTokens()
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().imePadding()) {
+        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).quimiaContent()) {
                 Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
                 QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)

@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import buttons.*
@@ -42,13 +44,14 @@ internal fun MixturePicker(
     current: MixtureIngredient?, onDismiss: () -> Unit, onUse: (MixtureIngredient) -> Unit,
     onOpenCatalog: () -> Unit, initialSubstances: Boolean = false,
     loadingProducts: Boolean = false, productsError: String? = null, onRetryProducts: () -> Unit = {}, allowSubstances: Boolean = true,
+    loadingSubstances: Boolean = false, substancesError: String? = null, onRetrySubstances: () -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     val content: @Composable () -> Unit = {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             MixturePickerContent(products, substances, other, current, onDismiss, onUse, onOpenCatalog,
                 Modifier.fillMaxWidth().heightIn(max = maxHeight).height(if (initialSubstances) 515.dp else 650.dp), initialSubstances,
-                loadingProducts, productsError, onRetryProducts, allowSubstances)
+                loadingProducts, productsError, onRetryProducts, allowSubstances, loadingSubstances, substancesError, onRetrySubstances)
         }
     }
     if (LocalInspectionMode.current) {
@@ -69,12 +72,16 @@ internal fun MixturePickerContent(
     onDismiss: () -> Unit, onUse: (MixtureIngredient) -> Unit, onOpenCatalog: () -> Unit,
     modifier: Modifier = Modifier, initialSubstances: Boolean = false,
     loadingProducts: Boolean = false, productsError: String? = null, onRetryProducts: () -> Unit = {}, allowSubstances: Boolean = true,
+    loadingSubstances: Boolean = false, substancesError: String? = null, onRetrySubstances: () -> Unit = {},
 ) {
     val tokens = quimiaColorTokens()
     var substanceTab by rememberSaveable { mutableStateOf(allowSubstances && (initialSubstances || current?.kind == MixtureIngredientKind.Substance)) }
     var chosenKey by rememberSaveable { mutableStateOf(current?.key) }
     val candidates = if (substanceTab) substances else products.map { it.mixtureIngredient() }
     val chosen = candidates.firstOrNull { it.key == chosenKey && it.key != other?.key }
+    val loading = if (substanceTab) loadingSubstances else loadingProducts
+    val error = if (substanceTab) substancesError else productsError
+    val retry = if (substanceTab) onRetrySubstances else onRetryProducts
     val selectionColor = if (quimiaHighContrastEnabled()) tokens.info else tokens.borderFocus
     Column(modifier.quimiaContrastOutline(RoundedCornerShape(40.dp)).padding(32.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -98,17 +105,17 @@ internal fun MixturePickerContent(
           }
         }
         Spacer(Modifier.height(26.dp))
-        if (loadingProducts) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        if (loading) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             toast.QuimiaToast("Carregando sua estante…", type = toast.QuimiaToastType.Loading)
-        } else if (productsError != null) Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            toast.QuimiaToast(productsError, type = toast.QuimiaToastType.Error)
-            QuimiaButton(text = "Tentar novamente", iconSize = 0, espacamento = 0, onClick = onRetryProducts)
+        } else if (error != null) Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            toast.QuimiaToast(error, type = toast.QuimiaToastType.Error)
+            QuimiaButton(text = "Tentar novamente", iconSize = 0, espacamento = 0, onClick = retry)
         } else if (candidates.isEmpty()) Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(if (substanceTab) "Sua estante ainda não tem substâncias." else "Guarde produtos na estante para selecionar uma mistura.",
                 style = QuimiaTextStyles.medium16, color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
             if (!substanceTab) QuimiaButton(text = "Ir para catálogo", onClick = onOpenCatalog, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0)
-        } else LazyVerticalGrid(GridCells.Adaptive(140.dp), modifier = Modifier.weight(1f),
+        } else LazyVerticalGrid(GridCells.Adaptive(if (substanceTab) 110.dp else 140.dp), modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(candidates, key = { it.key }) { item ->
                 val unavailable = item.key == other?.key
@@ -116,15 +123,15 @@ internal fun MixturePickerContent(
                 QuimiaCard(title = "", showTitle = false, primaryActionLabel = null, secondaryActionLabel = null,
                     layout = QuimiaCardLayout.Stacked, contentPadding = 16.dp, outline = selected,
                     outlineColor = selectionColor, contrastOutline = !quimiaHighContrastEnabled() || chosenKey == null,
-                    modifier = Modifier.height(if (substanceTab) 110.dp else 318.dp), headerContent = null) {
+                    modifier = Modifier.height(if (substanceTab) 99.dp else 318.dp).semantics { this.selected = selected }, headerContent = null) {
                     val playSound = feedback.LocalQuimiaSound.current
                     Surface(onClick = { if (!unavailable && chosenKey != item.key) {
                         chosenKey = item.key; playSound(feedback.QuimiaSound.Selection)
                     } }, enabled = !unavailable,
                         color = Color.Transparent, modifier = Modifier.fillMaxSize()) {
-                        if (substanceTab) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+                        if (substanceTab) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Icon(androidx.compose.ui.res.painterResource(com.quimia.android.R.drawable.figma_bubbles), null,
-                                Modifier.size(24.dp), tint = tokens.foregroundDisabled)
+                                Modifier.size(21.dp), tint = tokens.foregroundDisabled)
                             Text(item.name, style = QuimiaTextStyles.medium15, color = tokens.foregroundPrimary)
                         } else Column(Modifier.fillMaxSize()) {
                             val product = products.first { it.id == item.id }
@@ -139,7 +146,7 @@ internal fun MixturePickerContent(
             }
         }
         Spacer(Modifier.height(24.dp))
-        QuimiaButton(text = "Usar", enabled = chosen != null && !loadingProducts && productsError == null, modifier = Modifier.fillMaxWidth().height(52.dp),
+        QuimiaButton(text = "Usar", enabled = chosen != null && !loading && error == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0, onClick = { chosen?.let(onUse) })
     }
 }
@@ -164,7 +171,9 @@ internal fun MixtureResultSheet(result: MixtureResult, onClose: () -> Unit, onSa
 @Composable
 internal fun MixtureResultContent(result: MixtureResult, onClose: () -> Unit, onSave: () -> Unit, saved: Boolean = false) {
     val tokens = quimiaColorTokens()
-    Column(Modifier.fillMaxWidth().quimiaContrastOutline(RoundedCornerShape(40.dp)).verticalScroll(rememberScrollState()).padding(32.dp),
+    Column(Modifier.fillMaxWidth().heightIn(max = 760.dp).quimiaContrastOutline(RoundedCornerShape(40.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
             QuimiaIconButton(icon = Lucide.X, onClick = onClose, size = QuimiaIconButtonSize.Large,
@@ -175,7 +184,7 @@ internal fun MixtureResultContent(result: MixtureResult, onClose: () -> Unit, on
             Text("Demonstração visual · sem avaliação de segurança", style = QuimiaTextStyles.medium12, color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
         }
         Spacer(Modifier.height(26.dp))
-        QuimiaShapeIcon(size = 200.dp,
+        QuimiaShapeIcon(size = 200.dp, modifier = Modifier.mixtureResultEntrance(),
             icon = when (result.risk) { MixtureRisk.Safe -> Lucide.Shield; MixtureRisk.Extreme -> Lucide.Skull; else -> Lucide.TriangleAlert },
             iconSize = 41.311.dp, containerColor = mixtureRiskColor(result.risk),
             iconColor = if (result.risk == MixtureRisk.Extreme || result.risk == MixtureRisk.Dangerous) tokens.white else tokens.foregroundPrimary)
@@ -187,7 +196,7 @@ internal fun MixtureResultContent(result: MixtureResult, onClose: () -> Unit, on
         if (result.risk != MixtureRisk.Extreme) result.ingredients.forEachIndexed { index, ingredient ->
             Spacer(Modifier.height(15.dp))
             val quantity = result.quantities.getOrNull(index)
-            QuimiaListItem(title = ingredient.name, titleTextStyle = QuimiaTextStyles.medium15,
+            QuimiaListItem(title = ingredient.name, modifier = Modifier.mixtureResultEntrance(index + 1), titleTextStyle = QuimiaTextStyles.medium15,
                 titleMaxLines = 3, containerColor = tokens.surfaceBackground, contentPadding = PaddingValues(24.dp),
                 trailingContent = if (quantity == null) null else ({
                     Surface(color = tokens.surfaceBase, shape = RoundedCornerShape(100.dp)) {
@@ -200,8 +209,9 @@ internal fun MixtureResultContent(result: MixtureResult, onClose: () -> Unit, on
                 }))
         }
         Spacer(Modifier.height(26.dp))
+    }
         QuimiaButton(text = if (saved) "Salvo no histórico" else "Salvar no histórico", enabled = !saved,
-            containerColor = tokens.secondary, textColor = tokens.foregroundPrimary, modifier = Modifier.fillMaxWidth().height(52.dp),
+            containerColor = tokens.secondary, textColor = tokens.foregroundPrimary, modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).padding(bottom = 24.dp).heightIn(min = 52.dp),
             textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0, onClick = onSave)
     }
 }

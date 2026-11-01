@@ -111,11 +111,15 @@ internal fun RoomForm(
                         }
                     }
                 }
-                if (error != null) QuimiaToast(message = error, type = QuimiaToastType.Error,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                QuimiaButton(modifier = Modifier.fillMaxWidth().padding(24.dp).height(43.dp),
+                Spacer(Modifier.height(12.dp))
+            }
+            androidx.compose.material3.Surface(color = tokens.surfaceBackground) {
+              Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (error != null) QuimiaToast(message = error, type = QuimiaToastType.Error)
+                QuimiaButton(modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                     text = submitLabel, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0,
-                    enabled = canSubmit ?: (roomValidationError(name, icon, selectedIds, products.map { it.id }) == null), onClick = onSubmit)
+                    enabled = enabled && (canSubmit ?: (roomValidationError(name, icon, selectedIds, products.map { it.id }) == null)), onClick = onSubmit)
+              }
             }
         }
     }

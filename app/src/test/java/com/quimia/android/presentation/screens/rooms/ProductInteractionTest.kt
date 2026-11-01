@@ -90,7 +90,7 @@ class ProductInteractionTest {
         compose.onNodeWithText("Editar cômodo").performClick()
         compose.onNodeWithText("Editar as informações do cômodo").assertIsDisplayed()
         compose.onNodeWithContentDescription("Selecionar ${catalog[1].name}").performScrollTo().assertIsOn().performClick().assertIsOff()
-        compose.onNodeWithText("Salvar").performScrollTo().performClick()
+        compose.onNodeWithText("Salvar").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(listOf(catalog.first().id), rooms.single().productIds) }
         compose.onNodeWithContentDescription("Ações do cômodo").assertIsDisplayed()
     }
@@ -142,6 +142,6 @@ class ProductInteractionTest {
         val second = compose.onNodeWithContentDescription("Selecionar ${catalog[1].name}").assertIsOn().fetchSemanticsNode().boundsInRoot
         assertEquals(first.top, second.top, 1f)
         assertTrue(second.left > first.right)
-        compose.onNodeWithText("Salvar").performScrollTo().assertIsDisplayed().assertIsNotEnabled()
+        compose.onNodeWithText("Salvar").assertIsDisplayed().assertIsNotEnabled()
     }
 }
