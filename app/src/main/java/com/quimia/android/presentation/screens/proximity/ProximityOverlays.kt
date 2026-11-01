@@ -124,7 +124,7 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
     Surface(Modifier.fillMaxSize(), color = tokens.surfaceBackground) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().imePadding()) {
-            Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
+            Spacer(Modifier.height(formTopSpace(79.dp)))
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
                 QuimiaIconButton(icon = Lucide.ChevronLeft, containerColor = tokens.secondary,
                     contentDescription = "Voltar sem alterar endereço", onClick = close)
@@ -158,25 +158,27 @@ private fun NearbyAddressForm(onDismiss: () -> Unit, onSave: (NearbyAddress) -> 
                 }
                 Spacer(Modifier.height(24.dp))
             }
-            Row(Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 50.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = "Cancelar", textStyle = QuimiaTextStyles.medium16,
-                    iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = close)
-                QuimiaButton(modifier = Modifier.weight(1f).height(58.dp), text = if (saving) "Salvando…" else "Salvar", textStyle = QuimiaTextStyles.medium16,
-                    iconSize = 0, espacamento = 0, enabled = !saving && lookup.state.ready && number.toIntOrNull()?.let { it > 0 } == true && complement.length <= 255, onClick = {
-                        val resolved = address ?: return@QuimiaButton
-                        val value = NearbyAddress(postalCode, resolved.state, resolved.city, resolved.district, resolved.street, number.trim(), complement.trim())
-                        error = value.validationError()
-                        if (error == null) {
-                            if (saveRemote == null) onSave(value)
-                            else if (!saving) scope.launch {
-                                saving = true
-                                try { saveRemote(value); onSave(value) }
-                                catch (cancelled: CancellationException) { throw cancelled }
-                                catch (failure: Exception) { error = if (failure is IllegalArgumentException) failure.message else authErrorMessage(failure) }
-                                finally { saving = false }
+            FormFooter(bottomPadding = 50.dp) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    QuimiaButton(modifier = Modifier.weight(1f).heightIn(min = 58.dp), text = "Cancelar", textStyle = QuimiaTextStyles.medium16,
+                        iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = close)
+                    QuimiaButton(modifier = Modifier.weight(1f).heightIn(min = 58.dp), text = if (saving) "Salvando…" else "Salvar", textStyle = QuimiaTextStyles.medium16,
+                        iconSize = 0, espacamento = 0, enabled = !saving && lookup.state.ready && number.toIntOrNull()?.let { it > 0 } == true && complement.length <= 255, onClick = {
+                            val resolved = address ?: return@QuimiaButton
+                            val value = NearbyAddress(postalCode, resolved.state, resolved.city, resolved.district, resolved.street, number.trim(), complement.trim())
+                            error = value.validationError()
+                            if (error == null) {
+                                if (saveRemote == null) onSave(value)
+                                else if (!saving) scope.launch {
+                                    saving = true
+                                    try { saveRemote(value); onSave(value) }
+                                    catch (cancelled: CancellationException) { throw cancelled }
+                                    catch (failure: Exception) { error = if (failure is IllegalArgumentException) failure.message else authErrorMessage(failure) }
+                                    finally { saving = false }
+                                }
                             }
-                        }
-                    })
+                        })
+                }
             }
         }
     }

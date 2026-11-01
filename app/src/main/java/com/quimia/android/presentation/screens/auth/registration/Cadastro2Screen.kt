@@ -29,7 +29,7 @@ fun Cadastro2Screen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onSk
     val tokens = quimiaColorTokens()
     AuthScreenLayout(modifier, onBack = onBack, bottomPadding = 50.dp, bodyVerticalPadding = 0.dp, footer = {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            QuimiaButton(text = "Pular", onClick = onSkip, modifier = Modifier.weight(1f).height(58.dp),
+            QuimiaButton(text = "Pular", onClick = onSkip, modifier = Modifier.weight(1f).heightIn(min = 58.dp),
                 containerColor = tokens.secondary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
             AuthPrimaryButton("Entrar", {
                 if (onAddressContinue == null) onEnter() else address?.let {

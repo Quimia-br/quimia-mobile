@@ -41,8 +41,10 @@ fun Cadastro1Screen(modifier: Modifier = Modifier, onContinue: () -> Unit = {}, 
                 error = authEmailError(email).takeIf { email.isNotEmpty() })
             AuthPasswordInput(password, { password = it }, "Crie uma senha", authNewPasswordError(password).takeIf { password.isNotEmpty() })
         }
-        Spacer(Modifier.height(58.dp))
-        AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
+        if (!com.quimia.android.presentation.components.formKeyboardVisible()) {
+            Spacer(Modifier.height(58.dp))
+            AuthSocialButtons(onGoogleClick = onGoogleClick) { emailFocus.requestFocus() }
+        }
     }
 }
 

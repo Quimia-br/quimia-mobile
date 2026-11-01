@@ -41,7 +41,8 @@ import theme.quimiaContrastBorder
 internal fun BirthDateField(value: String, onValueChange: (String) -> Unit, error: String? = null) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
-    fun open() { keyboard?.hide(); expanded = true }
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
+    fun open() { focus.clearFocus(); keyboard?.hide(); expanded = true }
     Box(Modifier.fillMaxWidth().clearAndSetSemantics {
         role = Role.Button
         contentDescription = "Data de nascimento, ${value.ifBlank { "não selecionada" }}${error?.let { ". $it" }.orEmpty()}"

@@ -47,7 +47,7 @@ internal fun RoomForm(
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).quimiaContent()) {
-                Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
+                Spacer(Modifier.height(com.quimia.android.presentation.components.formTopSpace(62.dp)))
                 QuimiaNav(showBackButton = true, onBackClick = onClose, onCloseClick = onClose)
                 Column(Modifier.fillMaxWidth().padding(24.dp)) {
                     QuimiaMainTitle(title = formTitle)
@@ -113,13 +113,11 @@ internal fun RoomForm(
                 }
                 Spacer(Modifier.height(12.dp))
             }
-            androidx.compose.material3.Surface(color = tokens.surfaceBackground) {
-              Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            com.quimia.android.presentation.components.FormFooter(bottomPadding = 16.dp, spacing = 8.dp) {
                 if (error != null) QuimiaToast(message = error, type = QuimiaToastType.Error)
                 QuimiaButton(modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                     text = submitLabel, textStyle = QuimiaTextStyles.medium16, iconSize = 0, espacamento = 0,
                     enabled = enabled && (canSubmit ?: (roomValidationError(name, icon, selectedIds, products.map { it.id }) == null)), onClick = onSubmit)
-              }
             }
         }
     }

@@ -319,7 +319,7 @@ private fun ProfileEditScreen(
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).quimiaContent()) {
-                Spacer(Modifier.height((79.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
+                Spacer(Modifier.height(com.quimia.android.presentation.components.formTopSpace(79.dp)))
                 QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp), verticalArrangement = Arrangement.spacedBy(31.dp)) {
                     QuimiaMainTitle(title = "Alterar informações do perfil")
@@ -337,10 +337,12 @@ private fun ProfileEditScreen(
                     }
                 }
             }
-            QuimiaButton(text = if (saving) "Salvando…" else "Salvar", modifier = Modifier.fillMaxWidth().padding(horizontal = 19.dp, vertical = 24.dp).heightIn(min = 58.dp),
+            com.quimia.android.presentation.components.FormFooter(horizontalPadding = 19.dp) {
+            QuimiaButton(text = if (saving) "Salvando…" else "Salvar", modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp),
                 iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16,
                 enabled = !saving && profileNameError(name) == null && profileEmailError(email) == null && profileBirthDateError(birthDate) == null && (!remote || birthDate.isNotBlank()),
                 textColor = LightTokens.foregroundPrimary, onClick = onSave)
+            }
         }
     }
 }
