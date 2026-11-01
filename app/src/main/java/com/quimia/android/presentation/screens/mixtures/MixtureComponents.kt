@@ -108,6 +108,7 @@ internal fun MixtureSlot(ingredient: MixtureIngredient?, index: Int, enabled: Bo
             border = androidx.compose.foundation.BorderStroke(2.dp, tokens.brandSecondary)) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 QuimiaIconButton(icon = Lucide.Plus, size = QuimiaIconButtonSize.Large,
+                    enabled = enabled,
                     containerColor = tokens.surfaceBase, iconColor = tokens.foregroundPrimary,
                     contentDescription = "Adicionar item ${index + 1}", onClick = { if (enabled) onChoose() })
             }
@@ -117,6 +118,7 @@ internal fun MixtureSlot(ingredient: MixtureIngredient?, index: Int, enabled: Bo
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.fillMaxWidth().height(24.dp), contentAlignment = Alignment.CenterEnd) {
                 QuimiaIconButton(icon = Lucide.X, containerColor = Color.Transparent,
+                    enabled = enabled,
                     iconColor = tokens.foregroundDisabled, size = QuimiaIconButtonSize.Small, iconSize = 24.dp,
                     contentDescription = "Remover ${ingredient.name}", onClick = { if (enabled) onRemove() })
             }

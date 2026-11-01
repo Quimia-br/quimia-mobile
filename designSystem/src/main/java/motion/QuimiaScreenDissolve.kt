@@ -7,6 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -28,6 +34,22 @@ fun <T> QuimiaScreenDissolve(
     navigation: @Composable (T) -> Unit = {},
     content: @Composable (T) -> Unit,
 ) {
+    if (LocalQuimiaRenderingBudget.current == QuimiaRenderingBudget.Compact) {
+        // Full crossfades compose, measure and retain both pages. On constrained heaps render
+        // only the destination; a subtle entrance keeps feedback without doubling that work.
+        val opacity = remember { Animatable(1f) }
+        val enabled = LocalQuimiaMotionEnabled.current
+        LaunchedEffect(target, enabled) {
+            if (enabled) { opacity.snapTo(.94f); opacity.animateTo(1f, tween(140)) }
+            else opacity.snapTo(1f)
+        }
+        Box(modifier.graphicsLayer { alpha = opacity.value }) {
+            CompositionLocalProvider(LocalQuimiaScreenDissolve provides true) {
+                key(target) { content(target) }
+            }
+        }
+        return
+    }
     val transition = updateTransition(target, label = "screenDissolve")
     val sharedNavigation = (transition.currentState != transition.targetState || transition.isRunning) &&
         hasNavigation(transition.currentState) && hasNavigation(transition.targetState)

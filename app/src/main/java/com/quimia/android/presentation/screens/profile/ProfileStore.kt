@@ -3,24 +3,6 @@ package com.quimia.android.presentation.screens.profile
 import android.content.Context
 import com.quimia.android.presentation.components.isLegacyBirthDate
 
-class ProfilePreferencesStore(context: Context) {
-    private val preferences = context.applicationContext.getSharedPreferences("quimia_accessibility", Context.MODE_PRIVATE)
-
-    fun load() = ProfilePreferences(
-        theme = ProfileTheme.fromStored(preferences.getString("theme", null)),
-        textSizeStep = preferences.getInt("text_size_step", 0).coerceIn(0, 2),
-        dyslexicFont = preferences.getBoolean("dyslexic_font", false),
-        soundEffects = preferences.getBoolean("sound_effects", true),
-    )
-
-    fun save(value: ProfilePreferences) {
-        preferences.edit().putString("theme", value.theme.name)
-            .putInt("text_size_step", value.textSizeStep.coerceIn(0, 2))
-            .putBoolean("dyslexic_font", value.dyslexicFont)
-            .putBoolean("sound_effects", value.soundEffects).apply()
-    }
-}
-
 class LocalProfileStore(context: Context, uid: String, email: String) {
     private val preferences = context.applicationContext.getSharedPreferences("quimia_local_profile", Context.MODE_PRIVATE)
     private val scope = profileStorageScope(uid, email)

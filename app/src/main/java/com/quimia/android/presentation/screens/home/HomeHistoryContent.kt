@@ -29,6 +29,7 @@ import com.quimia.android.data.home.HomeProduct
 import com.quimia.android.presentation.screens.catalog.CatalogModalScrimColor
 import com.quimia.android.presentation.screens.errors.GenericErrorKind
 import com.quimia.android.presentation.screens.mixtures.mixtureDateLabel
+import com.quimia.android.presentation.screens.mixtures.mixtureResultEntrance
 import com.quimia.android.presentation.system.HideSystemNavigationBar
 import shapeIcon.QuimiaShapeIcon
 import theme.QuimiaTextStyles
@@ -131,21 +132,21 @@ internal fun HomeApiHistoryCard(item: HomeMixture, onClick: () -> Unit) {
 internal fun HomeHistoryDetails(item: HomeMixture, onClose: () -> Unit) {
     val tokens = quimiaColorTokens()
     ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         containerColor = tokens.surfaceBase, scrimColor = CatalogModalScrimColor, shape = RoundedCornerShape(40.dp), dragHandle = null) {
         HideSystemNavigationBar()
-        Column(Modifier.fillMaxWidth().heightIn(max = 700.dp).quimiaContrastOutline(RoundedCornerShape(40.dp))
-            .verticalScroll(rememberScrollState()).padding(32.dp),
+        Column(Modifier.fillMaxWidth().heightIn(max = 700.dp).quimiaContrastOutline(RoundedCornerShape(40.dp))) {
+        Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 QuimiaIconButton(icon = Lucide.X, containerColor = tokens.secondary, onClick = onClose, contentDescription = "Fechar mistura salva")
             }
-            HomeAssessmentIcon(item, 120.dp)
+            Box(Modifier.mixtureResultEntrance()) { HomeAssessmentIcon(item, 120.dp) }
             Text(item.resultLabel(), style = QuimiaTextStyles.medium24, color = tokens.foregroundPrimary)
             item.severityLabel()?.let { Text("Gravidade: $it", style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary) }
             item.descricaoRisco?.takeIf { it.isNotBlank() }?.let { Text(it, style = QuimiaTextStyles.medium16, color = tokens.foregroundSubtle) }
-            listOf(item.produtoA to item.dosagem?.produtoA, item.produtoB to item.dosagem?.produtoB).forEach { (product, dose) ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            listOf(item.produtoA to item.dosagem?.produtoA, item.produtoB to item.dosagem?.produtoB).forEachIndexed { index, (product, dose) ->
+                Row(Modifier.fillMaxWidth().mixtureResultEntrance(index + 1), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     HomeProductPhoto(product, Modifier.size(64.dp, 90.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(product?.nome.orEmpty(), style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary)
@@ -155,7 +156,8 @@ internal fun HomeHistoryDetails(item: HomeMixture, onClose: () -> Unit) {
             }
             Text(item.consultadoEm?.let(::homeTimestamp)?.let { mixtureDateLabel(it) } ?: "Data não informada",
                 style = QuimiaTextStyles.medium14, color = tokens.foregroundSubtle)
-            QuimiaButton(text = "Fechar", onClick = onClose, modifier = Modifier.fillMaxWidth().height(48.dp), iconSize = 0, espacamento = 0)
+        }
+            QuimiaButton(text = "Fechar", onClick = onClose, modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).padding(bottom = 24.dp).heightIn(min = 48.dp), iconSize = 0, espacamento = 0)
         }
     }
 }

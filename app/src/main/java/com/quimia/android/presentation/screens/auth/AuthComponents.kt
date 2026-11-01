@@ -41,20 +41,27 @@ internal fun AuthScreenLayout(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val statusInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val keyboardVisible = com.quimia.android.presentation.components.formKeyboardVisible()
     CompositionLocalProvider(input.LocalQuimiaInputActionIconSize provides 24.dp) {
-        Box(modifier.fillMaxSize().background(quimiaColorTokens().surfaceBackground).statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
+        Box(modifier.fillMaxSize().background(quimiaColorTokens().surfaceBackground).statusBarsPadding().navigationBarsPadding(), contentAlignment = Alignment.TopCenter) {
             BoxWithConstraints(Modifier.widthIn(max = 600.dp).fillMaxSize().imePadding()) {
                 val availableHeight = maxHeight
-                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = availableHeight),
-                    verticalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Spacer(Modifier.height((79.dp - statusInset).coerceAtLeast(0.dp)))
-                        if (onBack != null) QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
+                Column(Modifier.fillMaxSize()) {
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                        val bodyHeight = maxHeight
+                        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = bodyHeight),
+                            verticalArrangement = if (keyboardVisible) Arrangement.Top else Arrangement.SpaceBetween) {
+                            Column(Modifier.fillMaxWidth()) {
+                                Spacer(Modifier.height(com.quimia.android.presentation.components.formTopSpace(79.dp)))
+                                if (onBack != null) QuimiaNav(showBackButton = true, showCloseButton = false, onBackClick = onBack)
+                            }
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = bodyVerticalPadding)
+                                .padding(bottom = if (availableHeight + statusInset < 820.dp) 24.dp else 0.dp), content = content)
+                            Spacer(Modifier.height(0.dp))
+                        }
                     }
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = bodyVerticalPadding)
-                        .padding(bottom = if (availableHeight + statusInset < 820.dp) 24.dp else 0.dp), content = content)
-                    Column(Modifier.fillMaxWidth().padding(start = footerHorizontalPadding, end = footerHorizontalPadding, bottom = bottomPadding),
-                        horizontalAlignment = Alignment.CenterHorizontally, content = footer)
+                    com.quimia.android.presentation.components.FormFooter(
+                        horizontalPadding = footerHorizontalPadding, bottomPadding = bottomPadding, content = footer)
                 }
             }
         }
@@ -63,7 +70,7 @@ internal fun AuthScreenLayout(
 
 @Composable
 internal fun AuthPrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
-    QuimiaButton(text = text, onClick = onClick, enabled = enabled, modifier = modifier.fillMaxWidth().height(58.dp),
+    QuimiaButton(text = text, onClick = onClick, enabled = enabled, modifier = modifier.fillMaxWidth().heightIn(min = 58.dp),
         containerColor = quimiaColorTokens().primary, textColor = theme.LightTokens.foregroundPrimary, iconSize = 0, espacamento = 0, textStyle = QuimiaTextStyles.medium16)
 }
 
@@ -73,7 +80,7 @@ internal fun AuthFooterLink(prefix: String, action: String, onClick: () -> Unit)
     Text(buildAnnotatedString {
         withStyle(SpanStyle(color = tokens.foregroundSubtle)) { append(prefix) }
         withStyle(SpanStyle(color = tokens.foregroundPrimary)) { append(action) }
-    }, style = QuimiaTextStyles.medium16, modifier = Modifier
+    }, style = QuimiaTextStyles.medium16, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier
         .clickable(role = Role.Button, onClick = onClick).padding(top = 8.dp))
 }
 

@@ -37,11 +37,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -137,6 +138,7 @@ fun CatalogScreen(
 ) {
     val tokens = quimiaColorTokens()
     val focusManager = LocalFocusManager.current
+    val playSound = feedback.LocalQuimiaSound.current
     var query by rememberSaveable(initialQuery) { mutableStateOf(initialQuery) }
     fun changeQuery(value: String) { query = value.take(100); onQueryChange?.invoke(query) }
     val voiceInput = rememberVoiceInput { changeQuery(it) }
@@ -178,8 +180,8 @@ fun CatalogScreen(
     }
     fun select(id: String) {
         if (saving || id in savedIds) return
-        if (id in selectedIds) selectedIds = selectedIds - id
-        else if (selectedIds.size < 50) selectedIds = selectedIds + id
+        if (id in selectedIds) { selectedIds = selectedIds - id; playSound(feedback.QuimiaSound.Selection) }
+        else if (selectedIds.size < 50) { selectedIds = selectedIds + id; playSound(feedback.QuimiaSound.Selection) }
         else dialogMessage = "Selecione até 50 produtos por vez."
     }
 
@@ -203,98 +205,85 @@ fun CatalogScreen(
                 )
         )
 
-        Column(
-            modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxWidth().fillMaxHeight()
-                .statusBarsPadding().navigationBarsPadding().padding(bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + 27.dp)
-                .verticalScroll(rememberScrollState()).quimiaContent()
-        ) {
-            Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
-            QuimiaExpand(showBanner) {
-                CatalogBanner(
-                    message = bannerMessage ?: "Clique e segure nos\nprodutos para selecionar",
-                    success = bannerMessage != null && saveMessageSuccess,
-                    onDismiss = {
-                        if (saveMessage != null) onDismissSaveMessage() else if (successMessage != null) successMessage = null else bannerVisible = false
-                    },
-                )
+        BoxWithConstraints(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize()) {
+            val gap = 16.dp
+            val layoutWidth = (maxWidth - 48.dp).coerceAtLeast(1.dp)
+            val paired = layoutWidth >= 240.dp
+            val pairWidth = if (paired) (layoutWidth - gap) / 2 else layoutWidth
+            val rows = remember(filtered, paired) {
+                if (paired && filtered.isNotEmpty()) listOf(filtered.take(1)) + filtered.drop(1).chunked(2)
+                else filtered.map { listOf(it) }
             }
-            QuimiaSectionTitle(
-                title = "Catálogo de produtos", titleSize = 25.sp,
-                textStyle = Typography.headlineSmall.copy(lineHeight = 30.sp),
-                horizontalPadding = 32.dp, verticalPadding = 32.dp,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp).height(60.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                QuimiaSearchBar(
-                    value = query, onValueChange = { changeQuery(it) }, modifier = Modifier.weight(1f).height(60.dp),
-                    placeholder = "Pesquisar", icon = Lucide.Mic,
-                    iconDescription = "Pesquisar por voz", onClick = voiceInput,
-                    horizontalPadding = 16.dp, verticalPadding = 12.dp,
-                    spacedBy = 12.dp, textStyle = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
-                    searchIconSize = 22.dp,
-                )
-                QuimiaIconButton(
-                    modifier = Modifier.size(58.dp),
-                    icon = Lucide.Camera,
-                    size = QuimiaIconButtonSize.Large,
-                    iconSize = 22.dp,
-                    containerColor = tokens.surfaceBase,
-                    iconColor = tokens.textPrimary,
-                    contentDescription = "Buscar produto pela câmera",
-                    onClick = {
-                        focusManager.clearFocus()
-                        showLabelScanner = true
-                    },
-                )
-            }
-            statusContent?.invoke()
-            if (showEmpty && filtered.isEmpty()) {
-                SearchEmptyState()
-            } else {
-                BoxWithConstraints(Modifier.fillMaxWidth().padding(24.dp)) {
-                    val gap = 16.dp
-                    val layoutWidth = maxWidth
-                    val pairWidth = if (layoutWidth >= 240.dp) (layoutWidth - gap) / 2 else layoutWidth
-                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        filtered.forEachIndexed { index, product ->
-                            if (index == 0 || index % 2 == 1 || layoutWidth < 240.dp) {
-                                if (index > 0 && layoutWidth >= 240.dp) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-                                        filtered.drop(index).take(2).forEach { paired ->
-                                            ProductCard(
-                                                paired, paired.id in savedIds,
-                                                onSave = { save(listOf(paired.id)) },
-                                                onInfo = { showDetails(paired) },
-                                                saving = saving, canSave = canSave,
-                                                selected = paired.id in selectedIds,
-                                                selectionMode = selectedIds.isNotEmpty(),
-                                                onLongSelect = { select(paired.id) },
-                                                modifier = Modifier.width(pairWidth), compact = true,
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    ProductCard(
-                                        product, product.id in savedIds,
-                                        onSave = { save(listOf(product.id)) },
-                                        onInfo = { showDetails(product) },
-                                        saving = saving, canSave = canSave,
-                                        selected = product.id in selectedIds,
-                                        selectionMode = selectedIds.isNotEmpty(),
-                                        onLongSelect = { select(product.id) },
-                                        modifier = Modifier.fillMaxWidth(), compact = false,
-                                    )
-                                }
-                            }
+            LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().quimiaContent(),
+                contentPadding = PaddingValues(bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + 27.dp)) {
+                item(key = "catalog-header", contentType = "header") {
+                    Column {
+                        Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
+                        QuimiaExpand(showBanner) {
+                            CatalogBanner(
+                                message = bannerMessage ?: "Clique e segure nos\nprodutos para selecionar",
+                                success = bannerMessage != null && saveMessageSuccess,
+                                onDismiss = {
+                                    if (saveMessage != null) onDismissSaveMessage() else if (successMessage != null) successMessage = null else bannerVisible = false
+                                },
+                            )
+                        }
+                        QuimiaSectionTitle(
+                            title = "Catálogo de produtos", titleSize = 25.sp,
+                            textStyle = Typography.headlineSmall.copy(lineHeight = 30.sp),
+                            horizontalPadding = 32.dp, verticalPadding = 32.dp,
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp).height(60.dp),
+                            horizontalArrangement = Arrangement.spacedBy(20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            QuimiaSearchBar(
+                                value = query, onValueChange = { changeQuery(it) }, modifier = Modifier.weight(1f).height(60.dp),
+                                placeholder = "Pesquisar", icon = Lucide.Mic,
+                                iconDescription = "Pesquisar por voz", onClick = voiceInput,
+                                horizontalPadding = 16.dp, verticalPadding = 12.dp,
+                                spacedBy = 12.dp, textStyle = Typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 20.sp),
+                                searchIconSize = 22.dp,
+                            )
+                            QuimiaIconButton(
+                                modifier = Modifier.size(58.dp),
+                                icon = Lucide.Camera,
+                                size = QuimiaIconButtonSize.Large,
+                                iconSize = 22.dp,
+                                containerColor = tokens.surfaceBase,
+                                iconColor = tokens.textPrimary,
+                                contentDescription = "Buscar produto pela câmera",
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    showLabelScanner = true
+                                },
+                            )
+                        }
+                        statusContent?.invoke()
+                    }
+                }
+                if (showEmpty && filtered.isEmpty()) item(key = "catalog-empty", contentType = "empty") { SearchEmptyState() }
+                else itemsIndexed(rows, key = { _, row -> "products:" + row.joinToString("|") { it.id } },
+                    contentType = { index, _ -> if (!paired || index == 0) "featured" else "pair" }) { index, row ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(top = if (index == 0) 24.dp else 0.dp, bottom = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(gap)) {
+                        row.forEach { product ->
+                            val featured = !paired || index == 0
+                            ProductCard(product, product.id in savedIds,
+                                onSave = { save(listOf(product.id)) }, onInfo = { showDetails(product) },
+                                saving = saving, canSave = canSave,
+                                selected = product.id in selectedIds, selectionMode = selectedIds.isNotEmpty(),
+                                onLongSelect = { select(product.id) },
+                                modifier = if (featured) Modifier.fillMaxWidth() else Modifier.width(pairWidth), compact = !featured)
                         }
                     }
                 }
+                item(key = "catalog-footer", contentType = "footer") {
+                    footerContent?.invoke()
+                    Spacer(Modifier.height(24.dp))
+                }
             }
-            footerContent?.invoke()
-            Spacer(Modifier.height(24.dp))
         }
 
         QuimiaMenuBarBackdrop(
@@ -366,12 +355,8 @@ fun CatalogScreen(
     }
 
     dialogMessage?.let { message ->
-        AlertDialog(
-            onDismissRequest = { dialogMessage = null },
-            title = { Text("Catálogo") },
-            text = { Text(message) },
-            confirmButton = { TextButton(onClick = { dialogMessage = null }) { Text("Entendi") } },
-        )
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+            title = message, onDismiss = { dialogMessage = null })
     }
 }
 
@@ -401,6 +386,7 @@ private fun ProductCard(
     val outline = resolveCatalogProductOutline(tokens, quimiaHighContrastEnabled(), selectionMode, selected)
         ?: if (saved && !selectionMode) CatalogProductOutline(tokens.success, 2.dp) else null
     val interactions = remember { MutableInteractionSource() }
+    val playSound = feedback.LocalQuimiaSound.current
     val pressed by interactions.collectIsPressedAsState()
     QuimiaCard(
         modifier = modifier
@@ -408,7 +394,7 @@ private fun ProductCard(
             .clip(cardShape)
             .combinedClickable(
                 interactionSource = interactions, indication = androidx.compose.foundation.LocalIndication.current,
-                onClick = { if (selectionMode) onLongSelect() else onInfo() },
+                onClick = { if (selectionMode) onLongSelect() else { playSound(feedback.QuimiaSound.Tap); onInfo() } },
                 onLongClick = onLongSelect,
             ),
         title = product.name,
@@ -514,7 +500,7 @@ internal fun CatalogProductDetailsSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 8.dp),
-        sheetMaxWidth = 560.dp,
+        sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         shape = RoundedCornerShape(36.dp),
         containerColor = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
@@ -720,7 +706,7 @@ private fun CatalogDetailsPreviewContent(product: CatalogProduct) {
                 CatalogProductDetailsContent(
                     product = product, saved = false,
                     onDismiss = {}, onSave = {},
-                    modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+                    modifier = Modifier.widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp)).fillMaxWidth(),
                 )
             }
         }

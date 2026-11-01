@@ -3,8 +3,6 @@ package com.quimia.android.presentation.screens.rooms
 import androidx.activity.compose.BackHandler
 import com.composables.icons.lucide.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -51,16 +49,16 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             AuthRepositoryProvider.get(context)), userId).apply { setQuery(query) }
     }
     val state by controller.state.collectAsStateWithLifecycle()
+    val latestState by rememberUpdatedState(state)
     val scope = rememberCoroutineScope()
     val owner = LocalLifecycleOwner.current
     var reload by remember { mutableIntStateOf(0) }
     var action by remember(userId) { mutableStateOf<CatalogProduct?>(null) }
     var information by remember(userId) { mutableStateOf<CatalogProduct?>(null) }
-    var editing by remember(userId) { mutableStateOf(false) }
     var deleting by remember(userId) { mutableStateOf(false) }
-    var editName by remember(userId) { mutableStateOf("") }
-    var editIcon by remember(userId) { mutableStateOf(RoomIcon.Toilet) }
-    var iconMenu by remember { mutableStateOf(false) }
+    var editName by rememberSaveable(userId) { mutableStateOf("") }
+    var editIcon by rememberSaveable(userId) { mutableStateOf(RoomIcon.Toilet) }
+    var editSelected by rememberSaveable(userId) { mutableStateOf(emptyList<Int>()) }
     var removal by remember(userId) { mutableStateOf<CatalogProduct?>(null) }
     fun createDraft(seed: Int? = null) {
         draftName = ""; draftIcon = null; selected = listOfNotNull(seed); validation = null
@@ -71,9 +69,10 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             initialRoomId?.toIntOrNull() != null -> controller.open(initialRoomId.toInt())
             initialProductId?.toIntOrNull() != null -> { selected = listOf(initialProductId.toInt()); controller.prepareCreate() }
             restore.first in setOf(RoomsStage.Create.name, RoomsStage.Error.name) -> controller.prepareCreate()
-            restore.second != null && restore.first in setOf(RoomsStage.Detail.name, RoomsStage.Success.name, RoomsStage.Adding.name) -> {
+            restore.second != null && restore.first in setOf(RoomsStage.Detail.name, RoomsStage.Success.name, RoomsStage.Adding.name, RoomsStage.Editing.name) -> {
                 controller.open(requireNotNull(restore.second))
                 if (restore.first == RoomsStage.Adding.name) controller.prepareAdd()
+                if (restore.first == RoomsStage.Editing.name) controller.prepareEdit()
             }
             restore.first == RoomsStage.Saving.name -> controller.notice("Confira a lista de cômodos antes de cadastrar novamente. A confirmação anterior foi interrompida.")
         }
@@ -92,10 +91,10 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     }
     DisposableEffect(owner, controller) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) {
-            when (state.stage) {
+            when (latestState.stage) {
                 RoomsStage.List -> reload++
-                RoomsStage.Detail -> if (!state.busy) state.detailId?.let { id -> scope.launch { controller.open(id) } }
-                RoomsStage.Create, RoomsStage.Adding -> if (!state.busy) scope.launch { controller.loadShelf() }
+                RoomsStage.Detail -> if (!latestState.busy) latestState.detailId?.let { id -> scope.launch { controller.open(id) } }
+                RoomsStage.Create, RoomsStage.Adding, RoomsStage.Editing -> if (!latestState.busy) scope.launch { controller.loadShelf() }
                 else -> Unit
             }
         } }
@@ -107,7 +106,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     LaunchedEffect(state.notice) { if (state.notice != null) { delay(5_000); controller.notice(null) } }
     BackHandler(enabled = state.stage != RoomsStage.List) {
         if (!state.busy) when (state.stage) {
-            RoomsStage.Adding -> scope.launch { controller.cancelAdd() }
+            RoomsStage.Adding, RoomsStage.Editing -> scope.launch { controller.cancelAdd() }
             RoomsStage.Error -> scope.launch { controller.prepareCreate() }
             else -> controller.showList()
         }
@@ -117,13 +116,16 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     val screenLoading = initialListLoading && state.stage == RoomsStage.List
     com.quimia.android.presentation.components.ReportDestinationLoading("rooms", pending = when (state.stage) {
         RoomsStage.List -> screenLoading
-        RoomsStage.Create, RoomsStage.Adding -> state.shelfLoading
+        RoomsStage.Create, RoomsStage.Editing -> state.shelfLoading
+        RoomsStage.Adding -> false
         RoomsStage.Detail -> state.detailLoading
         else -> false
-    }, navigationVisible = state.stage == RoomsStage.List, page = state.stage)
-    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
+    }, navigationVisible = state.stage == RoomsStage.List,
+        page = (if (state.stage == RoomsStage.Adding) RoomsStage.Detail else state.stage) to state.detailId)
+    theme.QuimiaSkeleton(screenLoading) {
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
-        motion.QuimiaScreenDissolve(state.stage, Modifier.fillMaxSize()) { stage ->
+        // Adding products is an overlay over the same detail page, not a new loading destination.
+        motion.QuimiaScreenDissolve(if (state.stage == RoomsStage.Adding) RoomsStage.Detail else state.stage, Modifier.fillMaxSize()) { stage ->
             when (stage) {
                 RoomsStage.List -> RoomList(if (screenLoading) previewRooms else state.rooms.map { it.uiRoom() }, onOpen = { if (!screenLoading) scope.launch { controller.open(it.toInt()) } },
                     onCreate = { createDraft() }, onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
@@ -141,13 +143,9 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                                 onClick = { scope.launch { controller.loadMore() } })
                         }
                     })
-                RoomsStage.Create, RoomsStage.Adding -> {
-                    val adding = stage == RoomsStage.Adding
-                    val existing = if (adding) state.detail?.produtos.orEmpty().map { it.id }.toSet() else emptySet()
-                    val available = state.available.filterNot { it.id in existing }
-                    val valid = if (adding) selected.isNotEmpty() && existing.size + selected.distinct().size <= 20 &&
-                        selected.all { id -> available.any { it.id == id } }
-                        else apiRoomValidation(draftName, draftIcon, selected, available.map { it.id }) == null
+                RoomsStage.Create -> {
+                    val available = state.available
+                    val valid = apiRoomValidation(draftName, draftIcon, selected, available.map { it.id }) == null
                     RoomForm(draftName, draftIcon, selected.map(Int::toString), available.map { it.catalogProduct() },
                         error = validation ?: state.mutationError?.message,
                         onNameChange = { draftName = it; validation = null }, onIconChange = { draftIcon = it; validation = null },
@@ -155,19 +153,18 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                             if (!state.busy && !state.shelfLoading) {
                                 val id = raw.toInt()
                                 if (id in selected) selected = selected - id
-                                else if (existing.size + selected.size < 20) selected = selected + id
+                                else if (selected.size < 20) selected = selected + id
                                 else validation = "Um cômodo pode ter no máximo 20 produtos."
                             }
                         },
-                        onClose = { if (adding) scope.launch { controller.cancelAdd() } else controller.showList() }, onOpenCatalog = onOpenCatalog,
+                        onClose = controller::showList, onOpenCatalog = onOpenCatalog,
                         onSubmit = { scope.launch {
-                            if (adding) controller.add(selected) else controller.create(draftName, draftIcon, selected)
-                        } }, formTitle = if (adding) "Adicionar produtos" else "Cadastrar cômodo",
-                        submitLabel = if (state.busy) "Salvando…" else if (adding) "Adicionar produtos" else "Criar cômodo",
-                        nameLimit = 100, showIdentity = !adding, canSubmit = valid && state.shelfReady && !state.shelfLoading && !state.busy,
+                            controller.create(draftName, draftIcon, selected)
+                        } }, formTitle = "Cadastrar cômodo",
+                        submitLabel = if (state.busy) "Salvando…" else "Criar cômodo",
+                        nameLimit = 100, enabled = !state.busy && !state.shelfLoading, canSubmit = valid && state.shelfReady && !state.shelfLoading && !state.busy,
                         showEmpty = state.shelfReady && !state.shelfLoading,
-                        selectionHint = if (adding) "Selecione os produtos da sua estante. Limite de 20 por cômodo."
-                            else "Escolha os produtos que você usa para limpar esse cômodo",
+                        selectionHint = "Escolha os produtos que você usa para limpar esse cômodo",
                         statusContent = {
                             if (state.shelfLoading && available.isEmpty()) CatalogLoading("Carregando produtos da sua estante…")
                             state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
@@ -176,6 +173,35 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                             RoomsNotice(state.notice) { controller.notice(null) }
                         })
                 }
+                RoomsStage.Editing -> {
+                    val room = state.detail
+                    val products = (room?.produtos.orEmpty() + state.available).distinctBy { it.id }
+                    val changed = room != null && (normalizeRoomName(editName) != room.nome || editIcon.apiCode != room.icone ||
+                        editSelected.toSet() != room.produtos.map { it.id }.toSet())
+                    RoomForm(editName, editIcon, editSelected.map(Int::toString), products.map { it.catalogProduct() },
+                        error = state.mutationError?.message,
+                        onNameChange = { editName = it }, onIconChange = { editIcon = it },
+                        onToggleProduct = { raw -> val id = raw.toInt(); if (!state.busy && !state.shelfLoading) {
+                            editSelected = if (id in editSelected) editSelected - id else (editSelected + id).take(20)
+                        } },
+                        onClose = { if (!state.busy) scope.launch { controller.cancelAdd() } }, onOpenCatalog = onOpenCatalog,
+                        onSubmit = { scope.launch { controller.edit(editName, editIcon, editSelected) } },
+                        formTitle = "Editar cômodo", formDescription = "Editar as informações do cômodo",
+                        highlightName = false,
+                        submitLabel = if (state.busy) "Salvando…" else "Salvar", nameLimit = 100,
+                        enabled = !state.busy && !state.shelfLoading,
+                        canSubmit = room != null && (changed || state.mutationError != null) && editName.isNotBlank() && editSelected.size <= 20 && state.shelfReady && !state.shelfLoading && !state.busy,
+                        showEmpty = state.shelfReady && !state.shelfLoading,
+                        statusContent = {
+                            if (state.shelfLoading) CatalogLoading("Carregando produtos da sua estante…")
+                            state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
+                            state.detailError?.let { CatalogError(it) { scope.launch {
+                                state.detailId?.let { id -> controller.open(id); controller.prepareEdit() }
+                            } } }
+                            RoomsNotice(state.notice) { controller.notice(null) }
+                        })
+                }
+                RoomsStage.Adding -> Unit
                 RoomsStage.Saving -> RoomCreating(draftName)
                 RoomsStage.Success, RoomsStage.Error -> RoomCreationResult(stage == RoomsStage.Success,
                     state.detail?.nome ?: draftName, controller::showList,
@@ -185,13 +211,15 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                     RoomDetails(room.uiRoom(), room.produtos.map { it.catalogProduct() }, controller::showList,
                         onProductActions = { id -> if (!state.busy) action = room.produtos.find { it.id.toString() == id }?.catalogProduct() },
                         apiAssessment = { ApiRoomAssessment(room) },
-                        onEdit = { if (!state.busy) { controller.clearMutationError(); editName = room.nome; editIcon = room.uiRoom().icon; editing = true } },
+                        onEdit = { if (!state.busy) { editName = room.nome; editIcon = room.uiRoom().icon;
+                            editSelected = room.produtos.map { it.id }; scope.launch { controller.prepareEdit() } } },
                         onDelete = { if (!state.busy) { controller.clearMutationError(); deleting = true } },
                         onAddProducts = { selected = emptyList(); validation = null; scope.launch { controller.prepareAdd() } },
+                        enabled = !state.busy,
                         statusContent = {
                             RoomsNotice(state.notice) { controller.notice(null) }
                             if (state.busy) CatalogLoading("Atualizando cômodo…")
-                            state.mutationError?.let { Text(it.message, Modifier.padding(24.dp), color = tokens.textPrimary) }
+                            state.mutationError?.let { toast.QuimiaToast(message = it.message, type = QuimiaToastType.Error, modifier = Modifier.padding(24.dp)) }
                         })
                 } ?: Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     QuimiaNav(showBackButton = true, onBackClick = controller::showList, onCloseClick = controller::showList)
@@ -204,36 +232,28 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         }
     }
     }
-    if (editing) AlertDialog(
-        onDismissRequest = { if (!state.busy) { editing = false; controller.clearMutationError() } },
-        containerColor = tokens.surfaceBase,
-        title = { Text("Editar cômodo", color = tokens.textPrimary) },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(value = editName, onValueChange = { editName = it.take(100) }, label = { Text("Nome") }, singleLine = true)
-            Box {
-                TextButton(onClick = { iconMenu = true }, enabled = !state.busy) { Text("Ícone: ${editIcon.label}", color = tokens.textPrimary) }
-                DropdownMenu(expanded = iconMenu, onDismissRequest = { iconMenu = false }) {
-                    RoomIcon.entries.forEach { icon -> DropdownMenuItem(text = { Text(icon.label) }, onClick = { editIcon = icon; iconMenu = false }) }
-                }
-            }
-            state.mutationError?.let { Text(it.message, color = tokens.textPrimary) }
-        } },
-        confirmButton = { TextButton(enabled = !state.busy && editName.isNotBlank(), onClick = { scope.launch {
-            controller.edit(editName, editIcon)
-            if (controller.state.value.mutationError == null) editing = false
-        } }) { Text(if (state.busy) "Salvando…" else "Salvar", color = tokens.textPrimary) } },
-        dismissButton = { TextButton(enabled = !state.busy, onClick = { editing = false; controller.clearMutationError() }) { Text("Cancelar", color = tokens.textPrimary) } })
-    if (deleting) AlertDialog(
-        onDismissRequest = { if (!state.busy) { deleting = false; controller.clearMutationError() } },
-        containerColor = tokens.surfaceBase,
-        title = { Text("Excluir cômodo?", color = tokens.textPrimary) },
-        text = { Column { Text("Os produtos continuam na sua estante.", color = tokens.textSecondary)
-            state.mutationError?.let { Text(it.message, color = tokens.textPrimary) } } },
-        confirmButton = { TextButton(enabled = !state.busy, onClick = { scope.launch {
-            controller.delete()
-            if (controller.state.value.mutationError == null) deleting = false
-        } }) { Text(if (state.busy) "Excluindo…" else "Excluir", color = tokens.textPrimary) } },
-        dismissButton = { TextButton(enabled = !state.busy, onClick = { deleting = false; controller.clearMutationError() }) { Text("Cancelar", color = tokens.textPrimary) } })
+    if (state.stage == RoomsStage.Adding) {
+        val existing = state.detail?.produtos.orEmpty().map { it.id }.toSet()
+        RoomAddProductsPanel(products = state.available.filterNot { it.id in existing }.map { it.catalogProduct() },
+            selected = selected.map(Int::toString), busy = state.busy, loading = state.shelfLoading,
+            ready = state.shelfReady, existingCount = existing.size,
+            emptyShelf = state.available.isEmpty(),
+            onToggle = { raw -> val id = raw.toInt()
+                if (!state.busy && !state.shelfLoading) selected = if (id in selected) selected - id
+                    else if (existing.size + selected.size < 20) selected + id else selected
+            }, onDismiss = { scope.launch { controller.cancelAdd() } },
+            onSubmit = { scope.launch { controller.add(selected) } }, onOpenCatalog = onOpenCatalog,
+            statusContent = {
+                if (state.shelfLoading) CatalogLoading("Carregando produtos da sua estante…")
+                state.shelfError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
+                state.mutationError?.let { CatalogError(it) { scope.launch { controller.loadShelf() } } }
+                RoomsNotice(state.notice) { controller.notice(null) }
+            })
+    }
+    if (deleting) RoomDeleteConfirmation(state.detail?.nome.orEmpty(), busy = state.busy,
+        onDismiss = { if (!state.busy) { deleting = false; controller.clearMutationError() } },
+        onConfirm = { scope.launch { controller.delete(); if (controller.state.value.mutationError == null) deleting = false } },
+        statusContent = { state.mutationError?.let { toast.QuimiaToast(message = it.message, type = QuimiaToastType.Error) } })
     action?.let { product -> ShelfActionsPanel(product, onDismiss = { action = null }, showMixtures = false,
         onMixtures = {}, onInformation = { action = null; information = product }, onRemove = { action = null; removal = product }) }
     information?.let { ShelfProductInformation(it, onDismiss = { information = null }) }
@@ -244,14 +264,13 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                 if (state.mutationError != null) state.detailId?.let { id -> scope.launch { controller.open(id) } }
             }
         }
-        AlertDialog(onDismissRequest = ::dismissRemoval,
-            containerColor = tokens.surfaceBase, title = { Text("Remover ${product.name} deste cômodo?", color = tokens.textPrimary) },
-            text = { Column { Text("O produto continua salvo na sua estante.", color = tokens.textSecondary)
-                state.mutationError?.let { Text(it.message, color = tokens.textPrimary) } } },
-            confirmButton = { QuimiaButton(text = if (state.busy) "Removendo…" else "Remover", enabled = !state.busy,
-                containerColor = ShelfRemovalColor, textColor = tokens.white, iconSize = 0, espacamento = 0, onClick = {
-                    scope.launch { controller.remove(product.id.toInt()); if (controller.state.value.mutationError == null) removal = null }
-                }) }, dismissButton = { TextButton(enabled = !state.busy, onClick = ::dismissRemoval) { Text("Cancelar", color = tokens.textPrimary) } })
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+            title = "Remover ${product.name} deste cômodo?", description = "O produto continua salvo na sua estante.",
+            kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Destructive,
+            onDismiss = ::dismissRemoval, action = if (state.busy) "Removendo…" else "Remover", busy = state.busy,
+            secondaryAction = "Cancelar", onConfirm = {
+                scope.launch { controller.remove(product.id.toInt()); if (controller.state.value.mutationError == null) removal = null }
+            }, statusContent = { state.mutationError?.let { toast.QuimiaToast(message = it.message, type = QuimiaToastType.Error) } })
     }
 }
 

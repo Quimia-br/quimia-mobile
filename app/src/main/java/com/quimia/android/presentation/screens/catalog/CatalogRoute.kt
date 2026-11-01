@@ -107,7 +107,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
     val canSave = state.shelfReady && !state.shelfLoading
     val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading || state.shelfLoading, userId)
     com.quimia.android.presentation.components.ReportDestinationLoading("catalog", screenLoading)
-    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
+    theme.QuimiaSkeleton(screenLoading) {
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
         initialQuery = initialQuery, products = if (screenLoading) sampleCatalogProducts.take(5) else state.products.map { it.catalogProduct() },
         initialSavedProductIds = state.savedIds.map(Int::toString), onQueryChange = { query = it; controller.setQuery(it) },
@@ -166,7 +166,7 @@ internal fun CatalogLoading(message: String) {
 internal fun CatalogError(problem: CatalogProblem, retry: () -> Unit) {
     val tokens = quimiaColorTokens()
     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(problem.message, style = Typography.bodyMedium, color = tokens.textPrimary)
+        toast.QuimiaToast(message = problem.message, type = toast.QuimiaToastType.Error)
         if (problem.kind != GenericErrorKind.SessionExpired) QuimiaButton(text = "Tentar novamente", modifier = Modifier.fillMaxWidth().height(44.dp),
             iconSize = 0, espacamento = 0, onClick = retry)
     }
@@ -176,7 +176,7 @@ internal fun CatalogError(problem: CatalogProblem, retry: () -> Unit) {
 private fun CatalogDetailStatus(loading: Boolean, error: CatalogProblem?, close: () -> Unit, barcode: String? = null, retry: () -> Unit) {
     val tokens = quimiaColorTokens()
     ModalBottomSheet(onDismissRequest = close, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         shape = RoundedCornerShape(36.dp), containerColor = tokens.surfaceBase, scrimColor = CatalogModalScrimColor, dragHandle = null) {
         HideSystemNavigationBar()
         Column(Modifier.fillMaxWidth().padding(24.dp)) {
@@ -193,7 +193,7 @@ private fun CatalogDetailStatus(loading: Boolean, error: CatalogProblem?, close:
 private fun BarcodeNotFoundSheet(code: String, close: () -> Unit, rescan: () -> Unit) {
     val tokens = quimiaColorTokens()
     ModalBottomSheet(onDismissRequest = close, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = 326.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(326.dp, 840.dp),
         shape = RoundedCornerShape(40.dp), containerColor = tokens.surfaceBase,
         scrimColor = CatalogModalScrimColor, dragHandle = null) {
         HideSystemNavigationBar()

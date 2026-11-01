@@ -15,6 +15,8 @@ import com.quimia.android.data.auth.*
 import com.quimia.android.data.catalog.ApiCatalogProduct
 import com.quimia.android.data.home.HomeMixture
 import com.quimia.android.data.mixtures.*
+import com.quimia.android.data.shelf.ShelfApi
+import com.quimia.android.data.shelf.ShelfRepository
 import com.quimia.android.presentation.screens.catalog.catalogProduct
 import com.quimia.android.presentation.screens.errors.GenericErrorKind
 import com.quimia.android.presentation.screens.home.*
@@ -28,24 +30,31 @@ import toast.QuimiaToastType
 @Composable
 internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: () -> Unit,
     onSessionExpired: () -> Unit, onRecorded: () -> Unit, initialProductId: String? = null,
-    initialHistory: Boolean = false, historyProductId: String? = null) {
+    initialHistory: Boolean = false, historyProductId: String? = null, notificationsEnabled: Boolean = false) {
     val context = LocalContext.current.applicationContext
     val sessions = remember(context) { AuthRepositoryProvider.get(context) }
+    val latestNotificationsEnabled by rememberUpdatedState(notificationsEnabled)
     val repository = remember(userId, sessions) {
         MixturesRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, MixturesApi::class.java), sessions)
     }
     val controller = remember(userId) { MixtureController() }
+    val shelfRepository = remember(sessions) { ShelfRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, ShelfApi::class.java), sessions) }
     val scope = rememberCoroutineScope()
     val shelfLock = remember(userId) { Mutex() }
     var products by remember(userId) { mutableStateOf(emptyList<ApiCatalogProduct>()) }
     var shelfLoading by remember(userId) { mutableStateOf(true) }
     var shelfError by remember(userId) { mutableStateOf<String?>(null) }
+    var substances by remember(userId) { mutableStateOf(emptyList<MixtureIngredient>()) }
+    var substancesLoading by remember(userId) { mutableStateOf(true) }
+    var substancesError by remember(userId) { mutableStateOf<String?>(null) }
+    val substancesLock = remember(userId) { Mutex() }
     var history by remember(userId) { mutableStateOf(emptyList<HomeMixture>()) }
     var historyLoading by remember(userId) { mutableStateOf(false) }
     var historyLoaded by remember(userId) { mutableStateOf(false) }
     var historyError by remember(userId) { mutableStateOf<String?>(null) }
     var nextPage by remember(userId) { mutableStateOf<Int?>(null) }
     var result by remember(userId) { mutableStateOf<HomeMixture?>(null) }
+    var pendingRecordedResult by remember(userId) { mutableStateOf<HomeMixture?>(null) }
     var notice by remember(userId) { mutableStateOf<String?>(null) }
     fun errorKind(error: Exception): GenericErrorKind = homeProblem(error).also {
         if (it == GenericErrorKind.SessionExpired || sessions.session.value == SessionState.SignedOut) onSessionExpired()
@@ -56,11 +65,23 @@ internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: (
         try {
             products = repository.shelf(userId)
             if (controller.state.pendingId == null) controller.state.slots.forEachIndexed { index, ingredient ->
-                if (ingredient != null && products.none { it.id.toString() == ingredient.id }) controller.remove(index)
+                if (ingredient?.kind == MixtureIngredientKind.Product && products.none { it.id.toString() == ingredient.id }) controller.remove(index)
             }
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (error: Exception) { errorKind(error); shelfError = authErrorMessage(error) }
         finally { shelfLoading = false; shelfLock.unlock() }
+    }
+    suspend fun loadSubstances() {
+        if (!substancesLock.tryLock()) return
+        substancesLoading = true; substancesError = null
+        try {
+            substances = shelfRepository.substances(userId, "", null).map { MixtureIngredient(it.id.toString(), it.nome, MixtureIngredientKind.Substance) }
+            if (controller.state.pendingId == null) controller.state.slots.forEachIndexed { index, item ->
+                if (item?.kind == MixtureIngredientKind.Substance && substances.none { it.id == item.id }) controller.remove(index)
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: Exception) { errorKind(error); substancesError = authErrorMessage(error) }
+        finally { substancesLoading = false; substancesLock.unlock() }
     }
     suspend fun loadHistory(reset: Boolean = true) {
         if (historyLoading) return
@@ -81,20 +102,32 @@ internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: (
                 ?: run { if (shelfError == null) notice = "Esse produto não está mais na sua estante." }
         }
     }
+    LaunchedEffect(userId, shelfRepository) { loadSubstances() }
     val entryLoading = com.quimia.android.presentation.components.rememberEntryLoading(shelfLoading, userId)
     com.quimia.android.presentation.components.ReportDestinationLoading("mixtures", entryLoading)
     val catalog = remember(products) { products.map { it.catalogProduct() } }
     Box(Modifier.fillMaxSize()) {
         MixturesScreen(controller = controller, savedProductIds = catalog.map { it.id }, catalog = catalog,
-            substances = emptyList(), allowSubstances = false, loadingProducts = shelfLoading, productsError = shelfError,
+            substances = substances, allowSubstances = true, loadingProducts = shelfLoading, productsError = shelfError,
+            loadingSubstances = substancesLoading, substancesError = substancesError, onRetrySubstances = { scope.launch { loadSubstances() } },
+            supportsSubstanceAnalysis = false,
             onRetryProducts = { scope.launch { loadShelf() } }, onClose = onClose, onOpenCatalog = onOpenCatalog,
             initialHistory = initialHistory, historyProductId = historyProductId,
             onHistoryOpen = { scope.launch { loadHistory() } },
             analyzer = { request ->
                 try {
+                    require(request.ingredients.all { it.kind == MixtureIngredientKind.Product })
                     val ids = request.ingredients.map { requireNotNull(it.id.toIntOrNull()) }
-                    result = repository.analyze(userId, ids[0], ids[1])
+                    val recorded = repository.analyze(userId, ids[0], ids[1])
+                    // Publish the sheet after MixturesScreen finishes its entrance animation.
+                    pendingRecordedResult = recorded
                     onRecorded()
+                    if (latestNotificationsEnabled && (sessions.session.value as? SessionState.Authenticated)?.profile?.id == userId) {
+                        runCatching {
+                            com.quimia.android.data.notifications.QuimiaNotifications(context).post(
+                                com.quimia.android.domain.notifications.mixtureResultNotification(userId, recorded.id))
+                        }
+                    }
                     MixtureReply.Recorded
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) {
@@ -103,7 +136,7 @@ internal fun MixturesRoute(userId: String, onClose: () -> Unit, onOpenCatalog: (
                     if (error is retrofit2.HttpException && error.code() == 404) loadShelf()
                     MixtureReply.Failed(kind)
                 }
-            }, remoteHistoryContent = {
+            }, onAnalysisRecorded = { result = pendingRecordedResult; pendingRecordedResult = null }, remoteHistoryContent = {
                 if (historyLoading || !historyLoaded) item {
                     QuimiaToastHost("Carregando histórico…", Modifier.padding(24.dp), type = QuimiaToastType.Loading)
                 }

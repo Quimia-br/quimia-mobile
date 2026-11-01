@@ -285,7 +285,7 @@ fun HomeScreen(
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(start = 24.dp, end = 24.dp, bottom = QuimiaMenuBarHeight + QuimiaMenuBarBottomSpacing + 15.dp),
-            )
+            ) { data -> toast.QuimiaToast(message = data.visuals.message, type = toast.QuimiaToastType.Info, onDismiss = data::dismiss) }
         }
     }
 }

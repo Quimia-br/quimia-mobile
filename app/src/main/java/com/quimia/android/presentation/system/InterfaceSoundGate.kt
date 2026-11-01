@@ -6,18 +6,18 @@ import feedback.QuimiaSound
 internal class InterfaceSoundGate {
     private val ready = mutableSetOf<QuimiaSound>()
     private var pending: Pair<QuimiaSound, Long>? = null
-    private var lastTap: Long? = null
+    private val lastPlayed = mutableMapOf<QuimiaSound, Long>()
     var enabled: Boolean = true
         set(value) { field = value; if (!value) pending = null }
 
     fun request(cue: QuimiaSound, now: Long): QuimiaSound? {
         if (!enabled) return null
-        if (cue == QuimiaSound.Tap && lastTap?.let { now - it < 70 } == true) return null
+        if (lastPlayed[cue]?.let { now - it < cue.mix().minimumInterval } == true) return null
         if (cue !in ready) {
-            if (pending == null || cue != QuimiaSound.Tap || pending?.first == QuimiaSound.Tap) pending = cue to now
+            if (pending == null || cue.mix().priority >= pending!!.first.mix().priority) pending = cue to now
             return null
         }
-        if (cue == QuimiaSound.Tap) lastTap = now
+        lastPlayed[cue] = now
         return cue
     }
 

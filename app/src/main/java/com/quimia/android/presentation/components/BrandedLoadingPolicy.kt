@@ -1,10 +1,9 @@
 package com.quimia.android.presentation.components
 
-/** A visible menu always wins over delayed loading, including a stale authentication flag. */
+/** Tab changes use skeletons. Internal destinations show loading in their first pending frame. */
 internal fun brandedLoadingVisible(
     navigationVisible: Boolean,
     accountLoading: Boolean,
     aiEntry: Boolean,
     pending: Boolean,
-    delayElapsed: Boolean,
-): Boolean = !navigationVisible && (accountLoading || aiEntry || (pending && delayElapsed))
+): Boolean = !navigationVisible && (accountLoading || aiEntry || pending)

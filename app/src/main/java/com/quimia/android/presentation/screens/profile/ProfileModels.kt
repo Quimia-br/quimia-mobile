@@ -18,28 +18,8 @@ internal fun formatProfileBirthDate(value: String): String {
 internal fun profileEmailError(value: String): String? =
     if (value.trim().length <= 254 && value.trim().matches(Regex("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"))) null else "Informe um e-mail válido."
 
-enum class ProfileTheme(val label: String) {
-    Light("Claro"), Dark("Escuro"), HighContrast("Alto contraste"), System("Sistema");
-
-    fun usesDarkColors(systemDark: Boolean): Boolean = when (this) {
-        Light -> false
-        Dark, HighContrast -> true
-        System -> systemDark
-    }
-
-    companion object {
-        fun fromStored(value: String?): ProfileTheme = entries.firstOrNull { it.name == value } ?: Light
-    }
-}
-
-data class ProfilePreferences(
-    val theme: ProfileTheme = ProfileTheme.Light,
-    val textSizeStep: Int = 0,
-    val dyslexicFont: Boolean = false,
-    val soundEffects: Boolean = true,
-) {
-    val textScale: Float get() = 1f + textSizeStep.coerceIn(0, 2) * .2f
-}
+typealias ProfileTheme = com.quimia.android.domain.preferences.ProfileTheme
+typealias ProfilePreferences = com.quimia.android.domain.preferences.ProfilePreferences
 
 internal fun normalizedProfileName(value: String): String = value.trim().replace(Regex("\\s+"), " ")
 

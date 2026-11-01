@@ -57,7 +57,7 @@ internal fun NearbyPointsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         modifier = Modifier.statusBarsPadding().padding(start = 17.dp, end = 17.dp, bottom = 8.dp),
-        sheetMaxWidth = 560.dp, shape = RoundedCornerShape(40.dp), containerColor = tokens.secondary,
+        sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp), shape = RoundedCornerShape(40.dp), containerColor = tokens.secondary,
         scrimColor = CatalogModalScrimColor, dragHandle = null,
     ) {
         HideSystemNavigationBar()

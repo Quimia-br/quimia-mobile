@@ -1,6 +1,7 @@
 import java.util.Properties
 
 plugins {
+    alias(libs.plugins.ksp)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
@@ -47,6 +48,8 @@ android {
         buildConfig = true
     }
 
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     defaultConfig {
         applicationId = "com.quimia.android"
         versionCode = releaseVersionCode
@@ -69,7 +72,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -78,10 +82,25 @@ android {
                 "proguard-rules.pro"
             )
         }
+        create("performance") {
+            initWith(getByName("release"))
+            // Install over an Android Studio build without deleting the user's account/data.
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            versionNameSuffix = "-performance"
+            matchingFallbacks += listOf("release")
+        }
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
@@ -113,6 +132,13 @@ dependencies {
     implementation(libs.play.services.auth)
     
     testImplementation(libs.junit)
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.androidx.junit)
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation(libs.androidx.work.testing)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

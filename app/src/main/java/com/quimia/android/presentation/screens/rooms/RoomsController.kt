@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 
-internal enum class RoomsStage { List, Create, Detail, Adding, Saving, Success, Error }
+internal enum class RoomsStage { List, Create, Detail, Adding, Editing, Saving, Success, Error }
 internal data class RoomsState(val stage: RoomsStage = RoomsStage.List, val query: String = "",
     val rooms: List<ApiRoomSummary> = emptyList(), val loading: Boolean = true, val error: CatalogProblem? = null,
     val nextPage: Int? = null, val moreLoading: Boolean = false, val moreError: CatalogProblem? = null,
@@ -116,6 +116,11 @@ internal class RoomsController(private val source: RoomsDataSource, private val 
         mutable.update { it.copy(stage = RoomsStage.Adding, mutationError = null) }
         loadShelf()
     }
+    suspend fun prepareEdit() {
+        if (state.value.busy || state.value.detail == null) return
+        mutable.update { it.copy(stage = RoomsStage.Editing, mutationError = null) }
+        loadShelf()
+    }
     suspend fun cancelAdd() {
         if (state.value.busy) return
         shelfRevision++
@@ -153,19 +158,54 @@ internal class RoomsController(private val source: RoomsDataSource, private val 
         } catch (error: Exception) { mutable.update { it.copy(mutationError = roomsProblem(error)) }
         } finally { mutable.update { it.copy(busy = false) }; mutationLock.unlock() }
     }
-    suspend fun edit(name: String, icon: RoomIcon) {
+    suspend fun edit(name: String, icon: RoomIcon, productIds: List<Int>? = null) {
         if (!mutationLock.tryLock()) return
         try {
             val room = state.value.detail ?: return
             val normalized = normalizeRoomName(name)
             if (normalized.isBlank() || normalized.length > 100) { notice("Informe um nome de até 100 caracteres."); return }
+            val ids = productIds?.distinct()
+            if (ids != null && (!state.value.shelfReady || state.value.shelfLoading || ids.size > 20 ||
+                ids.any { id -> state.value.available.none { it.id == id } && room.produtos.none { it.id == id } })) {
+                notice("Confira os produtos disponíveis na sua estante. O limite por cômodo é 20."); return
+            }
             mutable.update { it.copy(busy = true, mutationError = null) }
-            val updated = source.edit(user, room.id, normalized, icon.apiCode)
+            var updated = if (normalized != room.nome || icon.apiCode != room.icone)
+                source.edit(user, room.id, normalized, icon.apiCode) else room
             validateApiRoom(updated)
-            if (updated.id != room.id) throw CatalogContractException()
-            mutable.update { it.copy(detail = updated, notice = "Cômodo atualizado.") }
+            if (updated.id != room.id || updated.nome != normalized || updated.icone != icon.apiCode) throw CatalogContractException()
+            mutable.update { it.copy(detail = updated) }
+            if (ids != null) {
+                val additions = ids.filterNot { id -> updated.produtos.any { it.id == id } }
+                val removals = updated.produtos.map { it.id }.filterNot { it in ids }
+                // Free capacity first when replacing products in a full room. Each confirmed step
+                // becomes the next baseline, so retrying a partial save never repeats a removal.
+                removals.forEach { id ->
+                    source.remove(user, room.id, id)
+                    updated = source.detail(user, room.id)
+                    validateApiRoom(updated)
+                    if (updated.id != room.id || updated.produtos.any { it.id == id }) throw CatalogContractException()
+                    mutable.update { it.copy(detail = updated) }
+                }
+                if (additions.isNotEmpty()) {
+                    updated = source.add(user, room.id, additions)
+                    validateApiRoom(updated)
+                }
+                if (updated.id != room.id || updated.nome != normalized || updated.icone != icon.apiCode ||
+                    updated.produtos.map { it.id }.toSet() != ids.toSet()) throw CatalogContractException()
+            }
+            mutable.update { it.copy(detail = updated, stage = RoomsStage.Detail, notice = "Cômodo atualizado.") }
         } catch (cancelled: CancellationException) { throw cancelled
-        } catch (error: Exception) { mutable.update { it.copy(mutationError = roomsProblem(error)) }
+        } catch (error: Exception) {
+            val problem = roomsProblem(error)
+            // A sequence of existing API routes is not atomic. Reconcile partial saves and keep
+            // the form open with its draft and an error instead of claiming everything was saved.
+            val id = state.value.detailId
+            if (productIds != null && id != null) {
+                mutable.update { it.copy(detail = null, detailLoading = true, detailError = null) }
+                fetchDetail(id, ++detailRevision)
+            }
+            mutable.update { it.copy(mutationError = problem) }
         } finally { mutable.update { it.copy(busy = false) }; mutationLock.unlock() }
     }
     suspend fun delete() {

@@ -29,7 +29,7 @@ fun LoginPassCodeScreen(
     AuthScreenLayout(modifier, onBack = onBack, footer = {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuimiaButton(text = if (seconds > 0) "${seconds}s Reenviar" else "Reenviar",
-                modifier = Modifier.weight(1f).height(58.dp), containerColor = tokens.secondary,
+                modifier = Modifier.weight(1f).heightIn(min = 58.dp), containerColor = tokens.secondary,
                 enabled = seconds == 0, onClick = onResend, iconSize = 0,
                 espacamento = 0, textStyle = QuimiaTextStyles.medium16)
             AuthPrimaryButton("Confirmar", { onConfirm(code) }, enabled = code.length == 4, modifier = Modifier.weight(1f))

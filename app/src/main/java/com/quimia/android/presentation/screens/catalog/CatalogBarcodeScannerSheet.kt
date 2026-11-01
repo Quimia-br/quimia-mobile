@@ -111,7 +111,7 @@ internal fun CatalogBarcodeScannerSheet(onDismiss: () -> Unit, onBarcode: (Strin
     }
     val tokens = quimiaColorTokens()
     ModalBottomSheet(onDismissRequest = ::close, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp), sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         containerColor = tokens.surfaceBase, contentColor = tokens.textPrimary, scrimColor = CatalogModalScrimColor,
         shape = RoundedCornerShape(36.dp), dragHandle = null) {
         HideSystemNavigationBar()

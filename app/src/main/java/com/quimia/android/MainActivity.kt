@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.size
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.AsyncImagePainter
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,10 +74,24 @@ import com.quimia.android.presentation.screens.auth.registration.GoogleDetailsSc
 import com.quimia.android.presentation.screens.proximity.NearbyAddress
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import com.quimia.android.data.notifications.NotificationOpenRequest
+import com.quimia.android.data.notifications.notificationOpenRequest
+import com.quimia.android.data.notifications.NOTIFICATION_OWNER
+import com.quimia.android.data.notifications.NOTIFICATION_DESTINATION
+import com.quimia.android.domain.notifications.NotificationDestination
 
 class MainActivity : ComponentActivity() {
+    private var notificationRequest by mutableStateOf<NotificationOpenRequest?>(null)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationRequest = notificationOpenRequest(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        notificationRequest = notificationOpenRequest(intent)
         volumeControlStream = android.media.AudioManager.STREAM_MUSIC
         AnalyticsLogger.logEvent("APP_STARTED")
 
@@ -91,8 +104,10 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val store = remember { ProfilePreferencesStore(this) }
-            var preferences by remember { mutableStateOf(store.load()) }
+            val preferencesFactory = remember { ProfilePreferencesViewModel.factory(applicationContext) }
+            val preferencesViewModel: ProfilePreferencesViewModel = viewModel(factory = preferencesFactory)
+            val settings by preferencesViewModel.state.collectAsStateWithLifecycle()
+            val preferences = settings.preferences
             val dark = preferences.theme.usesDarkColors(isSystemInDarkTheme())
             val density = LocalDensity.current
             SideEffect {
@@ -105,10 +120,31 @@ class MainActivity : ComponentActivity() {
                 QuimiaTheme(darkTheme = dark, highContrast = preferences.theme == ProfileTheme.HighContrast,
                     useDyslexicFont = preferences.dyslexicFont) {
                     HideSystemNavigationBar()
+                    com.quimia.android.presentation.system.QuimiaPerformance {
                     com.quimia.android.presentation.system.QuimiaSoundProvider(preferences.soundEffects) {
                         com.quimia.android.presentation.components.LaunchSplash {
-                            QuimiaApp(preferences) { preferences = it; store.save(it) }
+                            if (settings.ready) {
+                                QuimiaApp(preferences, preferencesViewModel::update, notificationRequest) {
+                                    notificationRequest = null
+                                    intent.removeExtra(NOTIFICATION_OWNER)
+                                    intent.removeExtra(NOTIFICATION_DESTINATION)
+                                }
+                            } else if (settings.error != null) {
+                                com.quimia.android.presentation.screens.errors.GenericErrorScreen(
+                                    kind = com.quimia.android.presentation.screens.errors.GenericErrorKind.Unknown,
+                                    description = settings.error.orEmpty(), onClose = ::finish,
+                                    onAction = { preferencesViewModel.reload() },
+                                )
+                            }
                         }
+                        if (settings.ready && settings.error != null) {
+                            com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+                                title = "Não foi possível salvar suas preferências", description = settings.error,
+                                kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error,
+                                onDismiss = preferencesViewModel::dismissError, action = "Tentar novamente",
+                                onConfirm = preferencesViewModel::retrySave, secondaryAction = "Fechar")
+                        }
+                    }
                     }
                 }
             }
@@ -117,7 +153,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (ProfilePreferences) -> Unit) {
+private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (ProfilePreferences) -> Unit,
+    notificationRequest: NotificationOpenRequest? = null, onNotificationHandled: () -> Unit = {}) {
+    com.quimia.android.presentation.system.NotificationEffects(preferences)
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val googleDraft by authViewModel.googleOnboarding.collectAsStateWithLifecycle()
@@ -208,6 +246,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var referenceAddressFields by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(storedGoogleAddress) }
     var showKemi by rememberSaveable(sessionUid) { mutableStateOf(false) }
     var showMixtures by rememberSaveable(sessionUid) { mutableStateOf(false) }
+    var mixtureNavigationKey by rememberSaveable(sessionUid) { mutableStateOf(0) }
     var openMixtureHistory by rememberSaveable(sessionUid) { mutableStateOf(false) }
     var mixtureHistoryFilter by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var initialMixtureProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
@@ -256,6 +295,20 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
             AuthDestination.entries.forEach { authScreens.removeState(it.name) }
             authScreens.removeState(AuthDestination.GoogleDetails.name + sessionUid)
             authScreens.removeState(AuthDestination.GoogleAddress.name + sessionUid)
+        }
+    }
+
+    LaunchedEffect(notificationRequest, sessionUid) {
+        if (notificationRequest != null && sessionUid != null) {
+            if (notificationRequest.ownerId == sessionUid) {
+                showProfile = false; showKemi = false; showMixtures = false
+                when (notificationRequest.destination) {
+                    NotificationDestination.Home -> selectedMainTab = 0
+                    NotificationDestination.Shelf -> selectedMainTab = 2
+                    NotificationDestination.MixtureHistory -> { mixtureNavigationKey++; openMixtures(history = true) }
+                }
+            }
+            onNotificationHandled()
         }
     }
 
@@ -351,16 +404,17 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                     target = when { showKemi -> "kemi"; showMixtures -> "mixtures"; else -> "none" },
                     modifier = Modifier.fillMaxSize(),
                 ) { overlay ->
-                    if (overlay == "mixtures") MixturesRoute(
+                    if (overlay == "mixtures") androidx.compose.runtime.key(mixtureNavigationKey) { MixturesRoute(
                         userId = sessionUid.orEmpty(), initialProductId = initialMixtureProductId,
                         initialHistory = openMixtureHistory, historyProductId = mixtureHistoryFilter,
+                        notificationsEnabled = preferences.mixtureNotifications,
                         onClose = { showMixtures = false }, onRecorded = { homeMixtureRevision++ },
                         onOpenCatalog = { showMixtures = false; selectedMainTab = 1 },
                         onSessionExpired = {
                             showMixtures = false; showProfile = false; selectedMainTab = 0
                             navigateAuth(AuthDestination.Login); authViewModel.logout()
                         },
-                    )
+                    ) }
                     if (overlay == "kemi") {
                         KemiScreen(
                             controller = kemiController,
@@ -378,12 +432,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                     }
                 }
                 unavailableTab?.let { name ->
-                    AlertDialog(
-                        onDismissRequest = { unavailableTab = null },
-                        title = { Text(name) },
-                        text = { Text("Esta tela ainda não está disponível.") },
-                        confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
-                    )
+                    com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+                        title = name, description = "Esta tela ainda não está disponível.", onDismiss = { unavailableTab = null })
                 }
             }
         }
@@ -452,15 +502,16 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                 type = toast.QuimiaToastType.Loading)
         }
     }
-    if (!authBusy && sessionProblem != null) AlertDialog(
-        onDismissRequest = {}, title = { Text("Não foi possível conferir sua sessão") },
-        text = { Text(sessionProblem.orEmpty()) },
-        confirmButton = { TextButton(onClick = authViewModel::retrySession) { Text("Tentar novamente") } },
-        dismissButton = { TextButton(onClick = { navigateAuth(AuthDestination.Login); authViewModel.logout() }) { Text("Ir para login") } },
+    if (!authBusy && sessionProblem != null) com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+        title = "Não foi possível conferir sua sessão", description = sessionProblem,
+        kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error,
+        onDismiss = {}, dismissible = false, action = "Tentar novamente", onConfirm = authViewModel::retrySession,
+        secondaryAction = "Ir para login", onSecondary = { navigateAuth(AuthDestination.Login); authViewModel.logout() },
     )
     authNotice?.let { notice ->
-        AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
-            text = { Text(notice) }, confirmButton = { TextButton(onClick = { authNotice = null }) { Text("Entendi") } })
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(title = "Não foi possível continuar",
+            description = notice, kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error,
+            onDismiss = { authNotice = null })
     }
     }
 }

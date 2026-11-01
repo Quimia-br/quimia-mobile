@@ -15,6 +15,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,10 +28,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -50,6 +58,7 @@ import theme.QuimiaTheme
 val LocalQuimiaInputActionIconSize = staticCompositionLocalOf<Dp?> { null }
 
 @Composable
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 fun QuimiaInput(
     value: String,
     onValueChange: (String) -> Unit,
@@ -86,6 +95,15 @@ fun QuimiaInput(
     val largeAction = actionIconSize != null && actionIconSize >= 20.dp
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
+    val bringIntoView = remember { BringIntoViewRequester() }
+    val keyboardBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(isFocused, keyboardBottom, error, description) {
+        if (isFocused) {
+            // Include the label, field border and validation text, after IME/layout updates.
+            withFrameNanos { }
+            bringIntoView.bringIntoView()
+        }
+    }
 
     val isError = error != null
 
@@ -123,6 +141,7 @@ fun QuimiaInput(
         horizontalAlignment = Alignment.Start,
         modifier = Modifier
             .fillMaxWidth()
+            .bringIntoViewRequester(bringIntoView)
     ) {
         if (label != null) {
             Text(
@@ -163,7 +182,7 @@ fun QuimiaInput(
                     contentAlignment = Alignment.CenterStart,
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp)
+                        .heightIn(min = 32.dp)
                 ) {
                     if (value.isEmpty() && placeholder != null) {
                         Text(text = placeholder, style = secondaryTextStyle)

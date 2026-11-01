@@ -50,7 +50,8 @@ internal fun HomePointMap(pointId: Int, name: String, coordinate: NearbyCoordina
             var zoomed by rememberSaveable { mutableStateOf(false) }
             var map by remember { mutableStateOf<GoogleMap?>(null) }
             val latestName by rememberUpdatedState(name)
-            val view = remember(context, owner) { MapView(context, GoogleMapOptions().mapType(GoogleMap.MAP_TYPE_HYBRID).liteMode(false)).apply { onCreate(saved) } }
+            val compact = motion.LocalQuimiaRenderingBudget.current == motion.QuimiaRenderingBudget.Compact
+            val view = remember(context, owner, compact) { MapView(context, GoogleMapOptions().mapType(GoogleMap.MAP_TYPE_HYBRID).liteMode(compact)).apply { onCreate(saved) } }
             val icon = rememberVectorPainter(Lucide.Recycle)
             val marker = remember(tokens.primary, icon) {
                 nearbyMarkerBitmap(tokens.primary.toArgb(), context.resources.displayMetrics.density, false, icon)
@@ -66,7 +67,8 @@ internal fun HomePointMap(pointId: Int, name: String, coordinate: NearbyCoordina
                         }
                         val toggleZoom = {
                             zoomed = !zoomed
-                            native.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(coordinate.latitude, coordinate.longitude), if (zoomed) 18f else 14.5f))
+                            val update = CameraUpdateFactory.newLatLngZoom(LatLng(coordinate.latitude, coordinate.longitude), if (zoomed) 18f else 14.5f)
+                            if (compact) native.moveCamera(update) else native.animateCamera(update)
                         }
                         native.setOnMapClickListener { toggleZoom() }
                         native.setOnMarkerClickListener { toggleZoom(); true }
@@ -88,7 +90,8 @@ internal fun HomePointMap(pointId: Int, name: String, coordinate: NearbyCoordina
             })
             Box(Modifier.fillMaxSize().quimiaClickable(role = Role.Button, onClickLabel = "Alterar zoom do ponto salvo") {
                 zoomed = !zoomed
-                map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(coordinate.latitude, coordinate.longitude), if (zoomed) 18f else 14.5f))
+                val update = CameraUpdateFactory.newLatLngZoom(LatLng(coordinate.latitude, coordinate.longitude), if (zoomed) 18f else 14.5f)
+                if (compact) map?.moveCamera(update) else map?.animateCamera(update)
             }.semantics {
                 contentDescription = "Mapa do último descarte salvo: $name"
                 stateDescription = if (zoomed) "Aproximado" else "Visão da região"

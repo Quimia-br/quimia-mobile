@@ -82,7 +82,7 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
         return
     }
     if (!loaded || profile == null) {
-        CompositionLocalProvider(theme.LocalQuimiaSkeleton provides true) {
+        theme.QuimiaSkeleton(true) {
             ProfileScreen("Seu nome", "email@quimia.com", preferences, {}, {}, {}, onBack = onBack)
         }
     } else {
@@ -121,8 +121,9 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
                 val result = repository.completeInitialProfile(normalizedProfileName(details.name), profileIsoDate(details.birthDate), userId)
                 latestUpdated(result)
             })
-        if (error != null) AlertDialog(onDismissRequest = { error = null }, text = { Text(error.orEmpty()) },
-            confirmButton = { TextButton(onClick = { scope.launch { reload() } }) { Text("Tentar novamente") } },
-            dismissButton = { TextButton(onClick = { error = null }) { Text("Fechar") } })
+        if (error != null) com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+            title = "Não foi possível carregar seu perfil", description = error,
+            kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error, onDismiss = { error = null },
+            action = "Tentar novamente", onConfirm = { scope.launch { reload() } }, secondaryAction = "Fechar")
     }
 }

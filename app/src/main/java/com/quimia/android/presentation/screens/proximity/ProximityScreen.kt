@@ -127,7 +127,7 @@ fun ProximityScreen(
             }
         }
         Surface(
-            modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp).fillMaxWidth()
+            modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp)).fillMaxWidth()
                 .padding(horizontal = 17.dp).height(75.dp)
                 .pointerInput(Unit) { detectVerticalDragGestures { change, amount -> change.consume(); if (amount < -8f) savedVisible = true } }
                 .clickable(onClickLabel = "Abrir pontos salvos") { savedVisible = true },

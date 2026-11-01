@@ -30,6 +30,7 @@ import image.QuimiaImage
 import shapeIcon.QuimiaShapeIcon
 import theme.QuimiaTextStyles
 import theme.quimiaColorTokens
+import motion.quimiaClickable
 
 internal val RoomIcon.vector: ImageVector get() = when (this) {
     RoomIcon.Refrigerator -> Lucide.Refrigerator
@@ -68,15 +69,19 @@ internal fun RoomProductCard(
     product: CatalogProduct, modifier: Modifier = Modifier,
     selectable: Boolean = false, checked: Boolean = false, critical: Boolean = false,
     previewQuantity: Boolean = false, onCheckedChange: (Boolean) -> Unit = {}, onActions: () -> Unit = {},
+    enabled: Boolean = true,
 ) {
     val tokens = quimiaColorTokens()
+    val playSound = feedback.LocalQuimiaSound.current
     val height = if (selectable) 297.dp else if (!critical) 318.dp else 256.dp
     QuimiaCard(
         title = product.name, primaryActionLabel = null, secondaryActionLabel = null,
         showTitle = false, showDescription = false, endIcon = null, sectionSpacing = 0.dp,
         modifier = modifier.height(height).clip(RoundedCornerShape(24.dp)).then(if (selectable) Modifier.semantics(mergeDescendants = true) {
             contentDescription = "Selecionar ${product.name}"
-        }.toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange) else Modifier),
+        }.toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = {
+            playSound(feedback.QuimiaSound.Selection); onCheckedChange(it)
+        }) else Modifier.quimiaClickable(enabled = enabled, onClick = onActions)),
         outline = selectable && checked, outlineWidth = 3.dp, contentPadding = 16.dp,
         containerColor = if (critical) tokens.secondary else tokens.surfaceBase,
     ) {
@@ -98,7 +103,7 @@ internal fun RoomProductCard(
                     contentScale = ContentScale.Fit, shape = RoundedCornerShape(0.dp))
                 if (!selectable) QuimiaIconButton(modifier = Modifier.align(Alignment.BottomEnd), icon = Lucide.Menu,
                     containerColor = if (critical) tokens.surfaceBase else tokens.secondary,
-                    contentDescription = "Ações de ${product.name}", onClick = onActions)
+                    contentDescription = "Ações de ${product.name}", enabled = enabled, onClick = onActions)
             }
             if (selectable) Row(Modifier.fillMaxWidth().height(34.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 QuimiaCheckBox(checked = checked, onCheckedChange = null)

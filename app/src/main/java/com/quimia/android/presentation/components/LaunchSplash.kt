@@ -57,7 +57,8 @@ private fun LaunchVideo(onFinished: () -> Unit) {
         .pointerInput(Unit) { detectTapGestures { } }) {
         val aspect = 784f / 1808f
         val width = minOf(maxWidth, maxHeight * aspect)
-        ResourceVideo(R.raw.quimia_splash,
+        val compact = motion.LocalQuimiaRenderingBudget.current == motion.QuimiaRenderingBudget.Compact
+        ResourceVideo(if (compact) R.raw.quimia_splash_compact else R.raw.quimia_splash,
             modifier = Modifier.align(Alignment.Center).width(width).height(width / aspect),
             onFinished = { finished() }, onFailure = { finished() })
     }

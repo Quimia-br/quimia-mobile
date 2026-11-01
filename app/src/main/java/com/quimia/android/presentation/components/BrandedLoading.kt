@@ -2,7 +2,6 @@ package com.quimia.android.presentation.components
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,17 +55,13 @@ internal fun DestinationLoadingHost(
     val menuShown = load?.navigationVisible ?: navigationVisible
     val motion = LocalQuimiaMotionEnabled.current
     var aiEntry by remember(destination, userId) { mutableStateOf(destination == "kemi" && motion) }
-    var slowEntry by remember(entry) { mutableStateOf(false) }
-    LaunchedEffect(entry, pending, menuShown) {
-        if (pending && !menuShown) { delay(650); slowEntry = true } else slowEntry = false
-    }
     // A short branded entrance to the assistant; it never waits for a chat response.
     LaunchedEffect(destination, motion) {
         if (aiEntry && motion) delay(450)
         aiEntry = false
     }
     val launching = LocalLaunchSplashVisible.current
-    val requested = !launching && brandedLoadingVisible(menuShown, accountLoading, aiEntry, pending, slowEntry)
+    val requested = !launching && brandedLoadingVisible(menuShown, accountLoading, aiEntry, pending)
     var playback by remember { mutableStateOf(LoadingPlaybackState()) }
     val presentation = playback.update(requested, motion, requireFullCycle = destination != "rooms")
     val visible = presentation.showing
@@ -81,7 +76,7 @@ internal fun DestinationLoadingHost(
         }
         // Tab switches cannot start a loading screen. A video already started elsewhere finishes before revealing the destination.
         if (!menuShown || visible) {
-            AnimatedVisibility(visible, enter = fadeIn(QuimiaMotion.tweenSpec(motion, 120)),
+            AnimatedVisibility(visible, enter = androidx.compose.animation.EnterTransition.None,
                 exit = fadeOut(QuimiaMotion.tweenSpec(motion, QuimiaMotion.ScreenDissolve))) {
                 key(presentation.appearance) {
                     BrandedLoadingScreen(onFirstCycleFinished = { playback = playback.cycleFinished(presentation.appearance) })
@@ -105,7 +100,8 @@ internal fun BrandedLoadingScreen(onFirstCycleFinished: () -> Unit = {}) {
         var failed by remember { mutableStateOf(false) }
         Box(Modifier.align(Alignment.Center).size(size, size * (137f / 138f)).clip(CircleShape)) {
             Image(painterResource(R.drawable.kemi_loading), null, Modifier.matchParentSize(), contentScale = ContentScale.Fit)
-            if (animate && !failed) ResourceVideo(R.raw.quimia_loading, Modifier.matchParentSize(),
+            val compact = motion.LocalQuimiaRenderingBudget.current == motion.QuimiaRenderingBudget.Compact
+            if (animate && !failed) ResourceVideo(if (compact) R.raw.quimia_loading_compact else R.raw.quimia_loading, Modifier.matchParentSize(),
                 looping = true, clipToCircle = true, onFirstCycleFinished = onFirstCycleFinished,
                 onFailure = { failed = true; onFirstCycleFinished() })
         }

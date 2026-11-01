@@ -270,7 +270,7 @@ private fun NearbyMapNotice(message: String, onRetry: (() -> Unit)? = null) {
         Column(Modifier.padding(24.dp).background(tokens.surfaceBase, RoundedCornerShape(24.dp))
             .quimiaContrastOutline(RoundedCornerShape(24.dp)).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(message, style = QuimiaTextStyles.medium14, color = tokens.textPrimary)
+            QuimiaToast(message = message, type = QuimiaToastType.Info)
             if (onRetry != null) QuimiaButton(modifier = Modifier.fillMaxWidth().height(43.dp), text = "Tentar novamente",
                 iconSize = 0, espacamento = 0, onClick = onRetry)
         }
