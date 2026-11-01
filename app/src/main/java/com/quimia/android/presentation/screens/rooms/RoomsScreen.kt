@@ -172,7 +172,7 @@ internal fun RoomList(
     rooms: List<QuimiaRoom>, onOpen: (String) -> Unit, onCreate: () -> Unit,
     onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit,
     connected: Boolean = false, initialQuery: String = "", onQueryChange: (String) -> Unit = {},
-    onUnavailable: (String) -> Unit = {}, showEmpty: Boolean = true,
+    selectedSort: RoomSort = RoomSort.Alphabetical, onSortChange: (RoomSort) -> Unit = {}, showEmpty: Boolean = true,
     statusContent: (@Composable () -> Unit)? = null, footerContent: (@Composable () -> Unit)? = null,
 ) {
     val tokens = quimiaColorTokens()
@@ -180,7 +180,8 @@ internal fun RoomList(
     fun changeQuery(value: String) { query = value.take(100); onQueryChange(query) }
     val voiceInput = rememberVoiceInput { changeQuery(it) }
     var filtersVisible by rememberSaveable { mutableStateOf(false) }
-    var sort by rememberSaveable { mutableStateOf(if (connected) RoomSort.Alphabetical else RoomSort.Oldest) }
+    var localSort by rememberSaveable { mutableStateOf(RoomSort.Oldest) }
+    val sort = if (connected) selectedSort else localSort
     val visibleRooms = if (connected) rooms else remember(rooms, query, sort) { filterRooms(rooms, query, sort) }
     val headerBackground = remember(tokens) {
         fun tint(cyan: Float, green: Float = 0f) = tokens.brandPrimary.copy(alpha = green).compositeOver(
@@ -212,7 +213,7 @@ internal fun RoomList(
             }
             QuimiaExpand(filtersVisible) { Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 RoomSort.entries.forEach { item -> QuimiaChip(label = item.label, modifier = Modifier.weight(1f), centerContent = true,
-                    selected = item == sort, onClick = { if (connected && item != RoomSort.Alphabetical) onUnavailable("A ordenação por data de criação ainda não está disponível.") else sort = item }) }
+                    selected = item == sort, onClick = { if (connected) onSortChange(item) else localSort = item }) }
             }
             }
             statusContent?.invoke()

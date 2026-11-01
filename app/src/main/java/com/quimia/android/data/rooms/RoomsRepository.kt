@@ -23,7 +23,7 @@ internal class RoomRejected(val code: String, val status: Int) : Exception()
 
 internal interface RoomsApi {
     @GET("api/v1/comodos") suspend fun list(@Header("Authorization") bearer: String, @Query("q") query: String?,
-        @Query("page") page: Int, @Query("size") size: Int): CatalogPage<ApiRoomSummary>
+        @Query("ordem") order: String, @Query("page") page: Int, @Query("size") size: Int): CatalogPage<ApiRoomSummary>
     @GET("api/v1/comodos/{id}") suspend fun detail(@Header("Authorization") bearer: String, @Path("id") id: Int): ApiRoom
     @POST("api/v1/comodos") suspend fun create(@Header("Authorization") bearer: String, @Body body: CreateRoomRequest): Response<ApiRoom>
     @POST("api/v1/comodos/{id}/produtos") suspend fun add(@Header("Authorization") bearer: String, @Path("id") id: Int,
@@ -36,7 +36,7 @@ internal interface RoomsApi {
         @Query("page") page: Int, @Query("size") size: Int): CatalogPage<ApiCatalogProduct>
 }
 internal interface RoomsDataSource {
-    suspend fun list(user: String, query: String, page: Int): CatalogPage<ApiRoomSummary>
+    suspend fun list(user: String, query: String, order: String, page: Int): CatalogPage<ApiRoomSummary>
     suspend fun detail(user: String, id: Int): ApiRoom
     suspend fun shelf(user: String): List<ApiCatalogProduct>
     suspend fun create(user: String, name: String, icon: String, ids: List<Int>): ApiRoom
@@ -58,8 +58,8 @@ internal class RoomsRepository(private val api: RoomsApi, private val sessions: 
         }
         throw error
     }
-    override suspend fun list(user: String, query: String, page: Int) = authenticated(user) {
-        api.list(it, query.trim().ifBlank { null }, page, 20).also { result ->
+    override suspend fun list(user: String, query: String, order: String, page: Int) = authenticated(user) {
+        api.list(it, query.trim().ifBlank { null }, order, page, 20).also { result ->
             validateRoomPage(result, page)
         }
     }

@@ -28,7 +28,9 @@ data class QuimiaRoom(
     val knownIcon: Boolean = true,
 )
 
-internal enum class RoomSort(val label: String) { Alphabetical("Alfabética"), Recent("Recentes"), Oldest("Antigos") }
+internal enum class RoomSort(val label: String, val apiValue: String) {
+    Alphabetical("Alfabética", "alfabetica"), Recent("Recentes", "recentes"), Oldest("Antigos", "antigos")
+}
 
 internal fun roomGridColumns(availableWidthDp: Float): Int = when {
     availableWidthDp >= 700f -> 4

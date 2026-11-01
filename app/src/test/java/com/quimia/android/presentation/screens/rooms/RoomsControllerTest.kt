@@ -15,7 +15,7 @@ class RoomsControllerTest {
     private fun page(items: List<ApiRoomSummary> = emptyList(), number: Int = 0, total: Int = items.size) =
         CatalogPage(items, number, 20, total.toLong(), if (total == 0) 0 else (total - 1) / 20 + 1)
     private inner class Source : RoomsDataSource {
-        var listCall: suspend (String, Int) -> CatalogPage<ApiRoomSummary> = { _, _ -> page() }
+        var listCall: suspend (String, String, Int) -> CatalogPage<ApiRoomSummary> = { _, _, _ -> page() }
         var createCall: suspend () -> ApiRoom = { room() }
         var detailCall: suspend () -> ApiRoom = { room() }
         var removeCall: suspend () -> Unit = {}
@@ -24,7 +24,7 @@ class RoomsControllerTest {
         var editCall: suspend (String, String) -> ApiRoom = { name, icon -> room().copy(nome = name, icone = icon) }
         var shelfProducts = products
         val users = mutableListOf<String>()
-        override suspend fun list(user: String, query: String, page: Int): CatalogPage<ApiRoomSummary> { users += user; return listCall(query, page) }
+        override suspend fun list(user: String, query: String, order: String, page: Int): CatalogPage<ApiRoomSummary> { users += user; return listCall(query, order, page) }
         override suspend fun shelf(user: String) = shelfProducts
         override suspend fun detail(user: String, id: Int) = detailCall()
         override suspend fun create(user: String, name: String, icon: String, ids: List<Int>) = createCall()
@@ -62,14 +62,70 @@ class RoomsControllerTest {
     }
     @Test fun `offline and successful empty lists are different and search ignores late response`() = runBlocking {
         val source = Source(); val controller = RoomsController(source, "user")
-        source.listCall = { _, _ -> throw IOException() }; controller.loadList()
+        source.listCall = { _, _, _ -> throw IOException() }; controller.loadList()
         assertEquals(GenericErrorKind.Offline, controller.state.value.error?.kind)
-        source.listCall = { _, _ -> page() }; controller.loadList(); assertNull(controller.state.value.error)
+        source.listCall = { _, _, _ -> page() }; controller.loadList(); assertNull(controller.state.value.error)
         val entered = CompletableDeferred<Unit>(); val answer = CompletableDeferred<CatalogPage<ApiRoomSummary>>()
-        source.listCall = { query, _ -> if (query == "old") { entered.complete(Unit); answer.await() } else page() }
+        source.listCall = { query, _, _ -> if (query == "old") { entered.complete(Unit); answer.await() } else page() }
         controller.setQuery("old"); val job = launch { controller.loadList() }; entered.await()
         controller.setQuery("new"); controller.loadList(); answer.complete(page(listOf(ApiRoomSummary(4,"Banheiro","toilet",2,"nao_avaliado")))); job.join()
         assertTrue(controller.state.value.rooms.isEmpty()); assertEquals("new", controller.state.value.query)
+    }
+    @Test fun `sorting restarts pagination and search keeps the selected server order`() = runBlocking {
+        val source = Source()
+        val calls = mutableListOf<Triple<String, String, Int>>()
+        source.listCall = { query, order, number ->
+            calls += Triple(query, order, number)
+            val ids = if (number == 0) (1..20).toList() else listOf(21)
+            page(ids.map { ApiRoomSummary(it, "Cômodo $it", "toilet", 2, "nao_avaliado") }, number, 21)
+        }
+        val controller = RoomsController(source, "user")
+        controller.loadList(); controller.loadMore()
+        assertEquals(21, controller.state.value.rooms.size)
+        controller.setSort(RoomSort.Recent)
+        assertTrue(controller.state.value.loading)
+        assertTrue(controller.state.value.rooms.isEmpty())
+        assertNull(controller.state.value.nextPage)
+        controller.loadMore()
+        assertEquals(2, calls.size)
+        controller.loadList(); controller.loadMore()
+        controller.setQuery("Banho"); controller.loadList()
+        controller.setSort(RoomSort.Oldest); controller.loadList()
+        assertEquals(listOf(
+            Triple("", "alfabetica", 0), Triple("", "alfabetica", 1),
+            Triple("", "recentes", 0), Triple("", "recentes", 1),
+            Triple("Banho", "recentes", 0), Triple("Banho", "antigos", 0)
+        ), calls)
+        assertEquals(RoomSort.Oldest, controller.state.value.sort)
+    }
+    @Test fun `late list and pagination responses cannot overwrite a newly selected sort`() = runBlocking {
+        val source = Source(); val controller = RoomsController(source, "user")
+        val entered = CompletableDeferred<Unit>()
+        val answer = CompletableDeferred<CatalogPage<ApiRoomSummary>>()
+        val current = ApiRoomSummary(50, "Cozinha", "refrigerator", 2, "nao_avaliado")
+        source.listCall = { _, order, _ ->
+            if (order == "alfabetica") { entered.complete(Unit); answer.await() } else page(listOf(current))
+        }
+        val pending = launch { controller.loadList() }; entered.await()
+        controller.setSort(RoomSort.Recent); controller.loadList()
+        answer.complete(page()); pending.join()
+        assertEquals(listOf(current), controller.state.value.rooms)
+
+        source.listCall = { _, _, number -> page((1..20).map {
+            ApiRoomSummary(it, "Cômodo $it", "toilet", 2, "nao_avaliado")
+        }, number, 21) }
+        controller.loadList()
+        val moreEntered = CompletableDeferred<Unit>()
+        val moreAnswer = CompletableDeferred<CatalogPage<ApiRoomSummary>>()
+        source.listCall = { _, _, number -> if (number == 1) {
+            moreEntered.complete(Unit); moreAnswer.await()
+        } else page(listOf(current)) }
+        val pendingMore = launch { controller.loadMore() }; moreEntered.await()
+        controller.setSort(RoomSort.Oldest); controller.loadList()
+        moreAnswer.complete(page(listOf(current.copy(id = 21)), 1, 21)); pendingMore.join()
+        assertEquals(listOf(current), controller.state.value.rooms)
+        assertFalse(controller.state.value.moreLoading)
+        assertNull(controller.state.value.nextPage)
     }
     @Test fun `creation waits for server and blocks duplicate submission`() = runBlocking {
         val source = Source(); val controller = RoomsController(source, "user"); controller.prepareCreate()

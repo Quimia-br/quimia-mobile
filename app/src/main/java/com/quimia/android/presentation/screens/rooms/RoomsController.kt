@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 
 internal enum class RoomsStage { List, Create, Detail, Adding, Editing, Saving, Success, Error }
 internal data class RoomsState(val stage: RoomsStage = RoomsStage.List, val query: String = "",
+    val sort: RoomSort = RoomSort.Alphabetical,
     val rooms: List<ApiRoomSummary> = emptyList(), val loading: Boolean = true, val error: CatalogProblem? = null,
     val nextPage: Int? = null, val moreLoading: Boolean = false, val moreError: CatalogProblem? = null,
     val detailId: Int? = null, val detail: ApiRoom? = null, val detailLoading: Boolean = false, val detailError: CatalogProblem? = null,
@@ -29,16 +30,23 @@ internal class RoomsController(private val source: RoomsDataSource, private val 
     private val mutationLock = Mutex()
     fun setQuery(query: String) {
         if (state.value.query == query.take(100)) return
+        invalidateList { it.copy(query = query.take(100)) }
+    }
+    fun setSort(sort: RoomSort) {
+        if (state.value.sort == sort) return
+        invalidateList { it.copy(sort = sort) }
+    }
+    private fun invalidateList(change: (RoomsState) -> RoomsState) {
         listRevision++
-        mutable.update { it.copy(query = query.take(100), rooms = emptyList(), loading = true, error = null,
+        mutable.update { change(it).copy(rooms = emptyList(), loading = true, error = null,
             nextPage = null, moreLoading = false, moreError = null) }
     }
     suspend fun loadList() {
         val revision = ++listRevision
-        val query = state.value.query
+        val before = state.value
         mutable.update { it.copy(loading = true, error = null, nextPage = null, moreLoading = false, moreError = null) }
         try {
-            val page = source.list(user, query, 0); validateRoomPage(page, 0)
+            val page = source.list(user, before.query, before.sort.apiValue, 0); validateRoomPage(page, 0)
             if (revision == listRevision) mutable.update { it.copy(rooms = page.itens, loading = false, nextPage = 1.takeIf { page.totalPaginas > 1 }) }
         } catch (cancelled: CancellationException) { throw cancelled
         } catch (error: Exception) { if (revision == listRevision) mutable.update { it.copy(loading = false, error = roomsProblem(error)) } }
@@ -51,7 +59,7 @@ internal class RoomsController(private val source: RoomsDataSource, private val 
             val revision = listRevision
             mutable.update { it.copy(moreLoading = true, moreError = null) }
             try {
-                val page = source.list(user, before.query, pageNumber); validateRoomPage(page, pageNumber)
+                val page = source.list(user, before.query, before.sort.apiValue, pageNumber); validateRoomPage(page, pageNumber)
                 if (revision == listRevision) mutable.update { it.copy(rooms = (it.rooms + page.itens).distinctBy { room -> room.id },
                     moreLoading = false, nextPage = (pageNumber + 1).takeIf { it < page.totalPaginas }) }
             } catch (cancelled: CancellationException) { throw cancelled

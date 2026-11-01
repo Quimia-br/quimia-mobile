@@ -37,6 +37,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     initialRoomId: String? = null, onInitialConsumed: () -> Unit = {}) {
     val context = LocalContext.current.applicationContext
     var query by rememberSaveable(userId) { mutableStateOf("") }
+    var sort by rememberSaveable(userId) { mutableStateOf(RoomSort.Alphabetical) }
     var draftName by rememberSaveable(userId) { mutableStateOf("") }
     var draftIcon by rememberSaveable(userId) { mutableStateOf<RoomIcon?>(null) }
     var selected by rememberSaveable(userId) { mutableStateOf(emptyList<Int>()) }
@@ -46,7 +47,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     var validation by remember { mutableStateOf<String?>(null) }
     val controller = remember(context, userId) {
         RoomsController(RoomsRepository(AuthApiFactory.create(BuildConfig.AUTH_BASE_URL, RoomsApi::class.java),
-            AuthRepositoryProvider.get(context)), userId).apply { setQuery(query) }
+            AuthRepositoryProvider.get(context)), userId).apply { setQuery(query); setSort(sort) }
     }
     val state by controller.state.collectAsStateWithLifecycle()
     val latestState by rememberUpdatedState(state)
@@ -86,7 +87,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             if (current != selected) { selected = current; controller.notice("Seleção atualizada conforme os produtos disponíveis para este cômodo.") }
         }
     }
-    LaunchedEffect(controller, state.stage, state.query, reload) {
+    LaunchedEffect(controller, state.stage, state.query, state.sort, reload) {
         if (state.stage == RoomsStage.List) { delay(350); controller.loadList() }
     }
     DisposableEffect(owner, controller) {
@@ -130,7 +131,8 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                 RoomsStage.List -> RoomList(if (screenLoading) previewRooms else state.rooms.map { it.uiRoom() }, onOpen = { if (!screenLoading) scope.launch { controller.open(it.toInt()) } },
                     onCreate = { createDraft() }, onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
                     connected = true, initialQuery = query, onQueryChange = { query = it; controller.setQuery(it) },
-                    onUnavailable = controller::notice, showEmpty = !state.loading && state.error == null,
+                    selectedSort = state.sort, onSortChange = { sort = it; controller.setSort(it) },
+                    showEmpty = !state.loading && state.error == null,
                     statusContent = {
                         RoomsNotice(state.notice) { controller.notice(null) }
                         if (!screenLoading && state.loading && state.rooms.isEmpty()) CatalogLoading("Carregando cômodos…")
