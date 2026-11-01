@@ -25,7 +25,8 @@ import theme.quimiaColorTokens
 @Composable
 internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick: () -> Unit,
     onFindDropOffClick: () -> Unit, onMixturesClick: () -> Unit, onShelfClick: () -> Unit,
-    onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit = {}, mixtureRevision: Int = 0, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit) {
+    onMenuItemSelected: (Int) -> Unit, onAiClick: () -> Unit = {}, mixtureRevision: Int = 0, onProfileLoaded: (UserProfile) -> Unit, onSessionExpired: () -> Unit,
+    onOpenSavedDropOff: (Int) -> Unit = { onFindDropOffClick() }) {
     val context = LocalContext.current.applicationContext
     val auth = remember(context) { AuthRepositoryProvider.get(context) }
     val session by auth.session.collectAsStateWithLifecycle()
@@ -83,7 +84,7 @@ internal fun HomeRoute(userId: String, onSearch: (String) -> Unit, onAvatarClick
         onSearch = onSearch, onAvatarClick = onAvatarClick, onFindDropOffClick = onFindDropOffClick,
         onMixturesClick = onMixturesClick, onShelfClick = onShelfClick, onMixClick = onMixturesClick,
         onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick, dropOffDescription = pointLabel, dropOffLoading = false,
-        dropOffMap = lastPoint?.let { point -> { HomePointMap(point.id, point.nome, pointCoordinate, onFindDropOffClick) } },
+        dropOffMap = lastPoint?.let { point -> { HomePointMap(point.id, point.nome, pointCoordinate) { onOpenSavedDropOff(point.id) } } },
         profileStatus = {
             if (!screenLoading) state.profileError?.let { HomeLoadError(it, "seu perfil", ::refresh) }
         }, historyContent = {

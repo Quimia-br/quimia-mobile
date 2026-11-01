@@ -6,6 +6,16 @@ import java.util.Locale
 
 internal const val MinimumBirthYear = 1900
 
+internal fun formatBirthDate(value: String): String {
+    val digits = value.filter { it in '0'..'9' }.take(8)
+    return buildString {
+        digits.forEachIndexed { index, digit ->
+            if (index == 2 || index == 4) append('/')
+            append(digit)
+        }
+    }
+}
+
 internal data class BirthDate(val year: Int, val month: Int, val day: Int) : Comparable<BirthDate> {
     override fun compareTo(other: BirthDate): Int = compareValuesBy(this, other, { it.year }, { it.month }, { it.day })
     override fun toString(): String = String.format(Locale.ROOT, "%02d/%02d/%04d", day, month, year)

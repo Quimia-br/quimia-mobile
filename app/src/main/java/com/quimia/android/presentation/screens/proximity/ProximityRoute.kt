@@ -53,7 +53,8 @@ internal fun NearbyAddress.apiAddress(): AuthAddress {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onSessionExpired: () -> Unit) {
+internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onSessionExpired: () -> Unit,
+    initialPointId: Int? = null, onInitialPointConsumed: () -> Unit = {}) {
     val context = LocalContext.current
     val auth = remember(context) { AuthRepositoryProvider.get(context) }
     val session by auth.session.collectAsState()
@@ -76,7 +77,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
     var savedReady by remember(userId) { mutableStateOf(false) }
     var savedLoadCount by remember(userId) { mutableIntStateOf(0) }
     var savingPoint by remember { mutableStateOf(false) }
-    var selectedPoint by remember { mutableStateOf<Int?>(null) }
+    var selectedPoint by rememberSaveable(userId) { mutableStateOf(initialPointId) }
     var showSaved by remember { mutableStateOf(false) }
     var points by remember(userId) { mutableStateOf(emptyList<ApiPoint>()) }
     var nextPage by remember { mutableIntStateOf(0) }
@@ -131,6 +132,12 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         catch (_: Exception) { homeError = "Não foi possível localizar sua casa agora. Confira a conexão e tente novamente." }
         finally { homeLoading = false }
     }
+    LaunchedEffect(userId, initialPointId) {
+        initialPointId?.let { id ->
+            type = "descarte"; selectedPoint = id; listVisible = false; showSaved = false
+            onInitialPointConsumed()
+        }
+    }
     LaunchedEffect(userId, type, registered) { load() }
     LaunchedEffect(userId) { loadAddress(); loadSaved() }
     LaunchedEffect(session) { if (session == SessionState.SignedOut) onSessionExpired() }
@@ -146,6 +153,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
         try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(query)}"))) }
         catch (_: android.content.ActivityNotFoundException) { notice = "Nenhum aplicativo de mapas disponível neste aparelho." }
     }
+    val visiblePoints = nearbyVisiblePoints(points, saved, selectedPoint, type)
     Column(Modifier.fillMaxSize().background(tokens.surfaceBackground).statusBarsPadding()) {
         Spacer(Modifier.height((62.dp - WindowInsets.statusBars.asPaddingValues().calculateTopPadding()).coerceAtLeast(0.dp)))
         NearbyNavigationHeader(loadingMessage = when {
@@ -170,7 +178,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             Spacer(Modifier.height(16.dp))
         }
         Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart = 39.dp, topEnd = 39.dp))) {
-            ProximityMap(points.mapNotNull { point ->
+            ProximityMap(visiblePoints.mapNotNull { point ->
                 val coordinate = point.latitude?.let { lat -> point.longitude?.let { lng -> NearbyCoordinate(lat, lng) } }
                     ?.takeIf { it.isValid() } ?: return@mapNotNull null
                 NearbyPoint(point.id, point.nome, point.address, if (point.tipo == "descarte") NearbyCategory.Collection else NearbyCategory.Shopping,
@@ -192,7 +200,7 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             }
             if (error != null) TextButton(modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
                 onClick = { showSaved = false; listVisible = true }) { Text("Não foi possível carregar os pontos. Tentar novamente", color = tokens.foregroundPrimary) }
-            points.find { it.id == selectedPoint }?.takeIf { it.latitude != null && it.longitude != null }?.let { point ->
+            visiblePoints.find { it.id == selectedPoint }?.takeIf { it.latitude != null && it.longitude != null }?.let { point ->
                 NearbyPointCard(point = NearbyPoint(point.id, point.nome, point.address,
                     if (point.tipo == "descarte") NearbyCategory.Collection else NearbyCategory.Shopping, "", 0f, 0f,
                     NearbyCoordinate(requireNotNull(point.latitude), requireNotNull(point.longitude))),

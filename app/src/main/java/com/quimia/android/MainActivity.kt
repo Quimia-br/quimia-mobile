@@ -238,6 +238,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var favoriteProductIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<String>()) }
     var roomDraftProductId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
     var roomToOpenId by rememberSaveable(sessionUid) { mutableStateOf<String?>(null) }
+    var proximityPointToOpen by rememberSaveable(sessionUid) { mutableStateOf<Int?>(null) }
     var savedPointIds by rememberSaveable(sessionUid) { mutableStateOf(emptyList<Int>()) }
     val storedGoogleAddress = remember(sessionUid, sessionEmail) { authViewModel.savedAddress(sessionUid.orEmpty(), sessionEmail) }
     var referenceAddress by rememberSaveable(sessionUid, sessionEmail) { mutableStateOf(storedGoogleAddress.takeIf { it.size == 7 }?.let {
@@ -261,6 +262,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
     var unavailableTab by rememberSaveable { mutableStateOf<String?>(null) }
     val onMainTabSelected: (Int) -> Unit = { index ->
         homeSearch = ""
+        if (index == 3) proximityPointToOpen = null
         if (index in 0..4) selectedMainTab = index
         else unavailableTab = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
             .getOrElse(index) { "Esta tela" }
@@ -378,6 +380,7 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         )
                         3 -> ProximityRoute(
                             userId = sessionUid.orEmpty(), onMenuItemSelected = onMainTabSelected,
+                            initialPointId = proximityPointToOpen, onInitialPointConsumed = { proximityPointToOpen = null },
                             onSessionExpired = { navigateAuth(AuthDestination.Login); authViewModel.logout() },
                         )
                         else -> HomeRoute(
@@ -385,7 +388,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                             onSearch = { homeSearch = it.trim(); selectedMainTab = 1 },
                             onAvatarClick = { showProfile = true },
                             onMenuItemSelected = onMainTabSelected,
-                            onFindDropOffClick = { selectedMainTab = 3 },
+                            onFindDropOffClick = { proximityPointToOpen = null; selectedMainTab = 3 },
+                            onOpenSavedDropOff = { id -> proximityPointToOpen = id; selectedMainTab = 3 },
                             onShelfClick = { selectedMainTab = 2 },
                             onMixturesClick = { openMixtures() }, onAiClick = { showKemi = true }, mixtureRevision = homeMixtureRevision,
                             onProfileLoaded = { profile ->

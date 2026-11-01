@@ -6,6 +6,28 @@ import org.junit.Test
 class BirthDateTest {
     private val today = BirthDate(2026, 10, 26)
 
+    @Test fun manualInputFormatsDigitsAndAcceptsPastedDatesWithoutMoreThanEightDigits() {
+        assertEquals("", formatBirthDate("abc"))
+        assertEquals("14", formatBirthDate("14"))
+        assertEquals("14/1", formatBirthDate("141"))
+        assertEquals("14/11", formatBirthDate("1411"))
+        assertEquals("14/11/1995", formatBirthDate("14/11/1995"))
+        assertEquals("14/11/1995", formatBirthDate("14111995000"))
+    }
+
+    @Test fun everyCaretPositionRoundTripsThroughTheDateMaskIncludingPartialDates() {
+        for (length in 0..8) {
+            val digits = "14111995".take(length)
+            val result = BirthDateVisualTransformation.filter(androidx.compose.ui.text.AnnotatedString(digits))
+            for (offset in 0..length) {
+                val transformed = result.offsetMapping.originalToTransformed(offset)
+                assertTrue(transformed in 0..result.text.length)
+                assertEquals(offset, result.offsetMapping.transformedToOriginal(transformed))
+            }
+            for (offset in 0..result.text.length) assertTrue(result.offsetMapping.transformedToOriginal(offset) in 0..length)
+        }
+    }
+
     @Test fun birthYearStartsAt1900InAllFormsAndSerialization() {
         listOf("01/01/0099", "31/12/1899").forEach {
             assertNull(BirthDate.parse(it))

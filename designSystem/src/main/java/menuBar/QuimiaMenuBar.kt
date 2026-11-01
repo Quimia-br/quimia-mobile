@@ -4,13 +4,10 @@ import motion.LocalQuimiaMotionEnabled
 import motion.LocalQuimiaNavigationProgress
 import motion.QuimiaMotion
 import motion.quimiaPress
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -27,6 +24,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.semantics.Role
 import kotlin.math.roundToInt
 import buttons.QuimiaFABSize
@@ -108,9 +110,16 @@ fun QuimiaMenuBar(
         Lucide.Bath,
     )
     val labels = listOf("Início", "Misturas", "Minha estante", "Pontos de descarte", "Loja")
-    val localPosition = animateFloatAsState(selectedIndex.toFloat(), QuimiaMotion.settleSpec(LocalQuimiaMotionEnabled.current), label = "QuimiaMenuPosition")
-    val sharedPosition = LocalQuimiaNavigationProgress.current?.takeIf { it.target == selectedIndex }?.position
-    val position = sharedPosition ?: localPosition
+    val sharedProgress = LocalQuimiaNavigationProgress.current?.takeIf { it.target == selectedIndex }
+    val progress = sharedProgress ?: motion.rememberQuimiaNavigationProgress(selectedIndex)
+    val latestSelected = rememberUpdatedState(selectedIndex)
+    val latestCommit = rememberUpdatedState<(Int) -> Unit> { index ->
+        if (index != selectedIndex) { sound(feedback.QuimiaSound.Navigation); onItemSelected(index) }
+    }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val highlightedIndex by remember(progress.drag, selectedIndex, icons.size) { derivedStateOf {
+        if (progress.drag.dragging) progress.drag.position.roundToInt().coerceIn(0, (icons.size - 1).coerceAtLeast(0)) else selectedIndex
+    } }
 
     androidx.compose.runtime.CompositionLocalProvider(theme.LocalQuimiaSkeleton provides false) {
     Box(modifier = modifier.fillMaxWidth().height(if (fab == null) QuimiaMenuBarHeight else QuimiaMenuBarHeight + QuimiaFABSize + fabSpacing)) {
@@ -121,16 +130,15 @@ fun QuimiaMenuBar(
                 .height(QuimiaMenuBarHeight)
                 .background(tokens.secondary, RoundedCornerShape(RadiusFull.dp))
                 .quimiaContrastOutline(RoundedCornerShape(RadiusFull.dp))
-                .padding(horizontal = 10.dp, vertical = 14.dp),
+                .padding(horizontal = 10.dp, vertical = 14.dp)
+                .semantics { contentDescription = "Menu principal" }
+                .liquidMenuDrag(progress, icons.size, rtl, latestSelected, latestCommit),
         ) {
             val itemWidth = maxWidth / icons.size.coerceAtLeast(1)
-            if (selectedIndex in icons.indices) Box(
-                Modifier.offset { IntOffset((position.value.coerceIn(0f, (icons.size - 1).toFloat()) * itemWidth.toPx()).roundToInt(), 0) }
-                    .width(itemWidth).height(56.dp).background(tokens.white, CircleShape),
-            )
+            if (selectedIndex in icons.indices) QuimiaLiquidMenuIndicator(progress, icons.size, Modifier.matchParentSize())
             Row(Modifier.fillMaxWidth().selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
             icons.forEachIndexed { index, element ->
-                val itemIconColor = if (index == selectedIndex && (quimiaHighContrastEnabled() || tokens.surfaceBackground == DarkTokens.surfaceBackground))
+                val itemIconColor = if (index == highlightedIndex && (quimiaHighContrastEnabled() || tokens.surfaceBackground == DarkTokens.surfaceBackground))
                     theme.LightTokens.foregroundPrimary else iconColor
                 val interactions = remember(index) { MutableInteractionSource() }
                 val pressed by interactions.collectIsPressedAsState()
