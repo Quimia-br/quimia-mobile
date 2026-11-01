@@ -132,7 +132,7 @@ internal fun HomeApiHistoryCard(item: HomeMixture, onClick: () -> Unit) {
 internal fun HomeHistoryDetails(item: HomeMixture, onClose: () -> Unit) {
     val tokens = quimiaColorTokens()
     ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         containerColor = tokens.surfaceBase, scrimColor = CatalogModalScrimColor, shape = RoundedCornerShape(40.dp), dragHandle = null) {
         HideSystemNavigationBar()
         Column(Modifier.fillMaxWidth().heightIn(max = 700.dp).quimiaContrastOutline(RoundedCornerShape(40.dp))) {

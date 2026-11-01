@@ -159,9 +159,9 @@ internal fun MixtureResultSheet(result: MixtureResult, onClose: () -> Unit, onSa
         MixtureResultContent(result, onClose, onSave, saved)
     }
     if (LocalInspectionMode.current) Box(Modifier.fillMaxSize().background(CatalogModalScrimColor).statusBarsPadding().padding(17.dp), contentAlignment = Alignment.BottomCenter) {
-        Surface(Modifier.widthIn(max = 560.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) { content() }
+        Surface(Modifier.widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp)).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) { content() }
     } else ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = 560.dp,
+        modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp, vertical = 16.dp), sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         containerColor = tokens.surfaceBase, scrimColor = CatalogModalScrimColor, shape = RoundedCornerShape(40.dp), dragHandle = null) {
         HideSystemNavigationBar()
         content()

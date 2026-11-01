@@ -219,7 +219,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                         statusContent = {
                             RoomsNotice(state.notice) { controller.notice(null) }
                             if (state.busy) CatalogLoading("Atualizando cômodo…")
-                            state.mutationError?.let { Text(it.message, Modifier.padding(24.dp), color = tokens.textPrimary) }
+                            state.mutationError?.let { toast.QuimiaToast(message = it.message, type = QuimiaToastType.Error, modifier = Modifier.padding(24.dp)) }
                         })
                 } ?: Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     QuimiaNav(showBackButton = true, onBackClick = controller::showList, onCloseClick = controller::showList)
@@ -253,7 +253,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     if (deleting) RoomDeleteConfirmation(state.detail?.nome.orEmpty(), busy = state.busy,
         onDismiss = { if (!state.busy) { deleting = false; controller.clearMutationError() } },
         onConfirm = { scope.launch { controller.delete(); if (controller.state.value.mutationError == null) deleting = false } },
-        statusContent = { state.mutationError?.let { Text(it.message, color = tokens.textPrimary) } })
+        statusContent = { state.mutationError?.let { toast.QuimiaToast(message = it.message, type = QuimiaToastType.Error) } })
     action?.let { product -> ShelfActionsPanel(product, onDismiss = { action = null }, showMixtures = false,
         onMixtures = {}, onInformation = { action = null; information = product }, onRemove = { action = null; removal = product }) }
     information?.let { ShelfProductInformation(it, onDismiss = { information = null }) }
@@ -264,14 +264,13 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
                 if (state.mutationError != null) state.detailId?.let { id -> scope.launch { controller.open(id) } }
             }
         }
-        AlertDialog(onDismissRequest = ::dismissRemoval,
-            containerColor = tokens.surfaceBase, title = { Text("Remover ${product.name} deste cômodo?", color = tokens.textPrimary) },
-            text = { Column { Text("O produto continua salvo na sua estante.", color = tokens.textSecondary)
-                state.mutationError?.let { Text(it.message, color = tokens.textPrimary) } } },
-            confirmButton = { QuimiaButton(text = if (state.busy) "Removendo…" else "Remover", enabled = !state.busy,
-                containerColor = ShelfRemovalColor, textColor = tokens.white, iconSize = 0, espacamento = 0, onClick = {
-                    scope.launch { controller.remove(product.id.toInt()); if (controller.state.value.mutationError == null) removal = null }
-                }) }, dismissButton = { TextButton(enabled = !state.busy, onClick = ::dismissRemoval) { Text("Cancelar", color = tokens.textPrimary) } })
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+            title = "Remover ${product.name} deste cômodo?", description = "O produto continua salvo na sua estante.",
+            kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Destructive,
+            onDismiss = ::dismissRemoval, action = if (state.busy) "Removendo…" else "Remover", busy = state.busy,
+            secondaryAction = "Cancelar", onConfirm = {
+                scope.launch { controller.remove(product.id.toInt()); if (controller.state.value.mutationError == null) removal = null }
+            }, statusContent = { state.mutationError?.let { toast.QuimiaToast(message = it.message, type = QuimiaToastType.Error) } })
     }
 }
 

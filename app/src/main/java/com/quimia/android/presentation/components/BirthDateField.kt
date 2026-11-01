@@ -81,13 +81,13 @@ internal fun BirthDateSheet(value: String, onDismiss: () -> Unit, onSave: (Strin
     }
     val shape = RoundedCornerShape(40.dp)
     if (LocalInspectionMode.current) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-        Surface(Modifier.widthIn(max = 360.dp).fillMaxWidth().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
+        Surface(Modifier.widthIn(max = quimiaOverlayWidth(360.dp)).fillMaxWidth().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
             color = quimiaColorTokens().surfaceBase, shape = shape, shadowElevation = 12.dp, border = quimiaContrastBorder()) {
             QuimiaBottomSheetContent(title = null, showDragHandle = false, showCloseButton = false,
                 contentHeight = null, content = content)
         }
     } else QuimiaBottomSheet(isVisible = true, onDismissRequest = onDismiss, title = null,
-        showDragHandle = false, showCloseButton = false, sheetMaxWidth = 360.dp, contentHeight = null,
+        showDragHandle = false, showCloseButton = false, sheetMaxWidth = quimiaOverlayWidth(360.dp), contentHeight = null,
         modifier = Modifier.statusBarsPadding().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
         shape = shape, scrimColor = Color.Transparent, content = content)
 }
@@ -101,7 +101,7 @@ private fun BirthCalendar(year: Int, month: Int, selected: BirthDate?, today: Bi
     var monthMenu by remember { mutableStateOf(false) }
     var yearMenu by remember { mutableStateOf(false) }
     Surface(color = tokens.surfaceBackground, shape = RoundedCornerShape(24.dp), border = quimiaContrastBorder(),
-        modifier = Modifier.fillMaxWidth().height(322.dp)) {
+        modifier = Modifier.fillMaxWidth().height(if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600) 380.dp else 322.dp)) {
         Column(Modifier.padding(20.dp)) {
             Row(Modifier.fillMaxWidth().height(32.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) {
@@ -118,7 +118,7 @@ private fun BirthCalendar(year: Int, month: Int, selected: BirthDate?, today: Bi
                         Box(Modifier.size(112.dp, 240.dp)) {
                             val listState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = (today.year - year).coerceAtLeast(0))
                             LazyColumn(state = listState) {
-                                items((today.year downTo 1).toList()) { item -> DropdownMenuItem(text = { Text(item.toString(), style = QuimiaTextStyles.medium14) },
+                                items((today.year downTo MinimumBirthYear).toList()) { item -> DropdownMenuItem(text = { Text(item.toString(), style = QuimiaTextStyles.medium14) },
                                     onClick = { onYear(item); yearMenu = false }) }
                             }
                         }
@@ -145,7 +145,7 @@ private fun BirthCalendar(year: Int, month: Int, selected: BirthDate?, today: Bi
                             val enabled = date != null && date <= today
                             val chosen = date != null && date == selected
                             Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                                if (day != null) Box(Modifier.size(32.dp)
+                                if (day != null) Box(Modifier.size(if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600) 40.dp else 32.dp)
                                     .background(if (chosen) tokens.primary else Color.Transparent, CircleShape)
                                     .clickable(enabled = enabled, role = Role.RadioButton) { onDay(day) }
                                     .semantics { this.selected = chosen; contentDescription = date.toString() }, contentAlignment = Alignment.Center) {

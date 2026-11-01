@@ -72,7 +72,7 @@ internal fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp,
         ShelfOverlayPreview(Alignment.BottomCenter, background = previewBackground) {
             Surface(
                 modifier = Modifier.statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = bottomMargin)
-                    .widthIn(max = 560.dp).fillMaxWidth(),
+                    .widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp)).fillMaxWidth(),
                 color = tokens.surfaceBase, shape = RoundedCornerShape(40.dp),
                 border = quimiaContrastBorder(),
             ) {
@@ -85,7 +85,7 @@ internal fun ShelfFloatingPanel(onDismiss: () -> Unit, bottomMargin: Dp = 26.dp,
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         modifier = Modifier.statusBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = bottomMargin),
-        sheetMaxWidth = 560.dp, containerColor = tokens.surfaceBase, shape = RoundedCornerShape(40.dp),
+        sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp), containerColor = tokens.surfaceBase, shape = RoundedCornerShape(40.dp),
         scrimColor = CatalogModalScrimColor, dragHandle = null,
     ) {
         HideSystemNavigationBar()
@@ -219,53 +219,13 @@ internal fun ShelfConfirmation(
     onDismiss: () -> Unit, onConfirm: () -> Unit,
     busy: Boolean = false, statusContent: (@Composable () -> Unit)? = null,
 ) {
-    val tokens = quimiaColorTokens()
-    val confirmation: @Composable () -> Unit = {
-        Surface(Modifier.widthIn(max = 297.dp).fillMaxWidth(), shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                QuimiaShapeIcon(
-                    size = 76.dp, icon = if (destructive) Lucide.TriangleAlert else Lucide.Info,
-                    containerColor = if (destructive) ShelfRemovalColor else tokens.surfaceBackground,
-                    iconColor = if (destructive) tokens.white else tokens.foregroundPrimary,
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(title, Modifier.fillMaxWidth(), style = ShelfBodyStyle.copy(fontSize = 16.sp, lineHeight = 19.sp),
-                        color = tokens.foregroundPrimary, textAlign = TextAlign.Center)
-                    description?.let {
-                        Text(it, Modifier.fillMaxWidth(), style = ShelfBodyStyle.copy(fontSize = 12.sp, lineHeight = 14.sp),
-                            color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
-                    }
-                }
-                statusContent?.invoke()
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    QuimiaButton(
-                        modifier = Modifier.weight(1f).height(43.dp), text = "Cancelar", iconSize = 0, espacamento = 0,
-                        textStyle = ShelfBodyStyle.copy(fontSize = 16.sp), containerColor = tokens.secondary,
-                        textColor = tokens.foregroundPrimary, enabled = !busy, onClick = onDismiss,
-                    )
-                    QuimiaButton(
-                        modifier = Modifier.weight(1f).height(43.dp), text = action, iconSize = 0, espacamento = 0,
-                        textStyle = ShelfBodyStyle.copy(fontSize = 16.sp),
-                        containerColor = if (destructive) ShelfRemovalColor else tokens.primary,
-                        textColor = if (destructive) tokens.white else tokens.foregroundPrimary, enabled = !busy, onClick = onConfirm,
-                    )
-                }
-            }
-        }
-    }
-    if (LocalInspectionMode.current) {
-        ShelfOverlayPreview(Alignment.Center, content = confirmation)
-    } else {
-        Dialog(onDismissRequest = { if (!busy) onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            HideSystemNavigationBar()
-            val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-            SideEffect { window?.setDimAmount(0.08f) }
-            confirmation()
-        }
-    }
+    val kind = if (destructive) com.quimia.android.presentation.components.QuimiaFeedbackKind.Destructive
+        else com.quimia.android.presentation.components.QuimiaFeedbackKind.Info
+    if (LocalInspectionMode.current) ShelfOverlayPreview(Alignment.Center) {
+        com.quimia.android.presentation.components.QuimiaFeedbackCard(title, description, kind, action, onConfirm,
+            secondaryAction = "Cancelar", onSecondary = onDismiss, busy = busy, statusContent = statusContent)
+    } else com.quimia.android.presentation.components.QuimiaFeedbackDialog(title, onDismiss, description, kind,
+        action, onConfirm, secondaryAction = "Cancelar", busy = busy, statusContent = statusContent)
 }
 
 @Composable

@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.size
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.AsyncImagePainter
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -139,10 +138,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         if (settings.ready && settings.error != null) {
-                            AlertDialog(onDismissRequest = preferencesViewModel::dismissError,
-                                text = { Text(settings.error.orEmpty()) },
-                                confirmButton = { TextButton(onClick = preferencesViewModel::retrySave) { Text("Tentar novamente") } },
-                                dismissButton = { TextButton(onClick = preferencesViewModel::dismissError) { Text("Fechar") } })
+                            com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+                                title = "Não foi possível salvar suas preferências", description = settings.error,
+                                kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error,
+                                onDismiss = preferencesViewModel::dismissError, action = "Tentar novamente",
+                                onConfirm = preferencesViewModel::retrySave, secondaryAction = "Fechar")
                         }
                     }
                     }
@@ -432,12 +432,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                     }
                 }
                 unavailableTab?.let { name ->
-                    AlertDialog(
-                        onDismissRequest = { unavailableTab = null },
-                        title = { Text(name) },
-                        text = { Text("Esta tela ainda não está disponível.") },
-                        confirmButton = { TextButton(onClick = { unavailableTab = null }) { Text("Entendi") } },
-                    )
+                    com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+                        title = name, description = "Esta tela ainda não está disponível.", onDismiss = { unavailableTab = null })
                 }
             }
         }
@@ -506,15 +502,16 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                 type = toast.QuimiaToastType.Loading)
         }
     }
-    if (!authBusy && sessionProblem != null) AlertDialog(
-        onDismissRequest = {}, title = { Text("Não foi possível conferir sua sessão") },
-        text = { Text(sessionProblem.orEmpty()) },
-        confirmButton = { TextButton(onClick = authViewModel::retrySession) { Text("Tentar novamente") } },
-        dismissButton = { TextButton(onClick = { navigateAuth(AuthDestination.Login); authViewModel.logout() }) { Text("Ir para login") } },
+    if (!authBusy && sessionProblem != null) com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+        title = "Não foi possível conferir sua sessão", description = sessionProblem,
+        kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error,
+        onDismiss = {}, dismissible = false, action = "Tentar novamente", onConfirm = authViewModel::retrySession,
+        secondaryAction = "Ir para login", onSecondary = { navigateAuth(AuthDestination.Login); authViewModel.logout() },
     )
     authNotice?.let { notice ->
-        AlertDialog(onDismissRequest = { authNotice = null }, title = { Text("Autenticação") },
-            text = { Text(notice) }, confirmButton = { TextButton(onClick = { authNotice = null }) { Text("Entendi") } })
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(title = "Não foi possível continuar",
+            description = notice, kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error,
+            onDismiss = { authNotice = null })
     }
     }
 }

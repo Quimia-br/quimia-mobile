@@ -66,7 +66,7 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
         Box(Modifier.fillMaxSize()) {
             ProximityScreen(initialHeaderExpanded = false)
             Box(Modifier.fillMaxSize().background(CatalogModalScrimColor), contentAlignment = Alignment.BottomCenter) {
-                Surface(Modifier.statusBarsPadding().padding(horizontal = 17.dp).widthIn(max = 560.dp).fillMaxWidth(),
+                Surface(Modifier.statusBarsPadding().padding(horizontal = 17.dp).widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp)).fillMaxWidth(),
                     shape = RoundedCornerShape(40.dp), color = tokens.secondary, border = quimiaContrastBorder(), content = sheetContent)
             }
         }
@@ -74,7 +74,7 @@ private fun NearbyFloatingSheet(onDismiss: () -> Unit, content: @Composable Colu
         ModalBottomSheet(
             onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp),
-            sheetMaxWidth = 560.dp, shape = RoundedCornerShape(40.dp), containerColor = tokens.secondary,
+            sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp), shape = RoundedCornerShape(40.dp), containerColor = tokens.secondary,
             scrimColor = CatalogModalScrimColor, dragHandle = null,
         ) {
             HideSystemNavigationBar()

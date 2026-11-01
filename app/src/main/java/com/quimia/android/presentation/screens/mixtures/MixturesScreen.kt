@@ -184,7 +184,9 @@ fun MixturesScreen(
             }
         }
         }
-        SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter).padding(24.dp))
+        SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter).padding(24.dp)) { data ->
+            toast.QuimiaToast(message = data.visuals.message, type = toast.QuimiaToastType.Success, onDismiss = data::dismiss)
+        }
         pickerSlot?.let { slot ->
             MixturePicker(products, substances, state.slots[1 - slot], state.slots[slot], onDismiss = { pickerSlot = null },
                 onUse = { if (controller.select(slot, it)) pickerSlot = null },

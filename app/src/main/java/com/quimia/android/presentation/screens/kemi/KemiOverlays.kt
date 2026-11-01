@@ -59,7 +59,7 @@ internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>,
             offset.animateTo(if (panel == KemiPanel.Expanded) 0f else collapsedPx, QuimiaMotion.settleSpec(motionEnabled))
         }
         val dragState = rememberDraggableState { delta -> dragOffset = (dragOffset + delta).coerceIn(0f, collapsedPx) }
-        Surface(modifier = Modifier.widthIn(max = 594.dp).fillMaxWidth()
+        Surface(modifier = Modifier.widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(594.dp, 840.dp)).fillMaxWidth()
             .padding(horizontal = 17.dp).padding(bottom = 22.dp)
             .offset { IntOffset(0, (if (dragging) dragOffset else offset.value).roundToInt()) }
             .height(contentHeight), color = tokens.surfaceBase, shape = RoundedCornerShape(40.dp), shadowElevation = 24.dp) {
@@ -112,37 +112,9 @@ internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>,
 
 @Composable
 internal fun KemiNewChatDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    val tokens = quimiaColorTokens()
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        HideSystemNavigationBar()
-        val view = LocalView.current
-        SideEffect {
-            (view.parent as? DialogWindowProvider)?.window?.let { window ->
-                window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                window.setDimAmount(.08f)
-            }
-        }
-        Surface(color = tokens.surfaceBase, shape = RoundedCornerShape(40.dp),
-            modifier = Modifier.padding(16.dp).widthIn(max = 297.dp).fillMaxWidth()) {
-            Column(Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                QuimiaShapeIcon(size = 76.dp, icon = Lucide.TriangleAlert)
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Tem certeza que quer abrir um novo chat e encerrar o atual?",
-                        style = QuimiaTextStyles.medium16, color = tokens.foregroundPrimary, textAlign = TextAlign.Center)
-                    Text("Ao abrir um novo chat, você não pode voltar a interagir com chats anteriores.",
-                        style = QuimiaTextStyles.medium12, color = tokens.foregroundSubtle, textAlign = TextAlign.Center)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    QuimiaButton(text = "Cancelar", onClick = onDismiss, iconSize = 0, espacamento = 0,
-                        textStyle = QuimiaTextStyles.medium16, containerColor = tokens.secondary,
-                        textColor = tokens.foregroundPrimary, modifier = Modifier.weight(1f).height(43.dp),
-                        contentPadding = PaddingValues(0.dp))
-                    QuimiaButton(text = "Abrir", onClick = onConfirm, iconSize = 0, espacamento = 0,
-                        textStyle = QuimiaTextStyles.medium16, textColor = LightTokens.foregroundPrimary,
-                        modifier = Modifier.weight(1f).height(43.dp), contentPadding = PaddingValues(0.dp))
-                }
-            }
-        }
-    }
+    com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+        title = "Tem certeza que quer abrir um novo chat e encerrar o atual?",
+        description = "Ao abrir um novo chat, você não pode voltar a interagir com chats anteriores.",
+        onDismiss = onDismiss, action = "Abrir", onConfirm = onConfirm, secondaryAction = "Cancelar",
+    )
 }

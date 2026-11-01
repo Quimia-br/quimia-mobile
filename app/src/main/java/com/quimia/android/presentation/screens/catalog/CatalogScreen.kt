@@ -43,7 +43,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -356,12 +355,8 @@ fun CatalogScreen(
     }
 
     dialogMessage?.let { message ->
-        AlertDialog(
-            onDismissRequest = { dialogMessage = null },
-            title = { Text("Catálogo") },
-            text = { Text(message) },
-            confirmButton = { TextButton(onClick = { dialogMessage = null }) { Text("Entendi") } },
-        )
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+            title = message, onDismiss = { dialogMessage = null })
     }
 }
 
@@ -505,7 +500,7 @@ internal fun CatalogProductDetailsSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 8.dp),
-        sheetMaxWidth = 560.dp,
+        sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         shape = RoundedCornerShape(36.dp),
         containerColor = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
@@ -711,7 +706,7 @@ private fun CatalogDetailsPreviewContent(product: CatalogProduct) {
                 CatalogProductDetailsContent(
                     product = product, saved = false,
                     onDismiss = {}, onSave = {},
-                    modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+                    modifier = Modifier.widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp)).fillMaxWidth(),
                 )
             }
         }

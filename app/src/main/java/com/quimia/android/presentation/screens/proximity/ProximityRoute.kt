@@ -266,6 +266,9 @@ internal fun ProximityRoute(userId: String, onMenuItemSelected: (Int) -> Unit, o
             address = repository.saveAddress(userId, body.copy(latitude = coordinate?.latitude, longitude = coordinate?.longitude))
             addressError = null
         })
-    notice?.takeIf { !listVisible }?.let { text -> AlertDialog(onDismissRequest = { notice = null }, text = { Text(text) },
-        confirmButton = { TextButton(onClick = { notice = null }) { Text("Entendi") } }) }
+    notice?.takeIf { !listVisible }?.let { text ->
+        com.quimia.android.presentation.components.QuimiaFeedbackDialog(title = text, onDismiss = { notice = null },
+            kind = if (text == "Ponto salvo com sucesso" || text == "Ponto removido dos salvos")
+                com.quimia.android.presentation.components.QuimiaFeedbackKind.Success else com.quimia.android.presentation.components.QuimiaFeedbackKind.Info)
+    }
 }

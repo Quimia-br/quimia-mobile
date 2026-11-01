@@ -142,9 +142,9 @@ fun ProfileScreen(
             photo = photo, onEdit = ::openEditor, onPhoto = onPhoto, onLogout = { confirmLogout = true })
     }
 
-    if (!editVisible && message != null) androidx.compose.material3.AlertDialog(
-        onDismissRequest = { message = null }, text = { Text(message.orEmpty()) },
-        confirmButton = { androidx.compose.material3.TextButton(onClick = { message = null }) { Text("Entendi") } })
+    if (!editVisible && !photoVisible && message != null) com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+        title = "Não foi possível atualizar seu perfil", description = message,
+        kind = com.quimia.android.presentation.components.QuimiaFeedbackKind.Error, onDismiss = { message = null })
     if (photoVisible) ProfilePhotoSheet(displayName, photo, message, saving = saving,
         onDismiss = { if (!saving) { photoVisible = false; message = null } },
         onChoose = { if (!saving) photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
@@ -349,13 +349,13 @@ private fun ProfileEditScreen(
 private fun ProfilePhotoSheet(name: String, photo: Painter?, message: String?, onDismiss: () -> Unit, onChoose: () -> Unit, onCamera: () -> Unit = {}, saving: Boolean = false) {
     val content: @Composable ColumnScope.() -> Unit = { ProfilePhotoContent(name, photo, message, onDismiss, onChoose, onCamera, saving) }
     if (LocalInspectionMode.current) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-        Surface(Modifier.widthIn(max = 594.dp).fillMaxWidth().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
+        Surface(Modifier.widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(594.dp, 840.dp)).fillMaxWidth().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
             shape = RoundedCornerShape(40.dp), color = quimiaColorTokens().surfaceBase, shadowElevation = 12.dp, border = quimiaContrastBorder()) {
             QuimiaBottomSheetContent(title = null, showDragHandle = false, showCloseButton = false, contentHeight = null,
                 contentPadding = PaddingValues(start = 32.dp, top = 32.dp, end = 32.dp, bottom = 27.dp), content = content)
         }
     } else QuimiaBottomSheet(isVisible = true, onDismissRequest = onDismiss, title = null,
-        showDragHandle = false, showCloseButton = false, sheetMaxWidth = 594.dp, contentHeight = null,
+        showDragHandle = false, showCloseButton = false, sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(594.dp, 840.dp), contentHeight = null,
         modifier = Modifier.statusBarsPadding().padding(start = 17.dp, end = 17.dp, bottom = 11.dp),
         contentPadding = PaddingValues(start = 32.dp, top = 32.dp, end = 32.dp, bottom = 27.dp),
         shape = RoundedCornerShape(40.dp), scrimColor = Color.Black.copy(alpha = .08f), content = content)
@@ -390,21 +390,8 @@ private fun ProfilePhotoContent(name: String, photo: Painter?, message: String?,
 
 @Composable
 private fun ProfileLogoutConfirmation(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    val tokens = quimiaColorTokens()
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(40.dp), color = tokens.surfaceBase, border = quimiaContrastBorder()) {
-            Column(Modifier.widthIn(max = 400.dp).padding(horizontal = 32.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                shapeIcon.QuimiaShapeIcon(size = 76.dp, icon = Lucide.TriangleAlert, containerColor = tokens.surfaceBackground)
-                Text("Tem certeza que quer sair da sua conta?", style = QuimiaTextStyles.medium16,
-                    color = tokens.foregroundPrimary, textAlign = TextAlign.Center)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    QuimiaButton(text = "Sair", modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        iconSize = 0, espacamento = 0, containerColor = tokens.secondary, onClick = onConfirm)
-                    QuimiaButton(text = "Cancelar", modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        iconSize = 0, espacamento = 0, onClick = onDismiss)
-                }
-            }
-        }
-    }
+    com.quimia.android.presentation.components.QuimiaFeedbackDialog(
+        title = "Tem certeza que quer sair da sua conta?", onDismiss = onDismiss,
+        action = "Sair", onConfirm = onConfirm, secondaryAction = "Cancelar",
+    )
 }

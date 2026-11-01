@@ -6,6 +6,18 @@ import org.junit.Test
 class BirthDateTest {
     private val today = BirthDate(2026, 10, 26)
 
+    @Test fun birthYearStartsAt1900InAllFormsAndSerialization() {
+        listOf("01/01/0099", "31/12/1899").forEach {
+            assertNull(BirthDate.parse(it))
+            assertNotNull(completeBirthDateError(it, today))
+            assertNotNull(com.quimia.android.presentation.screens.auth.authRegistrationBirthDateError(it, today))
+            assertTrue(runCatching { com.quimia.android.presentation.screens.auth.authApiBirthDate(it) }.isFailure)
+            assertTrue(runCatching { com.quimia.android.presentation.screens.profile.profileIsoDate(it) }.isFailure)
+        }
+        assertEquals("1900-01-01", com.quimia.android.presentation.screens.auth.authApiBirthDate("01/01/1900"))
+        assertNull(completeBirthDateError("01/01/1900", today))
+    }
+
     @Test fun rejectsImpossibleDatesAndUsesGregorianLeapYears() {
         listOf("29/02/2001", "29/02/1900", "31/04/2000", "00/01/2000", "01/00/2000", "01/01/0000", "01/01", "1/1/2000")
             .forEach { assertNull(it, BirthDate.parse(it)) }

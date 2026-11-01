@@ -79,7 +79,7 @@ internal fun LabelScannerSheet(visible: Boolean, onDismiss: () -> Unit, onBarcod
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp),
-        sheetMaxWidth = 560.dp,
+        sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
         shape = RoundedCornerShape(36.dp),
         containerColor = tokens.surfaceBase,
         contentColor = tokens.textPrimary,
@@ -247,7 +247,7 @@ private fun LabelScannerOverlayPreview() {
             CatalogScreen(previewItemLimit = 3, initialBannerVisible = false)
             Box(Modifier.fillMaxSize().background(CatalogModalScrimColor))
             Surface(
-                modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp)
+                modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp))
                     .fillMaxWidth().padding(horizontal = 16.dp).navigationBarsPadding(),
                 color = quimiaColorTokens().surfaceBase,
                 shape = RoundedCornerShape(36.dp),

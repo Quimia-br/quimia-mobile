@@ -139,7 +139,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
     removal?.let { product ->
         ShelfRemoveConfirmation(product, onDismiss = { removal = null; controller.clearRemoval() },
             onConfirm = { scope.launch { controller.remove(product.id.toInt()) } }, busy = state.removingId != null,
-            statusContent = { state.removeError?.let { Text(it.message, color = quimiaColorTokens().textPrimary, style = Typography.bodyMedium) } })
+            statusContent = { state.removeError?.let { toast.QuimiaToast(message = it.message, type = toast.QuimiaToastType.Error) } })
     }
     state.infoId?.let { id -> products.find { it.id == id.toString() }?.let { product ->
         ShelfProductInformation(product, controller::closeInformation) {

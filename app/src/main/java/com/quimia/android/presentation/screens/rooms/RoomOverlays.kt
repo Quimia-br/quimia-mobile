@@ -66,7 +66,7 @@ internal fun RoomAddProductsPanel(products: List<CatalogProduct>, selected: List
     BoxWithConstraints(Modifier.fillMaxSize()) {
         QuimiaBottomSheet(isVisible = true, onDismissRequest = { if (!busy) onDismiss() },
             title = "Adicionar produto", titleTextStyle = QuimiaTextStyles.medium20, closeButtonColor = tokens.secondary, showDragHandle = false,
-            theme = QuimiaBottomSheetTheme.Secondary, sheetMaxWidth = 560.dp,
+            theme = QuimiaBottomSheetTheme.Secondary, sheetMaxWidth = com.quimia.android.presentation.components.quimiaOverlayWidth(560.dp, 840.dp),
             modifier = Modifier.statusBarsPadding().padding(horizontal = 17.dp).padding(bottom = 17.dp),
             shape = RoundedCornerShape(40.dp), scrimColor = CatalogModalScrimColor,
             contentHeight = (maxHeight * .84f).coerceAtMost(850.dp),

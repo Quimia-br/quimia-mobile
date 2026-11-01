@@ -4,6 +4,8 @@ import java.util.Calendar
 import java.util.GregorianCalendar
 import java.util.Locale
 
+internal const val MinimumBirthYear = 1900
+
 internal data class BirthDate(val year: Int, val month: Int, val day: Int) : Comparable<BirthDate> {
     override fun compareTo(other: BirthDate): Int = compareValuesBy(this, other, { it.year }, { it.month }, { it.day })
     override fun toString(): String = String.format(Locale.ROOT, "%02d/%02d/%04d", day, month, year)
@@ -15,7 +17,7 @@ internal data class BirthDate(val year: Int, val month: Int, val day: Int) : Com
             val day = value.take(2).toInt()
             val month = value.substring(3, 5).toInt()
             val year = value.takeLast(4).toInt()
-            if (year !in 1..9999 || month !in 1..12 || day !in 1..daysInMonth(year, month)) return null
+            if (year !in MinimumBirthYear..9999 || month !in 1..12 || day !in 1..daysInMonth(year, month)) return null
             return BirthDate(year, month, day)
         }
     }
@@ -42,6 +44,8 @@ internal fun isLegacyBirthDate(value: String): Boolean =
 internal fun completeBirthDateError(value: String, today: BirthDate = BirthDate.today()): String? {
     if (value.isBlank()) return null
     if (isLegacyBirthDate(value)) return "Selecione também o ano de nascimento."
+    if (value.matches(Regex("\\d{2}/\\d{2}/\\d{4}")) && value.takeLast(4).toInt() < MinimumBirthYear)
+        return "O ano de nascimento deve ser 1900 ou posterior."
     val date = BirthDate.parse(value) ?: return "Informe uma data válida no formato DD/MM/AAAA."
     return if (date > today) "A data de nascimento não pode estar no futuro." else null
 }
