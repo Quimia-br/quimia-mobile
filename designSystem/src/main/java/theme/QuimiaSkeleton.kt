@@ -14,14 +14,28 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 val LocalQuimiaSkeleton = staticCompositionLocalOf { false }
+private val LocalSkeletonOpacity = staticCompositionLocalOf<State<Float>?> { null }
+
+/** One pulse per loading page; its value is read during drawing, never by the page composition. */
+@Composable
+fun QuimiaSkeleton(enabled: Boolean, content: @Composable () -> Unit) {
+    val opacity = if (enabled) rememberSkeletonOpacity() else null
+    CompositionLocalProvider(LocalQuimiaSkeleton provides enabled, LocalSkeletonOpacity provides opacity, content = content)
+}
+
+@Composable
+fun rememberSkeletonOpacity(): State<Float> {
+    LocalSkeletonOpacity.current?.let { return it }
+    return if (motion.LocalQuimiaMotionEnabled.current) {
+        rememberInfiniteTransition(label = "skeletonPulse").animateFloat(motion.QuimiaMotion.SkeletonMin, motion.QuimiaMotion.SkeletonMax,
+            infiniteRepeatable(tween(motion.QuimiaMotion.SkeletonPeriod, easing = motion.QuimiaMotion.Easing), RepeatMode.Reverse), label = "skeletonOpacity")
+    } else rememberUpdatedState(.16f)
+}
 
 /** Keep the real component's measured bounds, hiding its data and interactions while loading. */
 fun Modifier.quimiaSkeleton(radius: Dp = 24.dp): Modifier = composed {
     if (!LocalQuimiaSkeleton.current) return@composed this
-    val alpha = if (motion.LocalQuimiaMotionEnabled.current) {
-        rememberInfiniteTransition(label = "screenSkeleton").animateFloat(motion.QuimiaMotion.SkeletonMin, motion.QuimiaMotion.SkeletonMax,
-            infiniteRepeatable(tween(motion.QuimiaMotion.SkeletonPeriod, easing = motion.QuimiaMotion.Easing), RepeatMode.Reverse), label = "skeletonOpacity")
-    } else rememberUpdatedState(.16f)
+    val alpha = rememberSkeletonOpacity()
     val color = quimiaColorTokens().textPrimary
     this.drawWithContent { drawRoundRect(color.copy(alpha = alpha.value), cornerRadius = CornerRadius(radius.toPx())) }
         .clearAndSetSemantics { stateDescription = "Carregando" }

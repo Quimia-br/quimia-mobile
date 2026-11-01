@@ -121,6 +121,7 @@ class MainActivity : ComponentActivity() {
                 QuimiaTheme(darkTheme = dark, highContrast = preferences.theme == ProfileTheme.HighContrast,
                     useDyslexicFont = preferences.dyslexicFont) {
                     HideSystemNavigationBar()
+                    com.quimia.android.presentation.system.QuimiaPerformance {
                     com.quimia.android.presentation.system.QuimiaSoundProvider(preferences.soundEffects) {
                         com.quimia.android.presentation.components.LaunchSplash {
                             if (settings.ready) {
@@ -143,6 +144,7 @@ class MainActivity : ComponentActivity() {
                                 confirmButton = { TextButton(onClick = preferencesViewModel::retrySave) { Text("Tentar novamente") } },
                                 dismissButton = { TextButton(onClick = preferencesViewModel::dismissError) { Text("Fechar") } })
                         }
+                    }
                     }
                 }
             }

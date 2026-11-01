@@ -107,7 +107,7 @@ internal fun CatalogRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onA
     val canSave = state.shelfReady && !state.shelfLoading
     val screenLoading = com.quimia.android.presentation.components.rememberEntryLoading(state.loading || state.shelfLoading, userId)
     com.quimia.android.presentation.components.ReportDestinationLoading("catalog", screenLoading)
-    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
+    theme.QuimiaSkeleton(screenLoading) {
     CatalogScreen(onMenuItemSelected = onMenuItemSelected, onAiClick = onAiClick,
         initialQuery = initialQuery, products = if (screenLoading) sampleCatalogProducts.take(5) else state.products.map { it.catalogProduct() },
         initialSavedProductIds = state.savedIds.map(Int::toString), onQueryChange = { query = it; controller.setQuery(it) },

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.dp
 import theme.quimiaColorTokens
@@ -15,16 +16,15 @@ internal enum class SkeletonLayout { Grid, Lines, Detail, Profile, History }
 
 @Composable
 internal fun SkeletonBlock(modifier: Modifier = Modifier, radius: Int = 12) {
-    val opacity by if (motion.LocalQuimiaMotionEnabled.current) {
-        rememberInfiniteTransition(label = "skeleton").animateFloat(motion.QuimiaMotion.SkeletonMin, motion.QuimiaMotion.SkeletonMax,
-            infiniteRepeatable(tween(motion.QuimiaMotion.SkeletonPeriod, easing = motion.QuimiaMotion.Easing), RepeatMode.Reverse), label = "skeletonAlpha")
-    } else rememberUpdatedState(.16f)
-    Box(modifier.clip(RoundedCornerShape(radius.dp)).background(quimiaColorTokens().textPrimary.copy(alpha = opacity)))
+    val opacity = theme.rememberSkeletonOpacity()
+    val color = quimiaColorTokens().textPrimary
+    Box(modifier.clip(RoundedCornerShape(radius.dp)).drawBehind { drawRect(color.copy(alpha = opacity.value)) })
 }
 
 @Composable
 internal fun LoadingSkeleton(layout: SkeletonLayout = SkeletonLayout.Grid, label: String = "Carregando", modifier: Modifier = Modifier) {
     val tokens = quimiaColorTokens()
+    theme.QuimiaSkeleton(true) {
     Column(modifier.fillMaxWidth().padding(24.dp).semantics(mergeDescendants = true) {
         contentDescription = label
         stateDescription = "Carregando"
@@ -77,5 +77,6 @@ internal fun LoadingSkeleton(layout: SkeletonLayout = SkeletonLayout.Grid, label
             }
             SkeletonLayout.Lines -> repeat(3) { SkeletonBlock(Modifier.fillMaxWidth(if (it == 2) .65f else 1f).height(16.dp)) }
         }
+    }
     }
 }

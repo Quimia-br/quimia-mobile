@@ -100,7 +100,8 @@ internal fun BrandedLoadingScreen(onFirstCycleFinished: () -> Unit = {}) {
         var failed by remember { mutableStateOf(false) }
         Box(Modifier.align(Alignment.Center).size(size, size * (137f / 138f)).clip(CircleShape)) {
             Image(painterResource(R.drawable.kemi_loading), null, Modifier.matchParentSize(), contentScale = ContentScale.Fit)
-            if (animate && !failed) ResourceVideo(R.raw.quimia_loading, Modifier.matchParentSize(),
+            val compact = motion.LocalQuimiaRenderingBudget.current == motion.QuimiaRenderingBudget.Compact
+            if (animate && !failed) ResourceVideo(if (compact) R.raw.quimia_loading_compact else R.raw.quimia_loading, Modifier.matchParentSize(),
                 looping = true, clipToCircle = true, onFirstCycleFinished = onFirstCycleFinished,
                 onFailure = { failed = true; onFirstCycleFinished() })
         }

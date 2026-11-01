@@ -72,7 +72,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -80,6 +81,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        create("performance") {
+            initWith(getByName("release"))
+            // Install over an Android Studio build without deleting the user's account/data.
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            versionNameSuffix = "-performance"
+            matchingFallbacks += listOf("release")
         }
     }
 }

@@ -23,7 +23,7 @@ dependencies {
     api(libs.androidx.compose.ui.graphics)
     api(libs.androidx.compose.ui.tooling.preview)
 
-    api(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     api("com.composables:icons-lucide-android:1.1.0")
     implementation(libs.androidx.navigation.compose)

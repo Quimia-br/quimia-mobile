@@ -122,7 +122,7 @@ internal fun RoomsRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
         else -> false
     }, navigationVisible = state.stage == RoomsStage.List,
         page = (if (state.stage == RoomsStage.Adding) RoomsStage.Detail else state.stage) to state.detailId)
-    CompositionLocalProvider(theme.LocalQuimiaSkeleton provides screenLoading) {
+    theme.QuimiaSkeleton(screenLoading) {
     Box(Modifier.fillMaxSize().background(tokens.surfaceBackground)) {
         // Adding products is an overlay over the same detail page, not a new loading destination.
         motion.QuimiaScreenDissolve(if (state.stage == RoomsStage.Adding) RoomsStage.Detail else state.stage, Modifier.fillMaxSize()) { stage ->

@@ -82,7 +82,7 @@ internal fun ProfileRoute(userId: String, preferences: ProfilePreferences,
         return
     }
     if (!loaded || profile == null) {
-        CompositionLocalProvider(theme.LocalQuimiaSkeleton provides true) {
+        theme.QuimiaSkeleton(true) {
             ProfileScreen("Seu nome", "email@quimia.com", preferences, {}, {}, {}, onBack = onBack)
         }
     } else {
