@@ -47,6 +47,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 
     testOptions.unitTests.isIncludeAndroidResources = true
