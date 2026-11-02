@@ -163,10 +163,7 @@ internal fun ShelfRoute(userId: String, onMenuItemSelected: (Int) -> Unit, onAiC
             if (state.room.loading) CatalogLoading("Carregando cômodo…")
             state.room.error?.let { CatalogError(it) { scope.launch { controller.showRoom(id) } } }
             state.room.data?.let { room ->
-                Text(room.nome, color = quimiaColorTokens().textPrimary, style = Typography.titleMedium)
-                Text("${room.totalProdutos} produto(s)", color = quimiaColorTokens().textSecondary)
-                Text("Situação: ${room.status}", color = quimiaColorTokens().textSecondary)
-                QuimiaButton(text = "Abrir cômodo", iconSize = 0, espacamento = 0, onClick = {
+                ShelfRoomSummary(room, onOpen = {
                     controller.closeRoom(); onOpenRoom(room.id.toString())
                 })
             }

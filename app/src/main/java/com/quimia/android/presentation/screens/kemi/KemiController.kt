@@ -15,7 +15,7 @@ class KemiController(initialState: KemiState = KemiState()) {
         private set
 
     fun send(text: String, now: Long = System.currentTimeMillis()): KemiRequest? {
-        if (text.isBlank() || state.readOnly || state.pending) return null
+        if (text.isBlank() || text.trim().length > com.quimia.android.data.kemi.KEMI_MESSAGE_LIMIT || state.readOnly || state.pending) return null
         val current = state.active ?: KemiConversation(UUID.randomUUID().toString(), now)
         val message = KemiMessage(UUID.randomUUID().toString(), text.trim(), KemiRole.User, now, KemiDelivery.Pending)
         val updated = current.copy(messages = current.messages + message)

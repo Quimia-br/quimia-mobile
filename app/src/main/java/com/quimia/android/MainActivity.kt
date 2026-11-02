@@ -60,7 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.quimia.android.presentation.screens.kemi.KemiController
 import com.quimia.android.presentation.screens.kemi.KemiControllerSaver
-import com.quimia.android.presentation.screens.kemi.KemiScreen
+import com.quimia.android.presentation.screens.kemi.KemiRoute
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.quimia.android.presentation.screens.auth.AuthDestination
 import com.quimia.android.presentation.screens.mixtures.*
@@ -420,7 +420,8 @@ private fun QuimiaApp(preferences: ProfilePreferences, onPreferencesChange: (Pro
                         },
                     ) }
                     if (overlay == "kemi") {
-                        KemiScreen(
+                        KemiRoute(
+                            userId = sessionUid.orEmpty(),
                             controller = kemiController,
                             displayName = displayName.takeUnless { it == "Seu nome" }?.substringBefore(' '),
                             onClose = { showKemi = false },

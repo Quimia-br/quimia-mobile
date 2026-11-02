@@ -62,11 +62,11 @@ internal fun KemiHeader(
         QuimiaIconButton(icon = Lucide.ChevronLeft, onClick = onClose,
             containerColor = tokens.surfaceBase, contentDescription = "Voltar")
         Spacer(Modifier.weight(1f))
-        if (panel != KemiPanel.Collapsed) QuimiaIconButton(
-            icon = if (panel == KemiPanel.Expanded || pending) Lucide.Clock else Lucide.Menu,
+        QuimiaIconButton(
+            icon = Lucide.Clock,
             onClick = onHistory, containerColor = tokens.surfaceBase, contentDescription = "Histórico de chats")
-        if (panel != KemiPanel.Hidden) QuimiaIconButton(icon = Lucide.SquarePen, onClick = onNewChat,
-            containerColor = tokens.surfaceBase, contentDescription = "Novo chat")
+        QuimiaIconButton(icon = Lucide.SquarePen, onClick = onNewChat,
+            containerColor = tokens.surfaceBase, contentDescription = "Novo chat", enabled = !pending)
     }
 }
 
