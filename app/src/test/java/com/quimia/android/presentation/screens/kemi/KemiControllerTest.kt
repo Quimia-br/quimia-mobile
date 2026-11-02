@@ -7,6 +7,12 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class KemiControllerTest {
+    @Test fun messagesAboveApiLimitAreNotQueued() {
+        val controller = KemiController()
+        assertNull(controller.send("a".repeat(2001)))
+        assertTrue(controller.state.conversations.isEmpty())
+        assertNotNull(controller.send("a".repeat(2000)))
+    }
     @Test fun blankMessagesAreIgnored() {
         val controller = KemiController()
         assertNull(controller.send(" \n "))

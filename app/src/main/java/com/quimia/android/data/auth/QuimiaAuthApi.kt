@@ -54,7 +54,7 @@ interface QuimiaAuthApi {
 object AuthApiFactory {
     val json = Json { ignoreUnknownKeys = true }
     fun create(baseUrl: String): QuimiaAuthApi = create(baseUrl, QuimiaAuthApi::class.java)
-    fun <T> create(baseUrl: String, service: Class<T>): T {
+    fun <T> create(baseUrl: String, service: Class<T>, timeoutSeconds: Long = 30): T {
         val client = OkHttpClient.Builder().retryOnConnectionFailure(false)
             .followRedirects(false).followSslRedirects(false)
             .addInterceptor { chain ->
@@ -65,7 +65,8 @@ object AuthApiFactory {
                     throw IOException("Authentication request replay prevented")
                 chain.proceed(chain.request())
             }
-            .callTimeout(30, TimeUnit.SECONDS).build()
+            .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
+            .callTimeout(timeoutSeconds, TimeUnit.SECONDS).build()
         return Retrofit.Builder().baseUrl(baseUrl).client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build().create(service)

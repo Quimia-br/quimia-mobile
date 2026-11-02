@@ -111,10 +111,11 @@ internal fun KemiHistoryPanel(panel: KemiPanel, history: List<KemiConversation>,
 }
 
 @Composable
-internal fun KemiNewChatDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+internal fun KemiNewChatDialog(onDismiss: () -> Unit, onConfirm: () -> Unit, busy: Boolean = false) {
     com.quimia.android.presentation.components.QuimiaFeedbackDialog(
         title = "Tem certeza que quer abrir um novo chat e encerrar o atual?",
         description = "Ao abrir um novo chat, você não pode voltar a interagir com chats anteriores.",
         onDismiss = onDismiss, action = "Abrir", onConfirm = onConfirm, secondaryAction = "Cancelar",
+        busy = busy,
     )
 }
