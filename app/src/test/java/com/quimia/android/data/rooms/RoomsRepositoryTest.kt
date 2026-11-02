@@ -36,13 +36,27 @@ class RoomsRepositoryTest {
     @After fun teardown() { server.shutdown() }
     @Test fun `list and detail are scoped to account and use real pagination and query`() = runBlocking {
         response("""{"itens":[{"id":4,"nome":"Banheiro","icone":"toilet","totalProdutos":2,"status":"nao_avaliado"}],"pagina":0,"tamanho":20,"totalItens":1,"totalPaginas":1}""")
-        assertEquals(4, repository.list("u1", " Banho ", 0).itens.single().id)
+        assertEquals(4, repository.list("u1", " Banho ", "alfabetica", 0).itens.single().id)
         val request = server.takeRequest()
         assertEquals("/api/v1/comodos", request.requestUrl?.encodedPath)
         assertEquals("Banho", request.requestUrl?.queryParameter("q")); assertEquals("20", request.requestUrl?.queryParameter("size"))
+        assertEquals("alfabetica", request.requestUrl?.queryParameter("ordem"))
         assertEquals("Bearer access", request.getHeader("Authorization")); assertNull(request.getHeader("Cookie"))
         response(room); assertEquals(setOf(7, 8), repository.detail("u1", 4).produtos.map { it.id }.toSet())
         assertEquals("/api/v1/comodos/4", server.takeRequest().path)
+    }
+    @Test fun `date orders are sent with search and page while preserving server order`() = runBlocking {
+        val summaries = """{"id":12,"nome":"Sala","icone":"sofa","totalProdutos":2,"status":"nao_avaliado"},{"id":4,"nome":"Banheiro","icone":"toilet","totalProdutos":2,"status":"nao_avaliado"}"""
+        for (order in listOf("recentes", "antigos")) {
+            response("""{"itens":[$summaries],"pagina":1,"tamanho":20,"totalItens":22,"totalPaginas":2}""")
+            assertEquals(listOf(12, 4), repository.list("u1", " Sala ", order, 1).itens.map { it.id })
+            val request = server.takeRequest()
+            assertEquals(order, request.requestUrl?.queryParameter("ordem"))
+            assertEquals("Sala", request.requestUrl?.queryParameter("q"))
+            assertEquals("1", request.requestUrl?.queryParameter("page"))
+            assertEquals("20", request.requestUrl?.queryParameter("size"))
+            assertEquals("Bearer access", request.getHeader("Authorization"))
+        }
     }
     @Test fun `creation requires 201 and confirmed name icon and product links`() = runBlocking {
         response(room, 201); assertEquals(4, repository.create("u1", " Banheiro ", "toilet", listOf(7, 8, 7)).id)
@@ -79,10 +93,10 @@ class RoomsRepositoryTest {
         assertTrue(runCatching { repository.detail("u1", 4) }.exceptionOrNull() is CatalogContractException)
     }
     @Test fun `wrong account never sends request and expired refresh ends session`() = runBlocking {
-        assertTrue(runCatching { repository.list("other", "", 0) }.isFailure)
+        assertTrue(runCatching { repository.list("other", "", "alfabetica", 0) }.isFailure)
         assertEquals(1, server.requestCount)
         response("{}", 401); response("{}", 401)
-        assertTrue(runCatching { repository.list("u1", "", 0) }.exceptionOrNull() is CatalogSessionExpired)
+        assertTrue(runCatching { repository.list("u1", "", "alfabetica", 0) }.exceptionOrNull() is CatalogSessionExpired)
         assertEquals(3, server.requestCount)
     }
 }
