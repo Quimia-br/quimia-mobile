@@ -140,10 +140,10 @@ fun KemiScreen(
         .pointerInput(Unit) { detectTapGestures { } }) {
         KemiBackground(Modifier.fillMaxWidth().height(210.dp))
         Column(Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp).fillMaxSize().quimiaContent()
-            .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets(top = 62.dp)))
+            .statusBarsPadding()
             .navigationBarsPadding().imePadding()
             .then(if (error != null) Modifier.clearAndSetSemantics { } else Modifier)) {
-            KemiHeader(panel, state.pending || endingChat || copied > 0, ::close,
+            KemiHeader(panel, state.pending || endingChat, ::close,
                 onHistory = { keyboard?.hide(); panel = if (panel == KemiPanel.Expanded) KemiPanel.Collapsed else KemiPanel.Expanded },
                 onNewChat = ::openNewChat, compact = keyboardVisible)
             val messages = state.current?.messages.orEmpty()
@@ -206,7 +206,7 @@ fun KemiScreen(
                 statusIconContainerColor = if (voiceUnavailable || inputTooLong || endingChat) null else tokens.success,
                 onDismiss = { copied = 0; voiceUnavailable = false; inputTooLong = false },
                 modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 600.dp)
-                    .padding(horizontal = 24.dp).padding(top = maxOf(62.dp, statusTop) + 93.dp))
+                    .padding(horizontal = 24.dp).padding(top = statusTop + 76.dp))
         }
         if (error == null) KemiHistoryPanel(panel, state.history, now, onPanelChange = { panel = it },
             onOpen = { controller.viewConversation(it); panel = KemiPanel.Hidden; keyboard?.hide() }, onNewChat = ::openNewChat)
